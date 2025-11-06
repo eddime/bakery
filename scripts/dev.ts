@@ -1,52 +1,70 @@
 #!/usr/bin/env bun
-// ⚡ Zippy Development Server
-// Runs Zippy app with hot reload
+// 🥐 Bakery Development Server
+// Runs Bakery app with hot reload (like `neu run`)
 
 import { watch } from 'fs';
-import { $ } from 'bun';
+import { spawn, type Subprocess } from 'bun';
+import { resolve } from 'path';
 
-console.log('⚡ Zippy Development Server\n');
+console.log('🥐 Bakery Development Server\n');
 
-let process: any = null;
+let appProcess: Subprocess | null = null;
 
 async function startApp() {
-  if (process) {
+  if (appProcess) {
     console.log('🔄 Restarting app...\n');
-    process.kill();
+    appProcess.kill();
+    appProcess = null;
   }
   
   console.log('🚀 Starting app...');
   
-  // TODO: Build and run app
-  // For now, just a placeholder
-  process = Bun.spawn(['echo', 'App would run here'], {
+  // Run test-hello.ts (later this will be from user config)
+  const entryPoint = resolve('./test-hello.ts');
+  
+  appProcess = spawn({
+    cmd: ['bun', 'run', entryPoint],
     stdout: 'inherit',
     stderr: 'inherit',
+    stdin: 'inherit',
   });
+  
+  console.log('✅ App started (PID:', appProcess.pid, ')\n');
 }
 
 async function main() {
   console.log('👀 Watching for changes...\n');
   
-  // Start initial build
+  // Start initial app
   await startApp();
   
-  // Watch for changes
-  const watcher = watch('./src', { recursive: true }, async (event, filename) => {
-    if (filename?.endsWith('.ts') || filename?.endsWith('.c') || filename?.endsWith('.h')) {
-      console.log(`📝 Changed: ${filename}`);
+  // Watch for changes in lib/ and test files
+  const watcher = watch('.', { recursive: true }, async (event, filename) => {
+    if (!filename) return;
+    
+    // Watch TypeScript files in lib/ or test files
+    if (
+      (filename.includes('lib/') && filename.endsWith('.ts')) ||
+      (filename.includes('test-') && filename.endsWith('.ts')) ||
+      (filename.includes('examples/') && filename.endsWith('.ts'))
+    ) {
+      console.log(`\n📝 Changed: ${filename}`);
       await startApp();
     }
   });
   
   // Handle cleanup
   process.on('SIGINT', () => {
-    console.log('\n👋 Shutting down...');
+    console.log('\n\n👋 Shutting down Bakery dev server...');
     watcher.close();
-    if (process) process.kill();
-    Bun.exit(0);
+    if (appProcess) {
+      appProcess.kill();
+    }
+    process.exit(0);
   });
+  
+  // Keep process alive
+  await new Promise(() => {});
 }
 
 main().catch(console.error);
-

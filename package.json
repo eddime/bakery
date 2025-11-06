@@ -9,7 +9,8 @@
     "build": "bun run scripts/build.ts",
     "build:runtime": "bun run scripts/build-runtime.ts",
     "test": "bun test",
-    "clean": "rm -rf build dist tmp"
+    "clean": "rm -rf build dist tmp",
+    "hello": "bun run test-hello.ts"
   },
   "keywords": [
     "desktop",
