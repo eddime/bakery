@@ -99,6 +99,19 @@ const webview_eval = new FFI.CFunction(
     [FFI.types.pointer, FFI.types.string]
 );
 
+// 🥐 Bakery Extensions
+const webview_set_icon = new FFI.CFunction(
+    webviewLib.symbol('webview_set_icon'),
+    FFI.types.sint,
+    [FFI.types.pointer, FFI.types.string]
+);
+
+const webview_set_min_size = new FFI.CFunction(
+    webviewLib.symbol('webview_set_min_size'),
+    FFI.types.sint,
+    [FFI.types.pointer, FFI.types.sint, FFI.types.sint]
+);
+
 // Window class
 export class Window {
     constructor(options = {}) {
@@ -145,6 +158,20 @@ export class Window {
 
     eval(js) {
         webview_eval.call(this.handle, js);
+    }
+
+    setIcon(iconPath) {
+        const result = webview_set_icon.call(this.handle, iconPath);
+        if (result !== 0) {
+            console.warn(`⚠️  Failed to set icon: ${iconPath}`);
+        }
+    }
+
+    setMinSize(width, height) {
+        const result = webview_set_min_size.call(this.handle, width, height);
+        if (result !== 0) {
+            console.warn(`⚠️  Failed to set min size: ${width}x${height}`);
+        }
     }
 
     run() {

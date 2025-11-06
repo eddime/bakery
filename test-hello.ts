@@ -15,6 +15,10 @@ app.on("ready", () => {
     debug: true,
   });
 
+  // Set icon
+  win.setIcon('assets/icon.png');
+  console.log('🎨 Icon set!\n');
+
   const html = `
 <!DOCTYPE html>
 <html>

@@ -18,6 +18,10 @@ app.on('ready', () => {
 
     console.log('✅ Window created!\n');
 
+    // Set icon
+    win.setIcon('assets/icon.png');
+    console.log('🎨 Icon set!\n');
+
     const html = `
 <!DOCTYPE html>
 <html>

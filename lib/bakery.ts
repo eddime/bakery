@@ -54,6 +54,15 @@ const lib = dlopen(libPath, {
     args: [FFIType.ptr, FFIType.cstring, FFIType.ptr, FFIType.ptr],
     returns: FFIType.void,
   },
+  // 🥐 Bakery Extensions
+  webview_set_icon: {
+    args: [FFIType.ptr, FFIType.cstring],
+    returns: FFIType.i32,
+  },
+  webview_set_min_size: {
+    args: [FFIType.ptr, FFIType.i32, FFIType.i32],
+    returns: FFIType.i32,
+  },
 });
 
 const encoder = new TextEncoder();
@@ -127,6 +136,22 @@ export class Window {
   navigate(url: string) {
     if (!this.handle) throw new Error("Window destroyed");
     lib.symbols.webview_navigate(this.handle, encodeCString(url));
+  }
+
+  setIcon(iconPath: string) {
+    if (!this.handle) throw new Error("Window destroyed");
+    const result = lib.symbols.webview_set_icon(this.handle, encodeCString(iconPath));
+    if (result !== 0) {
+      console.warn(`⚠️  Failed to set icon: ${iconPath}`);
+    }
+  }
+
+  setMinSize(width: number, height: number) {
+    if (!this.handle) throw new Error("Window destroyed");
+    const result = lib.symbols.webview_set_min_size(this.handle, width, height);
+    if (result !== 0) {
+      console.warn(`⚠️  Failed to set min size: ${width}x${height}`);
+    }
   }
 
   eval(js: string) {
