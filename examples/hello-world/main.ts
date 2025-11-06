@@ -1,7 +1,7 @@
 // ⚡ Zippy Hello World Example
 // The simplest Zippy app
 
-import { app, Window } from 'zippy:app';
+import { app, Window } from 'bakery:app';
 
 console.log('🚀 Starting Zippy Hello World...');
 

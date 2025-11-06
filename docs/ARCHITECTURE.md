@@ -98,11 +98,11 @@ High-performance communication between JavaScript and WebView.
 High-level APIs for desktop app development.
 
 **Modules:**
-- `zippy:app` - Application lifecycle
-- `zippy:window` - Window management
-- `zippy:dialog` - Native dialogs
-- `zippy:shell` - OS integration
-- `zippy:worker` - StreamWorker (unique!)
+- `bakery:app` - Application lifecycle
+- `bakery:window` - Window management
+- `bakery:dialog` - Native dialogs
+- `bakery:shell` - OS integration
+- `bakery:worker` - StreamWorker (unique!)
 
 **Location:** `src/api/`
 

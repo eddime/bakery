@@ -1,8 +1,8 @@
 // ⚡ Zippy - Application API
 // High-level API for application lifecycle
 
-#ifndef ZIPPY_API_APP_H
-#define ZIPPY_API_APP_H
+#ifndef BAKERY_API_APP_H
+#define BAKERY_API_APP_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,5 +23,5 @@ void zippy_api_cleanup(void);
 }
 #endif
 
-#endif // ZIPPY_API_APP_H
+#endif // BAKERY_API_APP_H
 

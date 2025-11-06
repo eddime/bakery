@@ -91,7 +91,7 @@ async function buildTarget(target: Target, release: boolean) {
   // Copy to dist
   console.log('  📂 Copying to dist...');
   await $`mkdir -p dist`;
-  await $`cp ${buildDir}/zippy dist/zippy-${target}${target.includes('windows') ? '.exe' : ''}`;
+  await $`cp ${buildDir}/bakery dist/bakery-${target}${target.includes('windows') ? '.exe' : ''}`;
   
   console.log(`  ✅ ${target} build complete`);
 }

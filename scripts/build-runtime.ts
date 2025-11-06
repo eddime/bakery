@@ -29,7 +29,7 @@ async function main() {
     
     // Copy runtime binary
     const ext = target.includes('windows') ? '.exe' : '';
-    await $`cp dist/zippy-${target}${ext} ${runtimeDir}/zippy-runtime${ext}`;
+    await $`cp dist/bakery-${target}${ext} ${runtimeDir}/bakery-runtime${ext}`;
     
     // Copy WebView libraries
     if (target.includes('linux')) {

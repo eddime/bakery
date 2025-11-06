@@ -1,8 +1,8 @@
 // ⚡ Zippy - Window API
 // Window management functions
 
-#ifndef ZIPPY_API_WINDOW_H
-#define ZIPPY_API_WINDOW_H
+#ifndef BAKERY_API_WINDOW_H
+#define BAKERY_API_WINDOW_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -14,5 +14,5 @@ extern "C" {
 }
 #endif
 
-#endif // ZIPPY_API_WINDOW_H
+#endif // BAKERY_API_WINDOW_H
 

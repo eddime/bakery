@@ -1,8 +1,8 @@
 // ⚡ Zippy - WebView FFI Interface
 // Native WebView integration with zero-copy IPC
 
-#ifndef ZIPPY_WEBVIEW_FFI_H
-#define ZIPPY_WEBVIEW_FFI_H
+#ifndef BAKERY_WEBVIEW_FFI_H
+#define BAKERY_WEBVIEW_FFI_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -133,5 +133,5 @@ int zippy_webview_set_size(ZippyWebView *webview, int width, int height);
 }
 #endif
 
-#endif // ZIPPY_WEBVIEW_FFI_H
+#endif // BAKERY_WEBVIEW_FFI_H
 

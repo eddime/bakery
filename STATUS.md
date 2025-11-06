@@ -1,10 +1,10 @@
-# ⚡ Zippy Framework - Project Status
+# ⚡ Bakery Framework - Project Status
 
 **Last Updated:** 2024-11-06
 
 ## 🎯 Vision
 
-Zippy is a next-generation desktop framework that aims to be:
+Bakery is a next-generation desktop framework that aims to be:
 - **Smallest** - 5-8 MB binaries (vs Electron 150+ MB)
 - **Fastest** - <100ms startup, native performance
 - **Most Powerful** - Full Node.js APIs + Game-ready performance
@@ -65,14 +65,14 @@ Zippy is a next-generation desktop framework that aims to be:
 ## 📋 Planned (Phase 3+)
 
 ### Framework APIs
-- [ ] `zippy:app` - Application lifecycle
-- [ ] `zippy:window` - Window management
-- [ ] `zippy:dialog` - Native dialogs
-- [ ] `zippy:shell` - OS integration
-- [ ] `zippy:worker` - StreamWorker (unique!)
-- [ ] `zippy:fs` - File system operations
-- [ ] `zippy:http` - HTTP client/server
-- [ ] `zippy:crypto` - Cryptography
+- [ ] `bakery:app` - Application lifecycle
+- [ ] `bakery:window` - Window management
+- [ ] `bakery:dialog` - Native dialogs
+- [ ] `bakery:shell` - OS integration
+- [ ] `bakery:worker` - StreamWorker (unique!)
+- [ ] `bakery:fs` - File system operations
+- [ ] `bakery:http` - HTTP client/server
+- [ ] `bakery:crypto` - Cryptography
 
 ### Build System
 - [ ] Cross-platform compilation
@@ -80,11 +80,11 @@ Zippy is a next-generation desktop framework that aims to be:
   - [ ] Asset embedding
   - [ ] Code minification
   - [ ] Binary stripping
-- [ ] CLI tool (`zippy` command)
-  - [ ] `zippy init` - Create new project
-  - [ ] `zippy dev` - Development mode
-  - [ ] `zippy build` - Build for platform(s)
-  - [ ] `zippy run` - Run app
+- [ ] CLI tool (`bakery` command)
+  - [ ] `bakery init` - Create new project
+  - [ ] `bakery dev` - Development mode
+  - [ ] `bakery build` - Build for platform(s)
+  - [ ] `bakery run` - Run app
 
 ### Developer Experience
 - [ ] Hot reload for development
@@ -131,7 +131,7 @@ Zippy is a next-generation desktop framework that aims to be:
 - [ ] Video tutorials
 - [ ] Project website
 
-## 🎮 Special Features (Unique to Zippy)
+## 🎮 Special Features (Unique to Bakery)
 
 ### StreamWorker
 A unique worker API for streaming data processing:
@@ -196,12 +196,12 @@ worker.onstream = (chunk) => {
 
 ## 💪 How to Help
 
-We're building Zippy in the open! Here's how you can contribute:
+We're building Bakery in the open! Here's how you can contribute:
 
 1. **Try it out** - Build and test on your platform
 2. **Report bugs** - Open issues on GitHub
-3. **Write examples** - Show what's possible with Zippy
-4. **Improve docs** - Help others understand Zippy
+3. **Write examples** - Show what's possible with Bakery
+4. **Improve docs** - Help others understand Bakery
 5. **Contribute code** - See CONTRIBUTING.md
 
 ## 📅 Milestones
@@ -228,10 +228,10 @@ We're building Zippy in the open! Here's how you can contribute:
 
 ## 🔗 Resources
 
-- **Repository:** [GitHub](https://github.com/zippy/zippy)
-- **Documentation:** [zippy.dev/docs](https://zippy.dev/docs)
-- **Discord:** [Join our community](https://discord.gg/zippy)
-- **Twitter:** [@zippydev](https://twitter.com/zippydev)
+- **Repository:** [GitHub](https://github.com/bakery/bakery)
+- **Documentation:** [bakery.dev/docs](https://bakery.dev/docs)
+- **Discord:** [Join our community](https://discord.gg/bakery)
+- **Twitter:** [@bakerydev](https://twitter.com/bakerydev)
 
 ---
 

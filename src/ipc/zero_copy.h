@@ -1,8 +1,8 @@
 // ⚡ Zippy - Zero-Copy IPC
 // High-performance inter-process communication using shared memory
 
-#ifndef ZIPPY_ZERO_COPY_H
-#define ZIPPY_ZERO_COPY_H
+#ifndef BAKERY_ZERO_COPY_H
+#define BAKERY_ZERO_COPY_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -18,10 +18,10 @@ typedef struct ZippyIPC ZippyIPC;
 
 // IPC message types
 typedef enum {
-    ZIPPY_IPC_CALL,      // Function call from frontend
-    ZIPPY_IPC_RETURN,    // Return value to frontend
-    ZIPPY_IPC_EVENT,     // Event from backend
-    ZIPPY_IPC_STREAM,    // Streaming data
+    BAKERY_IPC_CALL,      // Function call from frontend
+    BAKERY_IPC_RETURN,    // Return value to frontend
+    BAKERY_IPC_EVENT,     // Event from backend
+    BAKERY_IPC_STREAM,    // Streaming data
 } ZippyIPCMessageType;
 
 // IPC message header
@@ -95,5 +95,5 @@ int zippy_ipc_stats(ZippyIPC *ipc, size_t *used_bytes, size_t *total_bytes);
 }
 #endif
 
-#endif // ZIPPY_ZERO_COPY_H
+#endif // BAKERY_ZERO_COPY_H
 

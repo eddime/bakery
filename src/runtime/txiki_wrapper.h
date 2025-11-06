@@ -1,8 +1,8 @@
 // ⚡ Zippy - txiki.js Runtime Wrapper
 // Provides high-level API for txiki.js integration
 
-#ifndef ZIPPY_TXIKI_WRAPPER_H
-#define ZIPPY_TXIKI_WRAPPER_H
+#ifndef BAKERY_TXIKI_WRAPPER_H
+#define BAKERY_TXIKI_WRAPPER_H
 
 #include <stddef.h>
 #include <stdint.h>
@@ -72,5 +72,5 @@ int zippy_runtime_register_function(
 }
 #endif
 
-#endif // ZIPPY_TXIKI_WRAPPER_H
+#endif // BAKERY_TXIKI_WRAPPER_H
 

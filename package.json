@@ -1,7 +1,7 @@
 {
-  "name": "zippy",
+  "name": "bakery",
   "version": "0.1.0",
-  "description": "⚡ Blazing fast desktop framework - Small, fast, powerful",
+  "description": "🥐 Blazing fast desktop framework - Small, fast, powerful",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
@@ -21,7 +21,7 @@
     "txiki.js",
     "performance"
   ],
-  "author": "Zippy Team",
+  "author": "Bakery Team",
   "license": "MIT",
   "devDependencies": {
     "@types/bun": "latest",

@@ -1,7 +1,7 @@
-// ⚡ Zippy Framework Configuration
-// This is the default configuration for Zippy apps
+// 🥐 Bakery Framework Configuration
+// This is the default configuration for Bakery apps
 
-export interface ZippyConfig {
+export interface BakeryConfig {
   // Application metadata
   app: {
     name: string;
@@ -106,14 +106,14 @@ export interface ZippyConfig {
 }
 
 // Default configuration
-const defaultConfig: ZippyConfig = {
+const defaultConfig: BakeryConfig = {
   app: {
-    name: 'zippy-app',
+    name: 'bakery-app',
     version: '1.0.0',
   },
 
   window: {
-    title: 'Zippy App',
+    title: 'Bakery App',
     width: 1200,
     height: 800,
     minWidth: 800,

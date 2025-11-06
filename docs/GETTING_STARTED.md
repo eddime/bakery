@@ -39,24 +39,24 @@ pacman -S mingw-w64-x86_64-cmake mingw-w64-x86_64-gcc
 
 ```bash
 # Install Zippy CLI globally
-npm install -g zippy-cli
+npm install -g bakery-cli
 
 # Or use with npx
-npx zippy-cli init my-app
+npx bakery-cli init my-app
 ```
 
 ## Create Your First App
 
 ```bash
 # Create new Zippy app
-zippy init my-app
+bakery init my-app
 cd my-app
 
 # Install dependencies
 bun install
 
 # Run in development mode
-zippy dev
+bakery dev
 ```
 
 ## Project Structure
@@ -69,7 +69,7 @@ my-app/
 │   └── styles.css        # Frontend styles
 ├── assets/
 │   └── icon.png          # App icon
-├── zippy.config.ts       # Configuration
+├── bakery.config.ts       # Configuration
 ├── package.json
 └── tsconfig.json
 ```
@@ -79,7 +79,7 @@ my-app/
 ### main.ts
 
 ```typescript
-import { app, Window } from 'zippy:app';
+import { app, Window } from 'bakery:app';
 
 app.on('ready', () => {
     const win = new Window({
@@ -118,7 +118,7 @@ app.on('window-all-closed', () => {
 
 ## Configuration
 
-Edit `zippy.config.ts`:
+Edit `bakery.config.ts`:
 
 ```typescript
 export default {
@@ -149,33 +149,33 @@ export default {
 
 ```bash
 # Start dev server with hot reload
-zippy dev
+bakery dev
 
 # Open DevTools
-zippy dev --devtools
+bakery dev --devtools
 ```
 
 ## Building
 
 ```bash
 # Build for current platform
-zippy build
+bakery build
 
 # Build for specific platform
-zippy build --target linux-x64
+bakery build --target linux-x64
 
 # Build for all platforms
-zippy build --all
+bakery build --all
 
 # Clean build
-zippy build --clean --all
+bakery build --clean --all
 ```
 
 ## Running Your App
 
 ```bash
 # Development
-zippy dev
+bakery dev
 
 # Production binary
 ./dist/my-app
@@ -186,7 +186,7 @@ zippy dev
 ### Backend (main.ts)
 
 ```typescript
-import { app, ipc } from 'zippy:app';
+import { app, ipc } from 'bakery:app';
 
 // Handle IPC messages
 ipc.handle('get-data', async () => {
@@ -204,11 +204,11 @@ ipc.handle('save-file', async (data) => {
 ```html
 <script>
 // Call backend function
-const data = await zippy.invoke('get-data');
+const data = await bakery.invoke('get-data');
 console.log(data.message);
 
 // Send data to backend
-await zippy.invoke('save-file', 'Hello World!');
+await bakery.invoke('save-file', 'Hello World!');
 </script>
 ```
 
@@ -236,15 +236,15 @@ Make sure you're using MSYS2 MinGW64 shell, not regular CMD/PowerShell.
 
 Check the logs:
 ```bash
-zippy dev --verbose
+bakery dev --verbose
 ```
 
 ## Getting Help
 
-- 📖 [Documentation](https://zippy.dev/docs)
-- 💬 [Discord](https://discord.gg/zippy)
-- 🐛 [GitHub Issues](https://github.com/zippy/zippy/issues)
-- 🐦 [Twitter](https://twitter.com/zippydev)
+- 📖 [Documentation](https://bakery.dev/docs)
+- 💬 [Discord](https://discord.gg/bakery)
+- 🐛 [GitHub Issues](https://github.com/bakery/bakery/issues)
+- 🐦 [Twitter](https://twitter.com/bakerydev)
 
 ---
 

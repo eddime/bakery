@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define ZIPPY_IPC_SHMEM_SIZE (1024 * 1024 * 16)  // 16 MB shared memory
+#define BAKERY_IPC_SHMEM_SIZE (1024 * 1024 * 16)  // 16 MB shared memory
 
 struct ZippyIPC {
     ZippyRuntime *runtime;
@@ -40,7 +40,7 @@ ZippyIPC* zippy_ipc_create(ZippyRuntime *runtime, ZippyWebView *webview) {
     ipc->webview = webview;
     
     // Allocate shared memory
-    ipc->shmem_size = ZIPPY_IPC_SHMEM_SIZE;
+    ipc->shmem_size = BAKERY_IPC_SHMEM_SIZE;
     ipc->shmem_base = malloc(ipc->shmem_size);
     if (!ipc->shmem_base) {
         free(ipc);

@@ -1,13 +1,13 @@
-# Contributing to Zippy
+# Contributing to Bakery
 
-Thank you for your interest in contributing to Zippy! 🚀
+Thank you for your interest in contributing to Bakery! 🚀
 
 ## Development Setup
 
 1. Fork and clone the repository
 ```bash
-git clone https://github.com/your-username/zippy.git
-cd zippy
+git clone https://github.com/your-username/bakery.git
+cd bakery
 ```
 
 2. Install dependencies

@@ -1,6 +1,6 @@
-# ⚡ Zippy - Blazing Fast Desktop Framework
+# 🥐 Bakery - Blazing Fast Desktop Framework
 
-**Zippy** is a lightweight, high-performance desktop application framework that combines the best of both worlds:
+**Bakery** is a lightweight, high-performance desktop application framework that combines the best of both worlds:
 - 🚀 **Tiny** - 5-8 MB binaries (vs Electron's 150+ MB)
 - ⚡ **Fast** - <100ms startup, native performance
 - 🎮 **Game-Ready** - Hardware acceleration, high FPS support
@@ -8,10 +8,10 @@
 - 📦 **Single Binary** - Everything in one file
 - 🔧 **Node.js APIs** - Full compatibility with npm ecosystem
 
-## Why Zippy?
+## Why Bakery?
 
-| Feature | Zippy | Electron | Tauri | Neutralino |
-|---------|-------|----------|-------|------------|
+| Feature | Bakery | Electron | Tauri | Neutralino |
+|---------|--------|----------|-------|------------|
 | Binary Size | **5-8 MB** | 150+ MB | 5-10 MB | 3-5 MB |
 | Startup | **<100ms** | 1-2s | 200ms | 200ms |
 | Node.js APIs | **✅ Full** | ✅ Full | ❌ Limited | ❌ Very Limited |
@@ -24,7 +24,7 @@
 
 ```
 ┌─────────────────────────────────────────┐
-│         Zippy Framework                  │
+│         Bakery Framework                 │
 ├─────────────────────────────────────────┤
 │  Native WebView (0 MB - system)         │
 │  + Consistency Layer (500 KB)           │
@@ -38,32 +38,32 @@
 ## Quick Start
 
 ```bash
-# Install Zippy CLI
-npm install -g zippy-cli
+# Install Bakery CLI
+npm install -g bakery-cli
 
 # Create new project
-zippy init my-app
+bakery init my-app
 cd my-app
 
 # Development with hot reload
-zippy dev
+bakery dev
 
 # Build for current platform
-zippy build
+bakery build
 
 # Build for all platforms
-zippy build --all
+bakery build --all
 ```
 
 ## Example
 
 ```typescript
 // main.ts
-import { app, Window } from 'zippy:app';
+import { app, Window } from 'bakery:app';
 
 app.on('ready', async () => {
     const win = new Window({
-        title: 'My Zippy App',
+        title: 'My Bakery App',
         width: 1200,
         height: 800,
     });
@@ -87,7 +87,7 @@ app.on('ready', async () => {
 
 🚧 **Early Development** - Not ready for production yet!
 
-We're building Zippy to be the fastest, smallest, most powerful desktop framework.
+We're building Bakery to be the fastest, smallest, most powerful desktop framework.
 
 ## Roadmap
 
@@ -106,5 +106,5 @@ MIT
 
 ---
 
-**Made with ⚡ and TypeScript**
+**Made with 🥐 and TypeScript**
 

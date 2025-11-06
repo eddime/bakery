@@ -1,8 +1,8 @@
-# ⚡ Zippy Framework - Project Summary
+# ⚡ Bakery Framework - Project Summary
 
-## Was ist Zippy?
+## Was ist Bakery?
 
-**Zippy** ist ein modernes Desktop-Framework, das die beste Alternative zu Electron, Neutralino und NW.js sein wird:
+**Bakery** ist ein modernes Desktop-Framework, das die beste Alternative zu Electron, Neutralino und NW.js sein wird:
 
 - 🚀 **Blitzschnell** - <100ms Startup, native Performance
 - 📦 **Winzig** - 5-8 MB Binaries (vs Electron 150+ MB)
@@ -35,7 +35,7 @@ Build System:           Cross-Platform Builder
                         └─ Pre-compiled Runtimes
 ```
 
-## Warum Zippy?
+## Warum Bakery?
 
 ### Problem: Electron ist zu groß
 
@@ -67,13 +67,13 @@ Neutralino:
 ❌ Schlechte DX
 ```
 
-### Lösung: Zippy = Best of Both Worlds!
+### Lösung: Bakery = Best of Both Worlds!
 
 ```
-Zippy App:
+Bakery App:
 ├─ txiki.js Runtime      ~5 MB
 ├─ WebView (System)      0 MB  ✨
-├─ Zippy APIs          ~500 KB
+├─ Bakery APIs          ~500 KB
 ├─ Your Code            ~2 MB
 └─ Total               ~7-8 MB
 
@@ -123,11 +123,11 @@ ipcRenderer.send('channel', json);  // Copy 2
 const parsed = JSON.parse(json);    // Copy 3
 ```
 
-**Zippy Lösung:** Shared Memory
+**Bakery Lösung:** Shared Memory
 ```javascript
-// Zippy: Zero-Copy!
+// Bakery: Zero-Copy!
 const data = { large: 'object' };
-zippy.send(data);  // Write to shared memory
+bakery.send(data);  // Write to shared memory
 // Frontend reads directly from shared memory - NO COPY!
 ```
 
@@ -175,19 +175,19 @@ Build für **ALLE** Plattformen von **JEDEM** OS aus:
 
 ```bash
 # Von macOS aus:
-zippy build --target linux-x64        # ✅
-zippy build --target windows-x64      # ✅
+bakery build --target linux-x64        # ✅
+bakery build --target windows-x64      # ✅
 
 # Von Linux aus:
-zippy build --target darwin-arm64     # ✅
-zippy build --target windows-x64      # ✅
+bakery build --target darwin-arm64     # ✅
+bakery build --target windows-x64      # ✅
 
 # Von Windows aus:
-zippy build --target darwin-x64       # ✅
-zippy build --target linux-arm64      # ✅
+bakery build --target darwin-x64       # ✅
+bakery build --target linux-arm64      # ✅
 
 # Alle auf einmal:
-zippy build --all                     # 🚀
+bakery build --all                     # 🚀
 ```
 
 **Wie?** Pre-compiled Runtime Bundles:
@@ -223,7 +223,7 @@ Your Code → Bundle → Inject in Runtime → Single Binary ✨
 
 ### 📋 Geplant:
 - Framework APIs (app, window, dialog, etc.)
-- CLI Tool (`zippy` command)
+- CLI Tool (`bakery` command)
 - Hot Reload
 - StreamWorker
 - Performance Benchmarks
@@ -231,7 +231,7 @@ Your Code → Bundle → Inject in Runtime → Single Binary ✨
 
 ## Vergleich mit Alternativen
 
-| Feature | Zippy | Electron | Tauri | Neutralino | NW.js |
+| Feature | Bakery | Electron | Tauri | Neutralino | NW.js |
 |---------|-------|----------|-------|------------|-------|
 | **Binary Size** | **5-8 MB** | 150+ MB | 5-10 MB | 3-5 MB | 100+ MB |
 | **Startup** | **<100ms** | 1-2s | 200ms | 200ms | 800ms |
@@ -249,22 +249,22 @@ Your Code → Bundle → Inject in Runtime → Single Binary ✨
 
 ```bash
 # Neues Projekt
-zippy init my-app
+bakery init my-app
 cd my-app
 
 # Development
-zippy dev          # Auto-Reload!
+bakery dev          # Auto-Reload!
 
 # Production
-zippy build        # Current OS
-zippy build --all  # All OS
+bakery build        # Current OS
+bakery build --all  # All OS
 ```
 
 ### Minimaler Code
 
 ```typescript
 // main.ts
-import { app, Window } from 'zippy:app';
+import { app, Window } from 'bakery:app';
 
 app.on('ready', () => {
     const win = new Window({
@@ -280,7 +280,7 @@ app.on('ready', () => {
 ### Konfiguration (Optional!)
 
 ```typescript
-// zippy.config.ts
+// bakery.config.ts
 export default {
     app: {
         name: 'my-app',
@@ -300,26 +300,26 @@ export default {
 - **v0.5.0** (3-4 Monate) - Beta Release mit StreamWorker
 - **v1.0.0** (6 Monate) - Production Ready
 
-## Warum der Name "Zippy"?
+## Warum der Name "Bakery"?
 
 - **Zip** = Klein, komprimiert (wie .zip files)
-- **Zippy** = Schnell, flink, energetisch
+- **Bakery** = Schnell, flink, energetisch
 - **⚡** = Lightning-fast Performance
 
 Passt perfekt zu unseren Zielen: **Klein, Schnell, Mächtig!**
 
 ## Mitmachen
 
-Zippy wird Open Source entwickelt!
+Bakery wird Open Source entwickelt!
 
-- 📖 **Docs:** [GitHub](https://github.com/zippy/zippy)
-- 💬 **Discord:** [Community](https://discord.gg/zippy)
-- 🐛 **Issues:** [Bug Reports](https://github.com/zippy/zippy/issues)
-- 🐦 **Twitter:** [@zippydev](https://twitter.com/zippydev)
+- 📖 **Docs:** [GitHub](https://github.com/bakery/bakery)
+- 💬 **Discord:** [Community](https://discord.gg/bakery)
+- 🐛 **Issues:** [Bug Reports](https://github.com/bakery/bakery/issues)
+- 🐦 **Twitter:** [@bakerydev](https://twitter.com/bakerydev)
 
 ---
 
 **Let's build the future of desktop apps! ⚡**
 
-*Zippy - Fast · Small · Powerful*
+*Bakery - Fast · Small · Powerful*
 
