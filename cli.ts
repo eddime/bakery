@@ -81,6 +81,14 @@ async function devCommand(args: string[]) {
       },
     });
 
+    // Watch for app process exit
+    appProcess.exited.then((exitCode: number) => {
+      if (!isRestarting) {
+        console.log('\n👋 App closed. Waiting for file changes to restart...\n');
+        appProcess = null;
+      }
+    });
+
     isRestarting = false;
   }
 
@@ -95,6 +103,10 @@ async function devCommand(args: string[]) {
       filename === entryPoint.split('/').pop()
     ) {
       console.log(`\n📝 Changed: ${filename}`);
+      // If app is not running, start it. Otherwise restart it.
+      if (!appProcess) {
+        console.log('🔄 Restarting app due to file change...\n');
+      }
       await restartApp();
     }
   });
