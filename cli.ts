@@ -52,13 +52,17 @@ async function devCommand(args: string[]) {
   const port = parseInt(values.port as string);
 
   let appProcess: any = null;
+  let isRestarting = false;
 
   async function restartApp() {
+    if (isRestarting) return; // Prevent multiple restarts
+    isRestarting = true;
+
     if (appProcess) {
       console.log('\n🔄 Restarting app...\n');
       appProcess.kill();
       // Wait a bit for process to fully exit
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise(resolve => setTimeout(resolve, 300));
     }
 
     console.log('🚀 Starting app...');
@@ -73,11 +77,9 @@ async function devCommand(args: string[]) {
         BAKERY_DEV: 'true',
       },
     });
-  }
 
-  // Start hot reload server
-  const devServer = new DevServer(['.']);
-  await devServer.start(port);
+    isRestarting = false;
+  }
 
   // Watch for file changes and restart app
   const { watch } = await import('fs');
@@ -101,7 +103,6 @@ async function devCommand(args: string[]) {
   process.on('SIGINT', () => {
     console.log('\n\n👋 Shutting down Bakery dev server...');
     watcher.close();
-    devServer.stop();
     if (appProcess) {
       appProcess.kill();
     }
