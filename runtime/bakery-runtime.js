@@ -14,13 +14,18 @@ function getWebViewLibPath() {
     const isProduction = !tjs.args[1] || !tjs.args[1].includes('test-');
     
     if (isProduction) {
-        // Production: Library next to binary
+        // Production: Get directory of the executable
+        // tjs.args[0] is the path to the executable
+        const execPath = tjs.args[0] || '';
+        const lastSlash = Math.max(execPath.lastIndexOf('/'), execPath.lastIndexOf('\\'));
+        const execDir = lastSlash > 0 ? execPath.substring(0, lastSlash) : '.';
+        
         if (platform === 'darwin') {
-            return './libwebview.dylib';
+            return `${execDir}/libwebview.dylib`;
         } else if (platform === 'linux') {
-            return `./libwebview-${arch}.so`;
+            return `${execDir}/libwebview-${arch}.so`;
         } else if (platform === 'windows') {
-            return './libwebview.dll';
+            return `${execDir}/libwebview.dll`;
         }
     } else {
         // Development: Library in deps folder
