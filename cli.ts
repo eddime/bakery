@@ -157,6 +157,7 @@ async function buildMacCommand(args: string[]) {
     options: {
       entry: { type: 'string', short: 'e', default: './test-hello.ts' },
       output: { type: 'string', short: 'o' },
+      runtime: { type: 'string', default: 'txiki' }, // 'bun' or 'txiki'
     },
     strict: false,
     allowPositionals: true,
@@ -164,9 +165,11 @@ async function buildMacCommand(args: string[]) {
 
   const entryPoint = resolve(values.entry as string);
   const outputName = values.output as string || 'bakery-app';
+  const runtime = values.runtime as string;
   
   console.log(`📦 Entry: ${entryPoint}`);
-  console.log(`📦 Output: dist/${outputName}-darwin-arm64.app\n`);
+  console.log(`📦 Output: dist/${outputName}-darwin-arm64`);
+  console.log(`📦 Runtime: ${runtime}\n`);
   
   // Step 1: Create dist directory
   console.log('1️⃣ Creating dist directory...');
@@ -176,66 +179,100 @@ async function buildMacCommand(args: string[]) {
     stderr: 'inherit',
   }).exited;
   
-  // Step 2: Bundle with esbuild
-  console.log('2️⃣ Bundling with esbuild...');
-  const bundlePath = `dist/${outputName}-bundle.js`;
-  const bundleResult = await spawn({
-    cmd: [
-      'npx', 'esbuild', entryPoint,
-      '--bundle',
-      `--outfile=${bundlePath}`,
-      '--external:tjs:*',
-      '--minify',
-      '--target=es2023',
-      '--platform=neutral',
-      '--format=esm',
-      '--main-fields=main,module'
-    ],
-    stdout: 'inherit',
-    stderr: 'inherit',
-  }).exited;
-  
-  if (bundleResult !== 0) {
-    console.error('❌ Bundling failed!');
-    process.exit(1);
+  if (runtime === 'bun') {
+    // Use Bun's compile (like bunery)
+    console.log('2️⃣ Compiling with Bun...');
+    const compileResult = await spawn({
+      cmd: [
+        'bun', 'build', entryPoint,
+        '--compile',
+        `--outfile=dist/${outputName}-darwin-arm64`,
+        '--minify',
+        '--target=bun'
+      ],
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }).exited;
+    
+    if (compileResult !== 0) {
+      console.error('❌ Compilation failed!');
+      process.exit(1);
+    }
+    
+    // Copy WebView library
+    console.log('3️⃣ Copying WebView library...');
+    await spawn({
+      cmd: ['cp', 'deps/webview-prebuilt/libwebview.dylib', 'dist/'],
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }).exited;
+    
+    console.log('\n✅ macOS build complete (Bun runtime)!');
+    console.log(`📦 Binary: dist/${outputName}-darwin-arm64 (~90 MB with Bun runtime)`);
+    console.log(`📦 Library: dist/libwebview.dylib (230 KB)`);
+  } else {
+    // Use txiki.js (small runtime)
+    console.log('2️⃣ Bundling with esbuild...');
+    const bundlePath = `dist/${outputName}-bundle.js`;
+    const bundleResult = await spawn({
+      cmd: [
+        'npx', 'esbuild', entryPoint,
+        '--bundle',
+        `--outfile=${bundlePath}`,
+        '--external:tjs:*',
+        '--minify',
+        '--target=es2023',
+        '--platform=neutral',
+        '--format=esm',
+        '--main-fields=main,module'
+      ],
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }).exited;
+    
+    if (bundleResult !== 0) {
+      console.error('❌ Bundling failed!');
+      process.exit(1);
+    }
+    
+    // Compile with txiki.js
+    console.log('3️⃣ Compiling with txiki.js...');
+    const compileResult = await spawn({
+      cmd: [
+        './deps/txiki.js/build/tjs',
+        'compile',
+        bundlePath,
+        `dist/${outputName}-darwin-arm64`
+      ],
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }).exited;
+    
+    if (compileResult !== 0) {
+      console.error('❌ Compilation failed!');
+      process.exit(1);
+    }
+    
+    // Copy WebView library
+    console.log('4️⃣ Copying WebView library...');
+    await spawn({
+      cmd: ['cp', 'deps/webview-prebuilt/libwebview.dylib', 'dist/'],
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }).exited;
+    
+    // Clean up bundle
+    await spawn({
+      cmd: ['rm', bundlePath],
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }).exited;
+    
+    console.log('\n✅ macOS build complete (txiki.js runtime)!');
+    console.log(`📦 Binary: dist/${outputName}-darwin-arm64 (~3.6 MB)`);
+    console.log(`📦 Library: dist/libwebview.dylib (230 KB)`);
   }
   
-  // Step 3: Compile with txiki.js
-  console.log('3️⃣ Compiling with txiki.js...');
-  const compileResult = await spawn({
-    cmd: [
-      './deps/txiki.js/build/tjs',
-      'compile',
-      bundlePath,
-      `dist/${outputName}-darwin-arm64`
-    ],
-    stdout: 'inherit',
-    stderr: 'inherit',
-  }).exited;
-  
-  if (compileResult !== 0) {
-    console.error('❌ Compilation failed!');
-    process.exit(1);
-  }
-  
-  // Step 4: Copy WebView library
-  console.log('4️⃣ Copying WebView library...');
-  await spawn({
-    cmd: ['cp', 'deps/webview-prebuilt/libwebview.dylib', 'dist/'],
-    stdout: 'inherit',
-    stderr: 'inherit',
-  }).exited;
-  
-  // Clean up bundle
-  await spawn({
-    cmd: ['rm', bundlePath],
-    stdout: 'inherit',
-    stderr: 'inherit',
-  }).exited;
-  
-  console.log('\n✅ macOS build complete!');
-  console.log(`📦 Binary: dist/${outputName}-darwin-arm64`);
-  console.log(`📦 Library: dist/libwebview.dylib`);
   console.log(`\n💡 To run: cd dist && ./${outputName}-darwin-arm64`);
 }
 
