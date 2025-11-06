@@ -1,7 +1,7 @@
 // 🥐 Bakery - Main Library
 // Runtime wrapper (initially using Bun, later txiki.js)
 
-import { dlopen, FFIType, ptr, type Pointer } from "bun:ffi";
+import { dlopen, FFIType, ptr, type Pointer, CString, JSCallback } from "bun:ffi";
 import { join } from "path";
 
 // Load WebView library
@@ -52,6 +52,10 @@ const lib = dlopen(libPath, {
   },
   webview_bind: {
     args: [FFIType.ptr, FFIType.cstring, FFIType.ptr, FFIType.ptr],
+    returns: FFIType.void,
+  },
+  webview_return: {
+    args: [FFIType.ptr, FFIType.cstring, FFIType.i32, FFIType.cstring],
     returns: FFIType.void,
   },
   // 🥐 Bakery Extensions
@@ -167,6 +171,81 @@ export class Window {
   setSize(width: number, height: number, hint: SizeHint = SizeHint.NONE) {
     if (!this.handle) throw new Error("Window destroyed");
     lib.symbols.webview_set_size(this.handle, width, height, hint);
+  }
+
+  bind(name: string, callback: (...args: any[]) => any) {
+    if (!this.handle) throw new Error("Window destroyed");
+    
+    // Store callback
+    this.callbacks.set(name, callback);
+    
+    // Create FFI callback using JSCallback
+    const ffiCallback = new JSCallback(
+      (seqPtr: Pointer, reqPtr: Pointer, _arg: Pointer) => {
+        const seq = seqPtr ? new CString(seqPtr) : "";
+        const req = reqPtr ? new CString(reqPtr) : "";
+        
+        try {
+          // Parse arguments from JSON array
+          const args = JSON.parse(req as string);
+          
+          // Call user callback
+          const result = callback(...args);
+          
+          // Handle async results
+          if (result instanceof Promise) {
+            result.then((res) => {
+              const jsonResult = JSON.stringify(res);
+              lib.symbols.webview_return(
+                this.handle,
+                encodeCString(seq as string),
+                0,
+                encodeCString(jsonResult)
+              );
+            }).catch((err) => {
+              const errorResult = JSON.stringify({ error: err.message });
+              lib.symbols.webview_return(
+                this.handle,
+                encodeCString(seq as string),
+                1,
+                encodeCString(errorResult)
+              );
+            });
+          } else {
+            // Sync result
+            const jsonResult = JSON.stringify(result);
+            lib.symbols.webview_return(
+              this.handle,
+              encodeCString(seq as string),
+              0,
+              encodeCString(jsonResult)
+            );
+          }
+        } catch (err: any) {
+          const errorResult = JSON.stringify({ error: err.message });
+          lib.symbols.webview_return(
+            this.handle,
+            encodeCString(seq as string),
+            1,
+            encodeCString(errorResult)
+          );
+        }
+      },
+      {
+        args: [FFIType.pointer, FFIType.pointer, FFIType.pointer],
+        returns: FFIType.void,
+      }
+    );
+    
+    // Bind to webview
+    lib.symbols.webview_bind(
+      this.handle,
+      encodeCString(name),
+      ffiCallback.ptr,
+      null
+    );
+    
+    console.log(`✅ Bound function: ${name}`);
   }
 
   run() {
