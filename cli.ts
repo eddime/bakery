@@ -18,6 +18,12 @@ async function main() {
   const args = process.argv.slice(2);
   const command = args[0] || 'help';
 
+  // Handle --help or -h
+  if (command === '--help' || command === '-h') {
+    helpCommand();
+    process.exit(0);
+  }
+
   const handler = commands[command as keyof typeof commands];
   if (!handler) {
     console.error(`❌ Unknown command: ${command}`);
