@@ -1,5 +1,9 @@
 # 🥐 Bakery - Blazing Fast Desktop Framework
 
+[![CI](https://github.com/eddime/bakery/actions/workflows/ci.yml/badge.svg)](https://github.com/eddime/bakery/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/eddime/bakery)
+
 **Bakery** is a lightweight, high-performance desktop application framework that combines the best of both worlds:
 - 🚀 **Tiny** - 5-8 MB binaries (vs Electron's 150+ MB)
 - ⚡ **Fast** - <100ms startup, native performance
