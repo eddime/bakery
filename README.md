@@ -46,17 +46,19 @@
 npm install -g bakery-cli
 
 # Create new project
-bakery init my-app
+bake init my-app
 cd my-app
 
 # Development with hot reload
-bakery dev
-
-# Build for current platform
-bakery build
+bake dev
 
 # Build for all platforms
-bakery build --all
+bake all
+
+# Build for specific platform
+bake mac    # macOS
+bake win    # Windows
+bake linux  # Linux
 ```
 
 ## Example

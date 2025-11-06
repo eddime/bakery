@@ -105,8 +105,8 @@ app.on('ready', async () => {
         </head>
         <body>
             <div class="container">
-                <h1>⚡ Zippy</h1>
-                <p>Fast · Small · Powerfulsss</p>
+                <h1>⚡ Zippyooo</h1>
+                <p>Fast · Small · Powerful</p>
                 
                 <div class="features">
                     <div class="feature">

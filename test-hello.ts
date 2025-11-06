@@ -8,7 +8,7 @@ app.on("ready", () => {
   console.log("✅ App ready!\n");
 
   const win = new Window({
-    title: "🥐 Bakery - Hello World",
+    title: "🥐 Bakery - Hello Worlds",
     width: 800,
     height: 600,
     resizable: true,
@@ -20,7 +20,7 @@ app.on("ready", () => {
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Bakery Hello World</title>
+    <title>Bakery Hello Worlds</title>
     <style>
         * {
             margin: 0;
@@ -136,7 +136,7 @@ app.on("ready", () => {
 <body>
     <div class="container">
         <h1>🥐 Bakery</h1>
-        <p>Fast · Small · Powerful</p>
+        <p>Fast · Small · Powerfulss</p>
         
         <div class="features">
             <div class="feature">

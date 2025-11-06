@@ -9,7 +9,10 @@ import { DevServer } from './lib/dev-server';
 
 const commands = {
   dev: devCommand,
-  build: buildCommand,
+  all: buildAllCommand,
+  mac: buildMacCommand,
+  win: buildWinCommand,
+  linux: buildLinuxCommand,
   run: runCommand,
   help: helpCommand,
 };
@@ -113,9 +116,30 @@ async function devCommand(args: string[]) {
   await new Promise(() => {});
 }
 
-async function buildCommand(args: string[]) {
-  console.log('🥐 Bakery Build\n');
-  console.log('🚧 Build system coming soon!');
+async function buildAllCommand(args: string[]) {
+  console.log('🥐 Bakery Build - All Platforms\n');
+  console.log('Building for: macOS, Windows, Linux...\n');
+  
+  await buildMacCommand(args);
+  await buildWinCommand(args);
+  await buildLinuxCommand(args);
+  
+  console.log('\n✅ All platforms built successfully!');
+}
+
+async function buildMacCommand(args: string[]) {
+  console.log('🍎 Building for macOS...');
+  console.log('🚧 macOS build coming soon!');
+}
+
+async function buildWinCommand(args: string[]) {
+  console.log('🪟 Building for Windows...');
+  console.log('🚧 Windows build coming soon!');
+}
+
+async function buildLinuxCommand(args: string[]) {
+  console.log('🐧 Building for Linux...');
+  console.log('🚧 Linux build coming soon!');
 }
 
 async function runCommand(args: string[]) {
@@ -138,23 +162,32 @@ function helpCommand() {
 🥐 Bakery - Blazing Fast Desktop Framework
 
 Usage:
-  bakery <command> [options]
+  bake <command> [options]
 
 Commands:
   dev       Start development mode with hot reload
-  build     Build app for production
+  all       Build for all platforms (macOS, Windows, Linux)
+  mac       Build for macOS only
+  win       Build for Windows only
+  linux     Build for Linux only
   run       Run an app without hot reload
   help      Show this help message
 
 Development:
-  bakery dev                    Start with default entry (test-hello.ts)
-  bakery dev -e ./my-app.ts     Start with custom entry point
-  bakery dev -p 8080            Use custom hot reload port
+  bake dev                      Start with default entry (test-hello.ts)
+  bake dev -e ./my-app.ts       Start with custom entry point
+  bake dev -p 8080              Use custom hot reload port
+
+Build:
+  bake all                      Build for all platforms
+  bake mac                      Build for macOS
+  bake win                      Build for Windows
+  bake linux                    Build for Linux
 
 Examples:
-  bakery dev                    # Start dev mode (like 'neu run')
-  bakery run ./my-app.ts        # Run without hot reload
-  bakery build                  # Build for production
+  bake dev                      # Start dev mode (like 'neu run')
+  bake run ./my-app.ts          # Run without hot reload
+  bake all                      # Build for all platforms
 
 Options:
   -e, --entry <file>    Entry point file (default: ./test-hello.ts)

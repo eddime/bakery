@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/index.ts",
   "bin": {
-    "bakery": "./cli.ts"
+    "bake": "./cli.ts"
   },
   "scripts": {
     "dev": "bun run scripts/dev.ts",
