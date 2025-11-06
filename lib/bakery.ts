@@ -111,6 +111,34 @@ export class Window {
 
   setHTML(html: string) {
     if (!this.handle) throw new Error("Window destroyed");
+    
+    // Inject hot reload script in dev mode
+    if (process.env.BAKERY_DEV) {
+      const hotReloadScript = `
+        <script>
+          (function() {
+            const ws = new WebSocket('ws://localhost:35729/hot-reload');
+            ws.onopen = () => console.log('🔥 Hot reload connected');
+            ws.onmessage = (event) => {
+              const data = JSON.parse(event.data);
+              if (data.type === 'reload') {
+                console.log('🔄 Reloading:', data.file);
+                window.location.reload();
+              }
+            };
+            ws.onerror = () => console.log('❌ Hot reload connection failed');
+          })();
+        </script>
+      `;
+      
+      // Inject before </body> or at end
+      if (html.includes('</body>')) {
+        html = html.replace('</body>', hotReloadScript + '</body>');
+      } else {
+        html += hotReloadScript;
+      }
+    }
+    
     lib.symbols.webview_set_html(this.handle, encodeCString(html));
   }
 
