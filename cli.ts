@@ -155,7 +155,7 @@ async function buildMacCommand(args: string[]) {
   const { values } = parseArgs({
     args,
     options: {
-      entry: { type: 'string', short: 'e', default: './test-hello.ts' },
+      entry: { type: 'string', short: 'e' },
       output: { type: 'string', short: 'o' },
       runtime: { type: 'string', default: 'txiki' }, // 'bun' or 'txiki'
     },
@@ -163,9 +163,11 @@ async function buildMacCommand(args: string[]) {
     allowPositionals: true,
   });
 
-  const entryPoint = resolve(values.entry as string);
-  const outputName = values.output as string || 'bakery-app';
   const runtime = values.runtime as string;
+  // Auto-select default entry based on runtime
+  const defaultEntry = runtime === 'bun' ? './test-hello.ts' : './test-txiki-webview.js';
+  const entryPoint = resolve(values.entry as string || defaultEntry);
+  const outputName = values.output as string || 'bakery-app';
   
   console.log(`📦 Entry: ${entryPoint}`);
   console.log(`📦 Output: dist/${outputName}-darwin-arm64`);
@@ -220,6 +222,8 @@ async function buildMacCommand(args: string[]) {
         '--bundle',
         `--outfile=${bundlePath}`,
         '--external:tjs:*',
+        '--external:bun:*',
+        '--external:path',
         '--minify',
         '--target=es2023',
         '--platform=neutral',
