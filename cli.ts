@@ -280,13 +280,78 @@ async function buildMacCommand(args: string[]) {
       stderr: 'inherit',
     }).exited;
 
+    // Create .app bundle
+    console.log('6️⃣ Creating .app bundle...');
+    const appName = outputName;
+    const appPath = `dist/${appName}.app`;
+    const contentsPath = `${appPath}/Contents`;
+    const macosPath = `${contentsPath}/MacOS`;
+    const resourcesPath = `${contentsPath}/Resources`;
+
+    // Create directories
+    await spawn({
+      cmd: ['mkdir', '-p', macosPath, resourcesPath],
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }).exited;
+
+    // Move binary into .app
+    await spawn({
+      cmd: ['mv', `dist/${outputName}-darwin-arm64`, `${macosPath}/${appName}`],
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }).exited;
+
+    // Move libwebview.dylib into .app
+    await spawn({
+      cmd: ['mv', 'dist/libwebview.dylib', `${macosPath}/`],
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }).exited;
+
+    // Copy icon.icns to Resources
+    await spawn({
+      cmd: ['cp', 'assets/icon.icns', `${resourcesPath}/`],
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }).exited;
+
+    // Create Info.plist
+    const plist = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>CFBundleExecutable</key>
+  <string>${appName}</string>
+  <key>CFBundleIconFile</key>
+  <string>icon</string>
+  <key>CFBundleIdentifier</key>
+  <string>com.bakery.${appName}</string>
+  <key>CFBundleName</key>
+  <string>Bakery App</string>
+  <key>CFBundlePackageType</key>
+  <string>APPL</string>
+  <key>CFBundleShortVersionString</key>
+  <string>1.0.0</string>
+  <key>CFBundleVersion</key>
+  <string>1.0.0</string>
+  <key>LSMinimumSystemVersion</key>
+  <string>10.13</string>
+  <key>NSHighResolutionCapable</key>
+  <true/>
+</dict>
+</plist>`;
+
+    await Bun.write(`${contentsPath}/Info.plist`, plist);
+
     console.log('\n✅ macOS build complete (txiki.js runtime)!');
-    console.log(`📦 Binary: dist/${outputName}-darwin-arm64 (~3.6 MB)`);
-    console.log(`📦 Library: dist/libwebview.dylib (230 KB)`);
-    console.log(`📦 Assets: dist/assets/ (icons)`);
+    console.log(`📦 App Bundle: dist/${appName}.app (~3.9 MB total)`);
+    console.log(`   Binary: ${appName}.app/Contents/MacOS/${appName} (3.6 MB)`);
+    console.log(`   Library: ${appName}.app/Contents/MacOS/libwebview.dylib (230 KB)`);
+    console.log(`   Icon: ${appName}.app/Contents/Resources/icon.icns (134 KB)`);
   }
   
-  console.log(`\n💡 To run: cd dist && ./${outputName}-darwin-arm64`);
+  console.log(`\n💡 To run: open dist/${outputName}.app`);
 }
 
 async function buildWinCommand(args: string[]) {

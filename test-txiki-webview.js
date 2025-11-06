@@ -1,7 +1,7 @@
 // 🥐 Test: txiki.js + WebView
 // This tests the production runtime
 
-import { app, Window } from './runtime/bakery-runtime.js';
+import { app, Window, resolveAssetPath } from './runtime/bakery-runtime.js';
 
 console.log('🥐 Starting Bakery with txiki.js...\n');
 
@@ -18,8 +18,10 @@ app.on('ready', () => {
 
     console.log('✅ Window created!\n');
 
-    // Set icon
-    win.setIcon('assets/icon.png');
+    // Set icon (with automatic path resolution for .app bundles)
+    const iconPath = resolveAssetPath('assets/icon.png');
+    console.log(`🎨 Resolved icon path: ${iconPath}`);
+    win.setIcon(iconPath);
     console.log('🎨 Icon set!\n');
 
     const html = `

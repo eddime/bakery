@@ -3,6 +3,36 @@
 
 import FFI from 'tjs:ffi';
 
+// Get the directory of the executable
+function getExecDir() {
+    const execPath = tjs.args[0] || '';
+    const lastSlash = Math.max(execPath.lastIndexOf('/'), execPath.lastIndexOf('\\'));
+    return lastSlash > 0 ? execPath.substring(0, lastSlash) : '.';
+}
+
+// Resolve asset path (for production .app bundles)
+// In .app bundle: binary is in Contents/MacOS/, assets are in Contents/Resources/
+export function resolveAssetPath(relativePath) {
+    const isProduction = !tjs.args[1] || !tjs.args[1].includes('test-');
+    
+    if (!isProduction) {
+        // Development: Use relative path as-is
+        return relativePath;
+    }
+    
+    // Production: Check if we're in a .app bundle
+    const execDir = getExecDir();
+    
+    // If we're in Contents/MacOS/, go up to Contents/Resources/
+    if (execDir.includes('Contents/MacOS')) {
+        const contentsDir = execDir.replace('/Contents/MacOS', '/Contents');
+        return `${contentsDir}/Resources/${relativePath.replace(/^assets\//, '')}`;
+    }
+    
+    // Otherwise, assets are relative to binary
+    return relativePath;
+}
+
 // Determine WebView library path based on platform
 function getWebViewLibPath() {
     const platform = tjs.system.platform;
@@ -15,10 +45,7 @@ function getWebViewLibPath() {
     
     if (isProduction) {
         // Production: Get directory of the executable
-        // tjs.args[0] is the path to the executable
-        const execPath = tjs.args[0] || '';
-        const lastSlash = Math.max(execPath.lastIndexOf('/'), execPath.lastIndexOf('\\'));
-        const execDir = lastSlash > 0 ? execPath.substring(0, lastSlash) : '.';
+        const execDir = getExecDir();
         
         if (platform === 'darwin') {
             return `${execDir}/libwebview.dylib`;
