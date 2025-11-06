@@ -46,6 +46,7 @@ async function devCommand(args: string[]) {
     options: {
       entry: { type: 'string', short: 'e', default: './test-hello.ts' },
       port: { type: 'string', short: 'p', default: '35729' },
+      persist: { type: 'boolean', default: false }, // Keep dev server running after app closes
     },
     strict: false,
     allowPositionals: true,
@@ -53,9 +54,11 @@ async function devCommand(args: string[]) {
 
   const entryPoint = resolve(values.entry as string);
   const port = parseInt(values.port as string);
+  const persistMode = values.persist === true;
 
   let appProcess: any = null;
   let isRestarting = false;
+  let shouldExit = false;
 
   async function restartApp() {
     if (isRestarting) return; // Prevent multiple restarts
@@ -83,9 +86,15 @@ async function devCommand(args: string[]) {
 
     // Watch for app process exit
     appProcess.exited.then((exitCode: number) => {
-      if (!isRestarting) {
-        console.log('\n👋 App closed. Waiting for file changes to restart...\n');
-        appProcess = null;
+      if (!isRestarting && !shouldExit) {
+        if (persistMode) {
+          console.log('\n👋 App closed. Waiting for file changes to restart...\n');
+          appProcess = null;
+        } else {
+          console.log('\n👋 App closed. Exiting dev mode...\n');
+          shouldExit = true;
+          process.exit(0);
+        }
       }
     });
 
@@ -188,7 +197,7 @@ Commands:
 Development:
   bake dev                      Start with default entry (test-hello.ts)
   bake dev -e ./my-app.ts       Start with custom entry point
-  bake dev -p 8080              Use custom hot reload port
+  bake dev --persist            Keep dev server running after app closes
 
 Build:
   bake all                      Build for all platforms
@@ -203,7 +212,7 @@ Examples:
 
 Options:
   -e, --entry <file>    Entry point file (default: ./test-hello.ts)
-  -p, --port <port>     Hot reload WebSocket port (default: 35729)
+  --persist             Keep dev server running after app closes
   -h, --help            Show help
 
 For more info: https://github.com/eddime/bakery
