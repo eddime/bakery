@@ -176,26 +176,67 @@ async function buildMacCommand(args: string[]) {
     stderr: 'inherit',
   }).exited;
   
-  // Step 2: Compile with txiki.js
-  console.log('2️⃣ Compiling with txiki.js...');
-  const result = await spawn({
+  // Step 2: Bundle with esbuild
+  console.log('2️⃣ Bundling with esbuild...');
+  const bundlePath = `dist/${outputName}-bundle.js`;
+  const bundleResult = await spawn({
+    cmd: [
+      'npx', 'esbuild', entryPoint,
+      '--bundle',
+      `--outfile=${bundlePath}`,
+      '--external:tjs:*',
+      '--minify',
+      '--target=es2023',
+      '--platform=neutral',
+      '--format=esm',
+      '--main-fields=main,module'
+    ],
+    stdout: 'inherit',
+    stderr: 'inherit',
+  }).exited;
+  
+  if (bundleResult !== 0) {
+    console.error('❌ Bundling failed!');
+    process.exit(1);
+  }
+  
+  // Step 3: Compile with txiki.js
+  console.log('3️⃣ Compiling with txiki.js...');
+  const compileResult = await spawn({
     cmd: [
       './deps/txiki.js/build/tjs',
       'compile',
-      entryPoint,
+      bundlePath,
       `dist/${outputName}-darwin-arm64`
     ],
     stdout: 'inherit',
     stderr: 'inherit',
   }).exited;
   
-  if (result !== 0) {
+  if (compileResult !== 0) {
     console.error('❌ Compilation failed!');
     process.exit(1);
   }
   
+  // Step 4: Copy WebView library
+  console.log('4️⃣ Copying WebView library...');
+  await spawn({
+    cmd: ['cp', 'deps/webview-prebuilt/libwebview.dylib', 'dist/'],
+    stdout: 'inherit',
+    stderr: 'inherit',
+  }).exited;
+  
+  // Clean up bundle
+  await spawn({
+    cmd: ['rm', bundlePath],
+    stdout: 'inherit',
+    stderr: 'inherit',
+  }).exited;
+  
   console.log('\n✅ macOS build complete!');
   console.log(`📦 Binary: dist/${outputName}-darwin-arm64`);
+  console.log(`📦 Library: dist/libwebview.dylib`);
+  console.log(`\n💡 To run: cd dist && ./${outputName}-darwin-arm64`);
 }
 
 async function buildWinCommand(args: string[]) {

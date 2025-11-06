@@ -8,14 +8,29 @@ function getWebViewLibPath() {
     const platform = tjs.system.platform;
     const arch = tjs.system.arch;
     
-    // Always use relative path from current directory for now
-    // TODO: Handle production builds with embedded libs
-    if (platform === 'darwin') {
-        return './deps/webview-prebuilt/libwebview.dylib';
-    } else if (platform === 'linux') {
-        return `./deps/webview-prebuilt/libwebview-${arch}.so`;
-    } else if (platform === 'windows') {
-        return './deps/webview-prebuilt/libwebview.dll';
+    // Check if we're in production (compiled binary) or development
+    // In production, the library should be next to the binary
+    // In development, it's in deps/webview-prebuilt/
+    const isProduction = !tjs.args[1] || !tjs.args[1].includes('test-');
+    
+    if (isProduction) {
+        // Production: Library next to binary
+        if (platform === 'darwin') {
+            return './libwebview.dylib';
+        } else if (platform === 'linux') {
+            return `./libwebview-${arch}.so`;
+        } else if (platform === 'windows') {
+            return './libwebview.dll';
+        }
+    } else {
+        // Development: Library in deps folder
+        if (platform === 'darwin') {
+            return './deps/webview-prebuilt/libwebview.dylib';
+        } else if (platform === 'linux') {
+            return `./deps/webview-prebuilt/libwebview-${arch}.so`;
+        } else if (platform === 'windows') {
+            return './deps/webview-prebuilt/libwebview.dll';
+        }
     }
     
     throw new Error(`Unsupported platform: ${platform}`);
@@ -189,8 +204,9 @@ class AppLifecycle {
 
 export const app = new AppLifecycle();
 
-// Auto-start app
-setTimeout(() => {
+// Auto-start app immediately for compiled binaries
+// Use queueMicrotask to allow event handlers to be registered first
+queueMicrotask(() => {
     app.start();
-}, 0);
+});
 
