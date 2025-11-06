@@ -149,8 +149,53 @@ async function buildAllCommand(args: string[]) {
 }
 
 async function buildMacCommand(args: string[]) {
-  console.log('🍎 Building for macOS...');
-  console.log('🚧 macOS build coming soon!');
+  console.log('🍎 Building for macOS...\n');
+  
+  const { parseArgs } = await import('util');
+  const { values } = parseArgs({
+    args,
+    options: {
+      entry: { type: 'string', short: 'e', default: './test-hello.ts' },
+      output: { type: 'string', short: 'o' },
+    },
+    strict: false,
+    allowPositionals: true,
+  });
+
+  const entryPoint = resolve(values.entry as string);
+  const outputName = values.output as string || 'bakery-app';
+  
+  console.log(`📦 Entry: ${entryPoint}`);
+  console.log(`📦 Output: dist/${outputName}-darwin-arm64.app\n`);
+  
+  // Step 1: Create dist directory
+  console.log('1️⃣ Creating dist directory...');
+  await spawn({
+    cmd: ['mkdir', '-p', 'dist'],
+    stdout: 'inherit',
+    stderr: 'inherit',
+  }).exited;
+  
+  // Step 2: Compile with txiki.js
+  console.log('2️⃣ Compiling with txiki.js...');
+  const result = await spawn({
+    cmd: [
+      './deps/txiki.js/build/tjs',
+      'compile',
+      entryPoint,
+      `dist/${outputName}-darwin-arm64`
+    ],
+    stdout: 'inherit',
+    stderr: 'inherit',
+  }).exited;
+  
+  if (result !== 0) {
+    console.error('❌ Compilation failed!');
+    process.exit(1);
+  }
+  
+  console.log('\n✅ macOS build complete!');
+  console.log(`📦 Binary: dist/${outputName}-darwin-arm64`);
 }
 
 async function buildWinCommand(args: string[]) {
