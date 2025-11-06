@@ -264,17 +264,26 @@ async function buildMacCommand(args: string[]) {
       stdout: 'inherit',
       stderr: 'inherit',
     }).exited;
-    
+
+    // Copy assets (icons)
+    console.log('5️⃣ Copying assets...');
+    await spawn({
+      cmd: ['cp', '-r', 'assets', 'dist/'],
+      stdout: 'inherit',
+      stderr: 'inherit',
+    }).exited;
+
     // Clean up bundle
     await spawn({
       cmd: ['rm', bundlePath],
       stdout: 'inherit',
       stderr: 'inherit',
     }).exited;
-    
+
     console.log('\n✅ macOS build complete (txiki.js runtime)!');
     console.log(`📦 Binary: dist/${outputName}-darwin-arm64 (~3.6 MB)`);
     console.log(`📦 Library: dist/libwebview.dylib (230 KB)`);
+    console.log(`📦 Assets: dist/assets/ (icons)`);
   }
   
   console.log(`\n💡 To run: cd dist && ./${outputName}-darwin-arm64`);
