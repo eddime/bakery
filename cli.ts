@@ -257,23 +257,8 @@ async function buildMacCommand(args: string[]) {
       process.exit(1);
     }
     
-    // Copy WebView library
-    console.log('4️⃣ Copying WebView library...');
-    await spawn({
-      cmd: ['cp', 'deps/webview-prebuilt/libwebview.dylib', 'dist/'],
-      stdout: 'inherit',
-      stderr: 'inherit',
-    }).exited;
-
-    // Copy assets (icons)
-    console.log('5️⃣ Copying assets...');
-    await spawn({
-      cmd: ['cp', '-r', 'assets', 'dist/'],
-      stdout: 'inherit',
-      stderr: 'inherit',
-    }).exited;
-
     // Clean up bundle
+    console.log('4️⃣ Cleaning up...');
     await spawn({
       cmd: ['rm', bundlePath],
       stdout: 'inherit',
@@ -281,7 +266,7 @@ async function buildMacCommand(args: string[]) {
     }).exited;
 
     // Create .app bundle
-    console.log('6️⃣ Creating .app bundle...');
+    console.log('5️⃣ Creating .app bundle...');
     const appName = outputName;
     const appPath = `dist/${appName}.app`;
     const contentsPath = `${appPath}/Contents`;
@@ -302,9 +287,9 @@ async function buildMacCommand(args: string[]) {
       stderr: 'inherit',
     }).exited;
 
-    // Move libwebview.dylib into .app
+    // Copy libwebview.dylib into .app
     await spawn({
-      cmd: ['mv', 'dist/libwebview.dylib', `${macosPath}/`],
+      cmd: ['cp', 'deps/webview-prebuilt/libwebview.dylib', `${macosPath}/`],
       stdout: 'inherit',
       stderr: 'inherit',
     }).exited;
