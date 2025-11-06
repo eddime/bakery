@@ -3,7 +3,6 @@
 
 import { dlopen, FFIType, ptr, type Pointer } from "bun:ffi";
 import { join } from "path";
-import { ReloadHandler } from "./bakery-reload";
 
 // Load WebView library
 const libPath = process.env.WEBVIEW_PATH || join(
@@ -113,117 +112,8 @@ export class Window {
   setHTML(html: string) {
     if (!this.handle) throw new Error("Window destroyed");
     
-    // Store original HTML for reloading
-    const originalHTML = html;
-    
-    // Inject hot reload script in dev mode
-    if (process.env.BAKERY_DEV) {
-      // Setup reload handler to re-apply HTML
-      ReloadHandler.setHTML(originalHTML);
-      ReloadHandler.onReload(() => {
-        // Re-apply HTML when reload is triggered
-        const currentHTML = ReloadHandler.getHTML();
-        if (currentHTML && this.handle) {
-          this._setHTMLRaw(currentHTML);
-        }
-      });
-      
-      const hotReloadScript = `
-        <script>
-          (function() {
-            let reconnectTimer;
-            
-            function connect() {
-              const ws = new WebSocket('ws://localhost:35729/hot-reload');
-              
-              ws.onopen = () => {
-                console.log('🔥 Hot reload connected');
-                if (reconnectTimer) clearTimeout(reconnectTimer);
-              };
-              
-              ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.type === 'reload') {
-                  console.log('🔄 Reloading:', data.file);
-                  // Just reload the page, the HTML will be re-injected
-                  window.location.reload();
-                }
-              };
-              
-              ws.onclose = () => {
-                console.log('🔌 Hot reload disconnected, reconnecting...');
-                reconnectTimer = setTimeout(connect, 1000);
-              };
-              
-              ws.onerror = () => {
-                ws.close();
-              };
-            }
-            
-            connect();
-          })();
-        </script>
-      `;
-      
-      // Inject before </body> or at end
-      if (html.includes('</body>')) {
-        html = html.replace('</body>', hotReloadScript + '</body>');
-      } else {
-        html += hotReloadScript;
-      }
-    }
-    
-    lib.symbols.webview_set_html(this.handle, encodeCString(html));
-  }
-
-  private _setHTMLRaw(html: string) {
-    // Internal method to set HTML with hot reload script already injected
-    if (!this.handle) return;
-    
-    if (process.env.BAKERY_DEV) {
-      const hotReloadScript = `
-        <script>
-          (function() {
-            let reconnectTimer;
-            
-            function connect() {
-              const ws = new WebSocket('ws://localhost:35729/hot-reload');
-              
-              ws.onopen = () => {
-                console.log('🔥 Hot reload reconnected');
-                if (reconnectTimer) clearTimeout(reconnectTimer);
-              };
-              
-              ws.onmessage = (event) => {
-                const data = JSON.parse(event.data);
-                if (data.type === 'reload') {
-                  console.log('🔄 Reloading:', data.file);
-                  window.location.reload();
-                }
-              };
-              
-              ws.onclose = () => {
-                console.log('🔌 Hot reload disconnected, reconnecting...');
-                reconnectTimer = setTimeout(connect, 1000);
-              };
-              
-              ws.onerror = () => {
-                ws.close();
-              };
-            }
-            
-            connect();
-          })();
-        </script>
-      `;
-      
-      if (html.includes('</body>')) {
-        html = html.replace('</body>', hotReloadScript + '</body>');
-      } else {
-        html += hotReloadScript;
-      }
-    }
-    
+    // In dev mode, just set the HTML - no hot reload script needed
+    // The app will restart when files change
     lib.symbols.webview_set_html(this.handle, encodeCString(html));
   }
 
