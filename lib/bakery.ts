@@ -117,16 +117,43 @@ export class Window {
       const hotReloadScript = `
         <script>
           (function() {
-            const ws = new WebSocket('ws://localhost:35729/hot-reload');
-            ws.onopen = () => console.log('🔥 Hot reload connected');
-            ws.onmessage = (event) => {
-              const data = JSON.parse(event.data);
-              if (data.type === 'reload') {
-                console.log('🔄 Reloading:', data.file);
-                window.location.reload();
-              }
-            };
-            ws.onerror = () => console.log('❌ Hot reload connection failed');
+            let reconnectTimer;
+            let isReloading = false;
+            
+            function connect() {
+              const ws = new WebSocket('ws://localhost:35729/hot-reload');
+              
+              ws.onopen = () => {
+                console.log('🔥 Hot reload connected');
+                if (reconnectTimer) clearTimeout(reconnectTimer);
+              };
+              
+              ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.type === 'reload' && !isReloading) {
+                  console.log('🔄 Reloading:', data.file);
+                  isReloading = true;
+                  // Use a slight delay to ensure message is processed
+                  setTimeout(() => {
+                    window.location.reload();
+                  }, 100);
+                }
+              };
+              
+              ws.onclose = () => {
+                if (!isReloading) {
+                  console.log('🔌 Hot reload disconnected, reconnecting...');
+                  reconnectTimer = setTimeout(connect, 1000);
+                }
+              };
+              
+              ws.onerror = (error) => {
+                console.log('❌ Hot reload connection error');
+                ws.close();
+              };
+            }
+            
+            connect();
           })();
         </script>
       `;
