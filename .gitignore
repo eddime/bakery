@@ -1,0 +1,61 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build outputs
+build/
+dist/
+out/
+*.app
+*.exe
+*.deb
+*.rpm
+*.dmg
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Compiled binaries
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+*.lib
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+
+# Test
+test-results/
+coverage/
+
+# Logs
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Temporary
+tmp/
+temp/
+.cache/
+
+# Environment
+.env
+.env.local
+
+# Bun
+bun.lockb
+

@@ -1,0 +1,34 @@
+{
+  "name": "zippy",
+  "version": "0.1.0",
+  "description": "⚡ Blazing fast desktop framework - Small, fast, powerful",
+  "type": "module",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "bun run scripts/dev.ts",
+    "build": "bun run scripts/build.ts",
+    "build:runtime": "bun run scripts/build-runtime.ts",
+    "test": "bun test",
+    "clean": "rm -rf build dist tmp"
+  },
+  "keywords": [
+    "desktop",
+    "electron-alternative",
+    "webview",
+    "cross-platform",
+    "framework",
+    "gui",
+    "txiki.js",
+    "performance"
+  ],
+  "author": "Zippy Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
+  }
+}
+
