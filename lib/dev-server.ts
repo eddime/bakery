@@ -62,7 +62,10 @@ export class DevServer {
           filename.endsWith('.css')
         ) {
           console.log(`\n📝 Changed: ${filename}`);
-          this.notifyClients({ type: 'reload', file: filename });
+          // Small delay to ensure file is written
+          setTimeout(() => {
+            this.notifyClients({ type: 'reload', file: filename });
+          }, 50);
         }
       });
       

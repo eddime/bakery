@@ -51,37 +51,65 @@ async function devCommand(args: string[]) {
   const entryPoint = resolve(values.entry as string);
   const port = parseInt(values.port as string);
 
+  let appProcess: any = null;
+
+  async function restartApp() {
+    if (appProcess) {
+      console.log('\n🔄 Restarting app...\n');
+      appProcess.kill();
+      // Wait a bit for process to fully exit
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+
+    console.log('🚀 Starting app...');
+
+    appProcess = spawn({
+      cmd: ['bun', 'run', entryPoint],
+      stdout: 'inherit',
+      stderr: 'inherit',
+      stdin: 'inherit',
+      env: {
+        ...process.env,
+        BAKERY_DEV: 'true',
+      },
+    });
+  }
+
   // Start hot reload server
   const devServer = new DevServer(['.']);
   await devServer.start(port);
 
-  // Set dev mode env
-  process.env.BAKERY_DEV = 'true';
+  // Watch for file changes and restart app
+  const { watch } = await import('fs');
+  const watcher = watch('.', { recursive: true }, async (event, filename) => {
+    if (!filename) return;
 
-  console.log('🚀 Starting app...\n');
-
-  // Start app (doesn't restart on changes - only content reloads)
-  const appProcess = spawn({
-    cmd: ['bun', 'run', entryPoint],
-    stdout: 'inherit',
-    stderr: 'inherit',
-    stdin: 'inherit',
-    env: {
-      ...process.env,
-      BAKERY_DEV: 'true',
-    },
+    // Only restart on TypeScript file changes in lib/ or entry file
+    if (
+      (filename.includes('lib/') && filename.endsWith('.ts')) ||
+      filename === entryPoint.split('/').pop()
+    ) {
+      console.log(`\n📝 Changed: ${filename}`);
+      await restartApp();
+    }
   });
+
+  // Start app initially
+  await restartApp();
 
   // Handle cleanup
   process.on('SIGINT', () => {
     console.log('\n\n👋 Shutting down Bakery dev server...');
+    watcher.close();
     devServer.stop();
-    appProcess.kill();
+    if (appProcess) {
+      appProcess.kill();
+    }
     process.exit(0);
   });
 
-  // Wait for app to exit
-  await appProcess.exited;
+  // Keep process alive
+  await new Promise(() => {});
 }
 
 async function buildCommand(args: string[]) {
