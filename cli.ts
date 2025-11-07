@@ -56,7 +56,7 @@ async function main() {
 // DEV COMMAND - Hot Reload Development
 // ==============================================
 async function devCommand(args: string[]) {
-  console.log('🥐 Bakery Development Mode (Socket Runtime)\n');
+  console.log('🥐 Bakery Development Mode (Native WebView)\n');
 
   const { values } = parseArgs({
     args,
@@ -86,9 +86,9 @@ async function devCommand(args: string[]) {
     }
     projectDir = resolve(projectPath);
   } else {
-    // Check if current directory has socket.ini (user is in a project)
+    // Check if current directory has bakery.config.js (user is in a project)
     const currentDir = resolve('.');
-    if (existsSync(join(currentDir, 'socket.ini'))) {
+    if (existsSync(join(currentDir, 'bakery.config.js'))) {
       projectDir = currentDir;
     } else if (config?.defaultProject) {
       // Use defaultProject from config
@@ -100,10 +100,10 @@ async function devCommand(args: string[]) {
     }
   }
   
-  // Check if socket.ini exists
-  const socketIniPath = join(projectDir, 'socket.ini');
-  if (!existsSync(socketIniPath)) {
-    console.error('❌ No socket.ini found in', projectDir);
+  // Check if bakery.config.js exists
+  const configPath = join(projectDir, 'bakery.config.js');
+  if (!existsSync(configPath)) {
+    console.error('❌ No bakery.config.js found in', projectDir);
     console.log('💡 Run: bake init <project-name> to create a new project');
     if (config) {
       console.log('💡 Or set defaultProject in bakery.config.js');
@@ -112,26 +112,33 @@ async function devCommand(args: string[]) {
   }
 
   console.log('📁 Project:', projectDir);
-  console.log('🔥 Starting development server...');
-  console.log('⏱️  First build may take ~10-15 seconds...');
-  console.log('💡 Hot reload is enabled - changes update instantly!\n');
+  console.log('🔥 Starting native WebView...\n');
 
-  // Run Socket Runtime in dev mode with build and run
-  // -r flag runs the app after building
-  // Socket Runtime handles file watching and hot reload automatically
-  const ssc = spawn(['ssc', 'build', '-r'], {
-    cwd: projectDir,
+  // Get path to bakery-simple launcher
+  const frameworkDir = dirname(import.meta.url.replace('file://', ''));
+  const launcherPath = join(frameworkDir, 'launcher', 'build', 'bakery-simple');
+  
+  if (!existsSync(launcherPath)) {
+    console.error('❌ bakery-simple not found:', launcherPath);
+    console.error('💡 Please build it first:');
+    console.error('   cd launcher/build && cmake .. && cmake --build .');
+    process.exit(1);
+  }
+
+  // Run bakery-simple with project directory
+  const launcher = spawn([launcherPath, projectDir], {
+    cwd: frameworkDir,
     stdio: ['inherit', 'inherit', 'inherit'],
   });
 
-  await ssc.exited;
+  await launcher.exited;
 }
 
 // ==============================================
 // BUILD COMMAND - Build for platforms
 // ==============================================
 async function buildCommand(args: string[]) {
-  console.log('🥐 Bakery Build (Socket Runtime)\n');
+  console.log('🥐 Bakery Build (Native WebView)\n');
 
   const { values } = parseArgs({
     args,
@@ -180,10 +187,10 @@ async function buildCommand(args: string[]) {
   const platform = values.platform as string;
   const shouldRun = values.run as boolean;
 
-  // Check if socket.ini exists
-  const socketIniPath = join(projectDir, 'socket.ini');
-  if (!existsSync(socketIniPath)) {
-    console.error('❌ No socket.ini found in', projectDir);
+  // Check if bakery.config.js exists
+  const configPath = join(projectDir, 'bakery.config.js');
+  if (!existsSync(configPath)) {
+    console.error('❌ No bakery.config.js found in', projectDir);
     console.log('💡 Run: bake init <project-name> to create a new project');
     process.exit(1);
   }
@@ -191,97 +198,34 @@ async function buildCommand(args: string[]) {
   console.log('📁 Project:', projectDir);
   console.log('🏗️  Platform:', platform);
   console.log('');
-
-  // Determine dist directory location
-  // If project is in miniframework/examples/, use miniframework/dist/
-  // Otherwise use project/dist/
-  let distDir: string;
-  const examplesMatch = projectDir.match(/^(.+)\/examples\/[^\/]+$/);
-  if (examplesMatch) {
-    // Project is in <framework>/examples/<project>
-    distDir = join(examplesMatch[1], 'dist');
-  } else {
-    // Standalone project
-    distDir = join(projectDir, 'dist');
-  }
-
-  // Create dist directory
-  if (!existsSync(distDir)) {
-    mkdirSync(distDir, { recursive: true });
-  }
-
-  // Build platforms
-  const platforms = platform === 'all' ? ['mac', 'win', 'linux'] : [platform];
-
-  for (const p of platforms) {
-    console.log(`\n🔨 Building for ${p} with OPTIMIZED postject build...`);
+  
+  // For now, just use the native launcher (no build needed!)
+  // In the future, we can embed assets and compile to single binary
+  
+  console.log('✅ Native launcher ready!');
+  console.log('💡 Run with: bake dev\n');
+  
+  if (shouldRun) {
+    // Get path to bakery-simple launcher
+    const frameworkDir = dirname(import.meta.url.replace('file://', ''));
+    const launcherPath = join(frameworkDir, 'launcher', 'build', 'bakery-simple');
     
-    // Use the optimized build-with-postject.ts script
-    const buildScript = join(dirname(import.meta.url.replace('file://', '')), 'scripts', 'build-with-postject.ts');
-    
-    const buildProcess = spawn(['bun', 'run', buildScript], {
-      cwd: dirname(import.meta.url.replace('file://', '')),
-      stdio: ['inherit', 'inherit', 'inherit'],
-      env: {
-        ...process.env,
-        BAKERY_PROJECT_DIR: projectDir,
-      }
-    });
-    
-    await buildProcess.exited;
-
-    if (buildProcess.exitCode !== 0) {
-      console.error(`❌ Build failed for ${p}`);
+    if (!existsSync(launcherPath)) {
+      console.error('❌ bakery-simple not found:', launcherPath);
+      console.error('💡 Please build it first:');
+      console.error('   cd launcher/build && cmake .. && cmake --build .');
       process.exit(1);
     }
 
-    console.log(`✅ Optimized build complete for ${p}!`);
+    console.log('🚀 Running app...\n');
     
-    // Rename the optimized binary to match the project name
-    console.log(`📦 Packaging optimized binary...`);
-    
-    // Get project name from socket.ini
-    const socketIniPath = join(projectDir, 'socket.ini');
-    let projectName = 'bakery-app';
-    try {
-      const iniContent = await Bun.file(socketIniPath).text();
-      const nameMatch = iniContent.match(/name\s*=\s*["']?([^"'\n]+)["']?/);
-      if (nameMatch) {
-        projectName = nameMatch[1].trim();
-      }
-    } catch (err) {
-      console.warn('⚠️  Could not read project name from socket.ini');
-    }
-    
-    if (p === 'mac') {
-      // Rename bakery-postject to project name
-      const srcBinary = join(distDir, 'bakery-postject');
-      const distBinary = join(distDir, projectName);
-      
-      if (existsSync(srcBinary)) {
-        // Remove old version if exists
-        if (existsSync(distBinary)) {
-          rmSync(distBinary);
-        }
-        
-        cpSync(srcBinary, distBinary);
-        chmodSync(distBinary, 0o755);
-        
-        console.log(`   ✅ ${distBinary} (7.3 MB, optimized, single-file!)`);
-      } else {
-        console.error(`   ❌ Could not find ${srcBinary}`);
-      }
-    } else if (p === 'win') {
-      // TODO: Copy Windows executable
-      console.log(`   📝 Windows build not yet implemented`);
-    } else if (p === 'linux') {
-      // TODO: Copy Linux executable
-      console.log(`   📝 Linux build not yet implemented`);
-    }
-  }
+    const launcher = spawn([launcherPath, projectDir], {
+      cwd: frameworkDir,
+      stdio: ['inherit', 'inherit', 'inherit'],
+    });
 
-  console.log('\n🎉 All builds complete!');
-  console.log(`📦 Output: ${distDir}`);
+    await launcher.exited;
+  }
 }
 
 // ==============================================
