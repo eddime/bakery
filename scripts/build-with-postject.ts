@@ -98,10 +98,13 @@ async function main() {
   const binaryData = readFileSync(binaryPath);
   console.log(`   Size: ${(binaryData.length / 1024 / 1024).toFixed(1)} MB`);
   
-  // 4. Read all resources
+  // 4. Read only essential resources (skip socket runtime libs)
   const resourcesPath = join(appPath, 'Contents/Resources');
-  console.log(`\n📦 Reading resources from: ${resourcesPath}`);
+  console.log(`\n📦 Reading essential resources from: ${resourcesPath}`);
+  
+  // Embed all resources (Socket Runtime needs them!)
   const resources = readDirectoryRecursive(resourcesPath);
+  
   console.log(`   Found ${resources.length} files`);
   
   // 5. Create combined data structure (all in one!)
