@@ -85,13 +85,19 @@ async function devCommand(args: string[]) {
       process.exit(1);
     }
     projectDir = resolve(projectPath);
-  } else if (config?.defaultProject) {
-    // Use defaultProject from config
-    projectDir = resolve(config.defaultProject);
-    console.log('📌 Using default project from config');
   } else {
-    // Fall back to current directory
-    projectDir = resolve('.');
+    // Check if current directory has socket.ini (user is in a project)
+    const currentDir = resolve('.');
+    if (existsSync(join(currentDir, 'socket.ini'))) {
+      projectDir = currentDir;
+    } else if (config?.defaultProject) {
+      // Use defaultProject from config
+      projectDir = resolve(config.defaultProject);
+      console.log('📌 Using default project from config');
+    } else {
+      // Fall back to current directory
+      projectDir = currentDir;
+    }
   }
   
   // Check if socket.ini exists
@@ -122,127 +128,6 @@ async function devCommand(args: string[]) {
 }
 
 // ==============================================
-// MINIFY HELPER - Minify project files
-// ==============================================
-async function minifyProject(projectDir: string) {
-  const srcDir = join(projectDir, 'src');
-  
-  if (!existsSync(srcDir)) {
-    console.log('⚠️  No src/ directory found, skipping minification');
-    return;
-  }
-
-  // Create a temporary minified directory
-  const minDir = join(projectDir, '.bakery-min');
-  if (existsSync(minDir)) {
-    rmSync(minDir, { recursive: true });
-  }
-  mkdirSync(minDir, { recursive: true });
-
-  // Find all JS/HTML/CSS files
-  const files = await findFiles(srcDir, ['.js', '.html', '.css', '.json']);
-  
-  for (const file of files) {
-    const ext = file.split('.').pop()?.toLowerCase();
-    const relativePath = file.replace(srcDir, '');
-    const outputPath = join(minDir, relativePath);
-    
-    // Ensure output directory exists
-    const outputDir = dirname(outputPath);
-    if (!existsSync(outputDir)) {
-      mkdirSync(outputDir, { recursive: true });
-    }
-
-    if (ext === 'js') {
-      // Minify JavaScript with esbuild
-      try {
-        const result = await Bun.build({
-          entrypoints: [file],
-          outdir: outputDir,
-          minify: true,
-          target: 'browser',
-          format: 'esm',
-        });
-        
-        if (!result.success) {
-          console.warn(`⚠️  Failed to minify ${file}, copying original`);
-          cpSync(file, outputPath);
-        } else {
-          const outputFile = join(outputDir, file.split('/').pop()!);
-          if (outputFile !== outputPath) {
-            cpSync(outputFile, outputPath);
-            rmSync(outputFile);
-          }
-        }
-      } catch (err) {
-        console.warn(`⚠️  Error minifying ${file}:`, (err as Error).message);
-        cpSync(file, outputPath);
-      }
-    } else if (ext === 'html') {
-      // Simple HTML minification (remove comments and extra whitespace)
-      let content = await Bun.file(file).text();
-      content = content
-        .replace(/<!--[\s\S]*?-->/g, '') // Remove HTML comments
-        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
-        .replace(/>\s+</g, '><') // Remove spaces between tags
-        .trim();
-      writeFileSync(outputPath, content);
-    } else if (ext === 'css') {
-      // Simple CSS minification
-      let content = await Bun.file(file).text();
-      content = content
-        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove CSS comments
-        .replace(/\s+/g, ' ') // Replace multiple spaces
-        .replace(/\s*([{}:;,])\s*/g, '$1') // Remove spaces around syntax
-        .trim();
-      writeFileSync(outputPath, content);
-    } else {
-      // Copy other files as-is (JSON, etc.)
-      cpSync(file, outputPath);
-    }
-  }
-
-  // Replace src/ with minified version
-  const srcBackup = join(projectDir, '.bakery-src-backup');
-  if (existsSync(srcBackup)) {
-    rmSync(srcBackup, { recursive: true });
-  }
-  cpSync(srcDir, srcBackup, { recursive: true });
-  rmSync(srcDir, { recursive: true });
-  cpSync(minDir, srcDir, { recursive: true });
-  rmSync(minDir, { recursive: true });
-
-  console.log(`   🗜️  Minified ${files.length} files`);
-  console.log(`   💾 Original src/ backed up to .bakery-src-backup/`);
-}
-
-// Helper to find files recursively
-async function findFiles(dir: string, extensions: string[]): Promise<string[]> {
-  const files: string[] = [];
-  
-  if (!existsSync(dir)) {
-    return files;
-  }
-  
-  const { readdir } = await import('fs/promises');
-  const entries = await readdir(dir, { withFileTypes: true });
-  
-  for (const entry of entries) {
-    const fullPath = join(dir, entry.name);
-    if (entry.isDirectory()) {
-      files.push(...await findFiles(fullPath, extensions));
-    } else if (entry.isFile()) {
-      const ext = '.' + entry.name.split('.').pop()?.toLowerCase();
-      if (extensions.includes(ext)) {
-        files.push(fullPath);
-      }
-    }
-  }
-  
-  return files;
-}
-
-// ==============================================
 // BUILD COMMAND - Build for platforms
 // ==============================================
 async function buildCommand(args: string[]) {
@@ -255,19 +140,20 @@ async function buildCommand(args: string[]) {
       project: { type: 'string', short: 'p' },
       platform: { type: 'string', default: 'mac' }, // mac, win, linux, all
       run: { type: 'boolean', short: 'r', default: false },
-      minify: { type: 'boolean', short: 'm', default: true }, // Enable minify by default
     },
   });
 
   // Load config
   const config = await loadConfig();
   
-  // Determine project directory (same logic as devCommand)
+  // Determine project directory
   let projectDir: string;
   
   if (values.dir) {
+    // Explicit --dir flag takes precedence
     projectDir = resolve(values.dir as string);
   } else if (values.project && config?.projects) {
+    // Named project from config
     const projectName = values.project as string;
     const projectPath = config.projects[projectName];
     if (!projectPath) {
@@ -276,11 +162,19 @@ async function buildCommand(args: string[]) {
       process.exit(1);
     }
     projectDir = resolve(projectPath);
-  } else if (config?.defaultProject) {
-    projectDir = resolve(config.defaultProject);
-    console.log('📌 Using default project from config');
   } else {
-    projectDir = resolve('.');
+    // Check if current directory has socket.ini (user is in a project)
+    const currentDir = resolve('.');
+    if (existsSync(join(currentDir, 'socket.ini'))) {
+      projectDir = currentDir;
+    } else if (config?.defaultProject) {
+      // Use defaultProject from config
+      projectDir = resolve(config.defaultProject);
+      console.log('📌 Using default project from config');
+    } else {
+      // Fall back to current directory
+      projectDir = currentDir;
+    }
   }
   
   const platform = values.platform as string;
@@ -298,13 +192,22 @@ async function buildCommand(args: string[]) {
   console.log('🏗️  Platform:', platform);
   console.log('');
 
-  const shouldMinify = values.minify as boolean;
+  // Determine dist directory location
+  // If project is in miniframework/examples/, use miniframework/dist/
+  // Otherwise use project/dist/
+  let distDir: string;
+  const examplesMatch = projectDir.match(/^(.+)\/examples\/[^\/]+$/);
+  if (examplesMatch) {
+    // Project is in <framework>/examples/<project>
+    distDir = join(examplesMatch[1], 'dist');
+  } else {
+    // Standalone project
+    distDir = join(projectDir, 'dist');
+  }
 
-  // Minify source files before building (if enabled)
-  if (shouldMinify) {
-    console.log('🗜️  Minifying source files...\n');
-    await minifyProject(projectDir);
-    console.log('✅ Minification complete!\n');
+  // Create dist directory
+  if (!existsSync(distDir)) {
+    mkdirSync(distDir, { recursive: true });
   }
 
   // Build platforms
@@ -312,6 +215,29 @@ async function buildCommand(args: string[]) {
 
   for (const p of platforms) {
     console.log(`\n🔨 Building for ${p}...`);
+    
+    // Embed assets for production build
+    console.log('🔒 Embedding assets...');
+    const embedScript = join(dirname(import.meta.url.replace('file://', '')), 'scripts', 'embed-assets.ts');
+    const srcPath = join(projectDir, 'src');
+    const distEmbeddedPath = join(projectDir, 'dist-embedded');
+    
+    const embedProcess = spawn(['bun', 'run', embedScript, srcPath, distEmbeddedPath], {
+      stdio: ['inherit', 'inherit', 'inherit'],
+    });
+    
+    await embedProcess.exited;
+    
+    if (embedProcess.exitCode !== 0) {
+      console.error('❌ Asset embedding failed');
+      process.exit(1);
+    }
+    
+    // Temporarily update socket.ini to use dist-embedded
+    const socketIniPath = join(projectDir, 'socket.ini');
+    const originalSocketIni = await Bun.file(socketIniPath).text();
+    const modifiedSocketIni = originalSocketIni.replace(/copy\s*=\s*["']?src["']?/g, 'copy = "dist-embedded"');
+    writeFileSync(socketIniPath, modifiedSocketIni);
     
     // Socket Runtime build - just use 'ssc build' without -o flag
     const buildArgs = ['ssc', 'build'];
@@ -326,6 +252,9 @@ async function buildCommand(args: string[]) {
     });
 
     await build.exited;
+    
+    // Restore original socket.ini
+    writeFileSync(socketIniPath, originalSocketIni);
 
     if (build.exitCode !== 0) {
       console.error(`❌ Build failed for ${p}`);
@@ -334,33 +263,53 @@ async function buildCommand(args: string[]) {
 
     console.log(`✅ Build complete for ${p}!`);
     
-    // Show output location
+    // Copy build output to dist/ as single-file executable
     const buildDir = join(projectDir, 'build', p);
     if (existsSync(buildDir)) {
-      console.log(`📦 Output: ${buildDir}`);
+      console.log(`📦 Packaging to dist/...`);
+      
+      // Get project name from socket.ini
+      const socketIniPath = join(projectDir, 'socket.ini');
+      let projectName = 'bakery-app';
+      try {
+        const iniContent = await Bun.file(socketIniPath).text();
+        const nameMatch = iniContent.match(/name\s*=\s*["']?([^"'\n]+)["']?/);
+        if (nameMatch) {
+          projectName = nameMatch[1].trim();
+        }
+      } catch (err) {
+        console.warn('⚠️  Could not read project name from socket.ini');
+      }
+      
+      if (p === 'mac') {
+        // Copy .app bundle to dist
+        const appFiles = await Bun.$`ls ${buildDir}`.text();
+        const appName = appFiles.split('\n').find((f: string) => f.endsWith('.app'));
+        
+        if (appName) {
+          const srcApp = join(buildDir, appName);
+          const distApp = join(distDir, `${projectName}.app`);
+          
+          // Remove old version if exists
+          if (existsSync(distApp)) {
+            rmSync(distApp, { recursive: true });
+          }
+          
+          cpSync(srcApp, distApp, { recursive: true });
+          console.log(`   ✅ ${distApp}`);
+        }
+      } else if (p === 'win') {
+        // TODO: Copy Windows executable
+        console.log(`   📝 Windows build in: ${buildDir}`);
+      } else if (p === 'linux') {
+        // TODO: Copy Linux executable
+        console.log(`   📝 Linux build in: ${buildDir}`);
+      }
     }
   }
 
   console.log('\n🎉 All builds complete!');
-  
-  // Restore original src/ if we minified
-  if (shouldMinify) {
-    console.log('\n🔄 Restoring original src/ files...');
-    await restoreOriginalSource(projectDir);
-    console.log('✅ Original files restored!');
-  }
-}
-
-// Restore original source after build
-async function restoreOriginalSource(projectDir: string) {
-  const srcDir = join(projectDir, 'src');
-  const srcBackup = join(projectDir, '.bakery-src-backup');
-  
-  if (existsSync(srcBackup)) {
-    rmSync(srcDir, { recursive: true });
-    cpSync(srcBackup, srcDir, { recursive: true });
-    rmSync(srcBackup, { recursive: true });
-  }
+  console.log(`📦 Output: ${distDir}`);
 }
 
 // ==============================================
@@ -615,7 +564,6 @@ Options:
     -p, --project <name>   Named project from bakery.config.js
     --platform <name>      Platform: mac, win, linux, all (default: mac)
     -r, --run              Run after building (mac only)
-    -m, --minify           Minify JS/CSS/HTML (default: true)
 
 Configuration (bakery.config.js):
   export default {

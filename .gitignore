@@ -3,11 +3,11 @@
 # Build outputs
 build/
 dist/
-*.app
-*.exe
 *.dmg
 *.deb
 *.rpm
+*.zip
+*.tar.gz
 
 # Dependencies
 node_modules/

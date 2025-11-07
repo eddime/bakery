@@ -26,10 +26,10 @@
   "license": "MIT",
   "devDependencies": {
     "@types/bun": "latest",
+    "postject": "^1.0.0-alpha.6",
     "typescript": "^5.3.3"
   },
   "engines": {
     "bun": ">=1.0.0"
   }
 }
-
