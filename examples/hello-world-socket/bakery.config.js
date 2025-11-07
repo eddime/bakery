@@ -10,9 +10,9 @@ export default {
     minWidth: 800,           // Minimum window width
     minHeight: 600,          // Minimum window height
     resizable: true,         // Allow window resizing
-    frameless: false,        // Hide window frame (titlebar, borders)
+    frameless: true,        // Hide window frame (titlebar, borders)
     fullscreen: false,       // F11 to toggle fullscreen
-    startFullscreen: true,  // Auto-fullscreen on launch (games, kiosk mode)
+    startFullscreen: false,  // Auto-fullscreen on launch (games, kiosk mode)
     alwaysOnTop: false,      // Keep window always on top
     debug: true,             // Enable debug logs (WebView inspector)
   },

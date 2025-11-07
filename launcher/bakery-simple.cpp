@@ -5,6 +5,7 @@
 
 #include <nlohmann/json.hpp>
 #include "bakery-config-reader.cpp"
+#include "webview-extensions.h"
 #include <iostream>
 #include <fstream>
 #include <sstream>
@@ -34,6 +35,22 @@ int main(int argc, char* argv[]) {
     
     // Apply config
     applyConfigToWebView(w, config);
+    
+    // Apply extended features (frameless, alwaysOnTop, fullscreen)
+    if (config.frameless) {
+        std::cout << "🪟 Setting frameless mode..." << std::endl;
+        bakery::setFrameless(w, true);
+    }
+    
+    if (config.alwaysOnTop) {
+        std::cout << "📌 Setting always on top..." << std::endl;
+        bakery::setAlwaysOnTop(w, true);
+    }
+    
+    if (config.startFullscreen) {
+        std::cout << "🖥️  Starting in fullscreen mode..." << std::endl;
+        bakery::toggleFullscreen(w);
+    }
     
     // Bind Bakery APIs
     std::cout << "\n🔧 Setting up Bakery APIs..." << std::endl;
