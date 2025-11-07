@@ -3,6 +3,16 @@
   <head>
     <title>🥐 Bakery - Hello World</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        connect-src https: file: ipc: socket: ws://localhost:*;
+        script-src https: socket: http://localhost:* 'unsafe-eval' 'unsafe-inline';
+        img-src https: data: file: http://localhost:*;
+        child-src 'none';
+        object-src 'none';
+      "
+    >
     <style>
       * { box-sizing: border-box; }
       html, body { 
@@ -65,63 +75,68 @@
         text-align: left;
       }
     </style>
+    <!-- 🥐 Bakery Auto-Init -->
+    <script src="bakery-init.js"></script>
   </head>
   <body>
     <div class="container">
-      <h1>🥐 Bakery - Hello World</h1>
-      <p>Powered by Native WebView + C++ APIs</p>
+      <h1>🥐 hello-world-socket</h1>
+      <p>Powered by Bakery + Socket Runtime</p>
       
       <div>
-        <span class="badge">✅ 151 KB Binary</span>
-        <span class="badge">✅ Native APIs</span>
+        <span class="badge">✅ 1.5 MB Binary</span>
+        <span class="badge">✅ Node.js APIs</span>
         <span class="badge">✅ Cross-Platform</span>
       </div>
       
       <button onclick="showInfo()">📊 Show System Info</button>
-      <button onclick="testWindow()">🪟 Test Window Control</button>
+      <button onclick="testFileSystem()">📁 Test File System</button>
       
       <div id="info"></div>
     </div>
 
-    <script>
+    <script type="module">
       const infoDiv = document.getElementById('info');
       
-      // System info using Navigator API (built-in browser API)
-      window.showInfo = () => {
-        const info = {
-          platform: navigator.platform,
-          userAgent: navigator.userAgent.split(' ').pop(),
-          language: navigator.language,
-          cores: navigator.hardwareConcurrency + ' cores',
-          memory: navigator.deviceMemory ? navigator.deviceMemory + ' GB' : 'Unknown',
-          online: navigator.onLine
-        };
-        
-        infoDiv.innerHTML = '<strong>System Info (Navigator API):</strong><br><pre>' + 
-          JSON.stringify(info, null, 2) + '</pre>';
-      };
-      
-      // Test window control via Bakery native bindings
-      window.testWindow = () => {
-        infoDiv.innerHTML = '<strong>Testing native bindings...</strong>';
-        
-        // Call native C++ binding (setTitle is bound in bakery-dev.cpp)
-        if (window.setTitle) {
-          window.setTitle('🎉 Title Changed from JavaScript!').then(() => {
-            infoDiv.innerHTML = '<strong>✅ Native binding works!</strong><br>' +
-              'Window title was changed via C++ binding!';
-          }).catch(err => {
-            infoDiv.innerHTML = '<strong>❌ Error:</strong><br>' + err;
-          });
-        } else {
-          infoDiv.innerHTML = '<strong>⚠️  Native bindings not available</strong><br>' +
-            'This is expected in development mode.<br>' +
-            'Bindings work in production builds!';
+      window.showInfo = async () => {
+        try {
+          const os = await import('socket:os');
+          const process = await import('socket:process');
+          
+          const info = {
+            platform: os.platform(),
+            arch: os.arch(),
+            type: os.type(),
+            cpus: os.cpus().length + ' cores',
+            cwd: process.cwd,  // property, not function!
+            pid: process.pid
+          };
+          
+          infoDiv.innerHTML = '<strong>System Info:</strong><br><pre>' + 
+            JSON.stringify(info, null, 2) + '</pre>';
+        } catch (err) {
+          infoDiv.innerHTML = '<strong>Error:</strong><br>' + err.message;
         }
       };
       
-      console.log('🥐 Bakery App Loaded!');
+      window.testFileSystem = async () => {
+        try {
+          const fs = await import('socket:fs/promises');
+          
+          const testData = {
+            message: 'Hello from hello-world-socket!',
+            timestamp: Date.now()
+          };
+          
+          await fs.writeFile('test.json', JSON.stringify(testData, null, 2));
+          const content = await fs.readFile('test.json', 'utf8');
+          
+          infoDiv.innerHTML = '<strong>File System Test:</strong><br>' +
+            'Wrote to: test.json<br><pre>' + content + '</pre>';
+        } catch (err) {
+          infoDiv.innerHTML = '<strong>Error:</strong><br>' + err.message;
+        }
+      };
     </script>
   </body>
 </html>
-

@@ -116,9 +116,9 @@ async function devCommand(args: string[]) {
 
   const frameworkDir = dirname(import.meta.url.replace('file://', ''));
   
-  // 1. Start dev server
-  console.log('🌐 Starting dev server on http://localhost:3000...');
-  const devServerScript = join(frameworkDir, 'scripts', 'dev-server.ts');
+  // 1. Start dev server with Socket Runtime shims
+  console.log('🌐 Starting dev server with Socket Runtime shims on http://localhost:3000...');
+  const devServerScript = join(frameworkDir, 'scripts', 'dev-server-socket.ts');
   const devServer = spawn(['bun', 'run', devServerScript, projectDir, '3000'], {
     cwd: frameworkDir,
     stdio: ['ignore', 'inherit', 'inherit'],
