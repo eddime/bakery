@@ -112,23 +112,42 @@ async function devCommand(args: string[]) {
   }
 
   console.log('📁 Project:', projectDir);
-  console.log('🔥 Starting native WebView...\n');
+  console.log('🔥 Starting development environment...\n');
 
-  // Get path to bakery-simple launcher
   const frameworkDir = dirname(import.meta.url.replace('file://', ''));
-  const launcherPath = join(frameworkDir, 'launcher', 'build', 'bakery-simple');
+  
+  // 1. Start dev server
+  console.log('🌐 Starting dev server on http://localhost:3000...');
+  const devServerScript = join(frameworkDir, 'scripts', 'dev-server.ts');
+  const devServer = spawn(['bun', 'run', devServerScript, projectDir, '3000'], {
+    cwd: frameworkDir,
+    stdio: ['ignore', 'inherit', 'inherit'],
+  });
+
+  // Wait for server to start
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // 2. Start native WebView launcher
+  console.log('📱 Opening app in native WebView...\n');
+  const launcherPath = join(frameworkDir, 'launcher', 'build', 'bakery-dev');
   
   if (!existsSync(launcherPath)) {
-    console.error('❌ bakery-simple not found:', launcherPath);
+    console.error('❌ bakery-dev not found:', launcherPath);
     console.error('💡 Please build it first:');
     console.error('   cd launcher/build && cmake .. && cmake --build .');
+    devServer.kill();
     process.exit(1);
   }
 
-  // Run bakery-simple with project directory
   const launcher = spawn([launcherPath, projectDir], {
     cwd: frameworkDir,
     stdio: ['inherit', 'inherit', 'inherit'],
+  });
+
+  // Cleanup when app closes
+  launcher.exited.then(() => {
+    console.log('\n🧹 Shutting down dev server...');
+    devServer.kill();
   });
 
   await launcher.exited;

@@ -10,7 +10,7 @@ export default {
     minWidth: 800,           // Minimum window width
     minHeight: 600,          // Minimum window height
     resizable: true,         // Allow window resizing
-    frameless: true,        // Hide window frame (titlebar, borders)
+    frameless: false,        // Hide window frame (titlebar, borders)
     fullscreen: false,       // F11 to toggle fullscreen
     startFullscreen: false,  // Auto-fullscreen on launch (games, kiosk mode)
     alwaysOnTop: false,      // Keep window always on top
