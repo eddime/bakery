@@ -49,6 +49,18 @@ add_executable(test-inline
   test-inline.cpp
 )
 
+add_executable(test-with-config
+  test-with-config.cpp
+)
+
+add_executable(bakery-native-final
+  bakery-native-final.cpp
+)
+
+add_executable(bakery-simple
+  bakery-simple.cpp
+)
+
 # Link JSON library
 target_link_libraries(bakery-launcher PRIVATE nlohmann_json::nlohmann_json)
 target_link_libraries(bakery-launcher-postject PRIVATE nlohmann_json::nlohmann_json)
@@ -57,6 +69,13 @@ target_link_libraries(bakery-launcher-postject PRIVATE nlohmann_json::nlohmann_j
 target_link_libraries(bakery-native PRIVATE ${WEBVIEW_LIBS})
 target_link_libraries(test-native-simple PRIVATE ${WEBVIEW_LIBS})
 target_link_libraries(test-inline PRIVATE ${WEBVIEW_LIBS})
+target_link_libraries(test-with-config PRIVATE ${WEBVIEW_LIBS})
+target_link_libraries(bakery-native-final PRIVATE ${WEBVIEW_LIBS})
+target_link_libraries(bakery-simple PRIVATE ${WEBVIEW_LIBS})
+
+# Link JSON for config parsing
+target_link_libraries(bakery-native-final PRIVATE nlohmann_json::nlohmann_json)
+target_link_libraries(bakery-simple PRIVATE nlohmann_json::nlohmann_json)
 
 # Aggressive optimization flags for maximum performance
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
