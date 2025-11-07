@@ -1,19 +1,34 @@
 #!/usr/bin/env bun
-// 🥐 Bakery CLI
+// 🥐 Bakery CLI - Socket Runtime Edition
 // Main command-line interface
 
 import { parseArgs } from 'util';
-import { resolve } from 'path';
+import { resolve, join, dirname } from 'path';
 import { spawn } from 'bun';
-import { DevServer } from './lib/dev-server';
+import { existsSync, mkdirSync, writeFileSync, cpSync, rmSync } from 'fs';
+
+// Load bakery.config.js if it exists
+async function loadConfig() {
+  const configPath = resolve('./bakery.config.js');
+  if (existsSync(configPath)) {
+    try {
+      const config = await import(configPath);
+      return config.default || config;
+    } catch (err) {
+      console.warn('⚠️  Warning: Failed to load bakery.config.js:', err.message);
+    }
+  }
+  return null;
+}
 
 const commands = {
   dev: devCommand,
-  all: buildAllCommand,
-  mac: buildMacCommand,
-  win: buildWinCommand,
-  linux: buildLinuxCommand,
-  run: runCommand,
+  build: buildCommand,
+  mac: (args: string[]) => buildCommand(['--platform', 'mac', ...args]),
+  win: (args: string[]) => buildCommand(['--platform', 'win', ...args]),
+  linux: (args: string[]) => buildCommand(['--platform', 'linux', ...args]),
+  all: (args: string[]) => buildCommand(['--platform', 'all', ...args]),
+  init: initCommand,
   help: helpCommand,
 };
 
@@ -37,373 +52,596 @@ async function main() {
   await handler(args.slice(1));
 }
 
+// ==============================================
+// DEV COMMAND - Hot Reload Development
+// ==============================================
 async function devCommand(args: string[]) {
-  console.log('🥐 Bakery Development Mode\n');
+  console.log('🥐 Bakery Development Mode (Socket Runtime)\n');
 
-  // Parse args
   const { values } = parseArgs({
     args,
     options: {
-      entry: { type: 'string', short: 'e', default: './test-hello.ts' },
-      port: { type: 'string', short: 'p', default: '35729' },
-      persist: { type: 'boolean', default: false }, // Keep dev server running after app closes
+      dir: { type: 'string', short: 'd' },
+      project: { type: 'string', short: 'p' }, // Named project from config
     },
-    strict: false,
-    allowPositionals: true,
   });
 
-  const entryPoint = resolve(values.entry as string);
-  const port = parseInt(values.port as string);
-  const persistMode = values.persist === true;
-
-  let appProcess: any = null;
-  let isRestarting = false;
-  let shouldExit = false;
-
-  async function restartApp() {
-    if (isRestarting) return; // Prevent multiple restarts
-    isRestarting = true;
-
-    if (appProcess) {
-      console.log('\n🔄 Restarting app...\n');
-      appProcess.kill();
-      // Wait a bit for process to fully exit
-      await new Promise(resolve => setTimeout(resolve, 300));
-    }
-
-    console.log('🚀 Starting app...');
-
-    appProcess = spawn({
-      cmd: ['bun', 'run', entryPoint],
-      stdout: 'inherit',
-      stderr: 'inherit',
-      stdin: 'inherit',
-      env: {
-        ...process.env,
-        BAKERY_DEV: 'true',
-      },
-    });
-
-    // Watch for app process exit
-    appProcess.exited.then((exitCode: number) => {
-      if (!isRestarting && !shouldExit) {
-        if (persistMode) {
-          console.log('\n👋 App closed. Waiting for file changes to restart...\n');
-          appProcess = null;
-        } else {
-          console.log('\n👋 App closed. Exiting dev mode...\n');
-          shouldExit = true;
-          process.exit(0);
-        }
-      }
-    });
-
-    isRestarting = false;
-  }
-
-  // Watch for file changes and restart app
-  const { watch } = await import('fs');
-  const watcher = watch('.', { recursive: true }, async (event, filename) => {
-    if (!filename) return;
-
-    // Only restart on TypeScript file changes in lib/ or entry file
-    if (
-      (filename.includes('lib/') && filename.endsWith('.ts')) ||
-      filename === entryPoint.split('/').pop()
-    ) {
-      console.log(`\n📝 Changed: ${filename}`);
-      // If app is not running, start it. Otherwise restart it.
-      if (!appProcess) {
-        console.log('🔄 Restarting app due to file change...\n');
-      }
-      await restartApp();
-    }
-  });
-
-  // Start app initially
-  await restartApp();
-
-  // Handle cleanup
-  process.on('SIGINT', () => {
-    console.log('\n\n👋 Shutting down Bakery dev server...');
-    watcher.close();
-    if (appProcess) {
-      appProcess.kill();
-    }
-    process.exit(0);
-  });
-
-  // Keep process alive
-  await new Promise(() => {});
-}
-
-async function buildAllCommand(args: string[]) {
-  console.log('🥐 Bakery Build - All Platforms\n');
-  console.log('Building for: macOS, Windows, Linux...\n');
+  // Load config
+  const config = await loadConfig();
   
-  await buildMacCommand(args);
-  await buildWinCommand(args);
-  await buildLinuxCommand(args);
+  // Determine project directory
+  let projectDir: string;
   
-  console.log('\n✅ All platforms built successfully!');
-}
-
-async function buildMacCommand(args: string[]) {
-  console.log('🍎 Building for macOS...\n');
-  
-  const { parseArgs } = await import('util');
-  const { values } = parseArgs({
-    args,
-    options: {
-      entry: { type: 'string', short: 'e' },
-      output: { type: 'string', short: 'o' },
-      runtime: { type: 'string', default: 'txiki' }, // 'bun' or 'txiki'
-    },
-    strict: false,
-    allowPositionals: true,
-  });
-
-  const runtime = values.runtime as string;
-  // Auto-select default entry based on runtime
-  const defaultEntry = runtime === 'bun' ? './test-hello.ts' : './test-txiki-webview.js';
-  const entryPoint = resolve(values.entry as string || defaultEntry);
-  const outputName = values.output as string || 'bakery-app';
-  
-  console.log(`📦 Entry: ${entryPoint}`);
-  console.log(`📦 Output: dist/${outputName}-darwin-arm64`);
-  console.log(`📦 Runtime: ${runtime}\n`);
-  
-  // Step 1: Create dist directory
-  console.log('1️⃣ Creating dist directory...');
-  await spawn({
-    cmd: ['mkdir', '-p', 'dist'],
-    stdout: 'inherit',
-    stderr: 'inherit',
-  }).exited;
-  
-  if (runtime === 'bun') {
-    // Use Bun's compile (like bunery)
-    console.log('2️⃣ Compiling with Bun...');
-    const compileResult = await spawn({
-      cmd: [
-        'bun', 'build', entryPoint,
-        '--compile',
-        `--outfile=dist/${outputName}-darwin-arm64`,
-        '--minify',
-        '--target=bun'
-      ],
-      stdout: 'inherit',
-      stderr: 'inherit',
-    }).exited;
-    
-    if (compileResult !== 0) {
-      console.error('❌ Compilation failed!');
+  if (values.dir) {
+    // Explicit --dir flag takes precedence
+    projectDir = resolve(values.dir as string);
+  } else if (values.project && config?.projects) {
+    // Named project from config
+    const projectName = values.project as string;
+    const projectPath = config.projects[projectName];
+    if (!projectPath) {
+      console.error(`❌ Project "${projectName}" not found in bakery.config.js`);
+      console.log('Available projects:', Object.keys(config.projects).join(', '));
       process.exit(1);
     }
-    
-    // Copy WebView library
-    console.log('3️⃣ Copying WebView library...');
-    await spawn({
-      cmd: ['cp', 'deps/webview-prebuilt/libwebview.dylib', 'dist/'],
-      stdout: 'inherit',
-      stderr: 'inherit',
-    }).exited;
-    
-    console.log('\n✅ macOS build complete (Bun runtime)!');
-    console.log(`📦 Binary: dist/${outputName}-darwin-arm64 (~90 MB with Bun runtime)`);
-    console.log(`📦 Library: dist/libwebview.dylib (230 KB)`);
+    projectDir = resolve(projectPath);
+  } else if (config?.defaultProject) {
+    // Use defaultProject from config
+    projectDir = resolve(config.defaultProject);
+    console.log('📌 Using default project from config');
   } else {
-    // Use txiki.js (small runtime)
-    console.log('2️⃣ Bundling with esbuild...');
-    const bundlePath = `dist/${outputName}-bundle.js`;
-    const bundleResult = await spawn({
-      cmd: [
-        'npx', 'esbuild', entryPoint,
-        '--bundle',
-        `--outfile=${bundlePath}`,
-        '--external:tjs:*',
-        '--external:bun:*',
-        '--external:path',
-        '--minify',
-        '--target=es2023',
-        '--platform=neutral',
-        '--format=esm',
-        '--main-fields=main,module'
-      ],
-      stdout: 'inherit',
-      stderr: 'inherit',
-    }).exited;
-    
-    if (bundleResult !== 0) {
-      console.error('❌ Bundling failed!');
-      process.exit(1);
-    }
-    
-    // Compile with txiki.js
-    console.log('3️⃣ Compiling with txiki.js...');
-    const compileResult = await spawn({
-      cmd: [
-        './deps/txiki.js/build/tjs',
-        'compile',
-        bundlePath,
-        `dist/${outputName}-darwin-arm64`
-      ],
-      stdout: 'inherit',
-      stderr: 'inherit',
-    }).exited;
-    
-    if (compileResult !== 0) {
-      console.error('❌ Compilation failed!');
-      process.exit(1);
-    }
-    
-    // Clean up bundle
-    console.log('4️⃣ Cleaning up...');
-    await spawn({
-      cmd: ['rm', bundlePath],
-      stdout: 'inherit',
-      stderr: 'inherit',
-    }).exited;
-
-    // Create .app bundle
-    console.log('5️⃣ Creating .app bundle...');
-    const appName = outputName;
-    const appPath = `dist/${appName}.app`;
-    const contentsPath = `${appPath}/Contents`;
-    const macosPath = `${contentsPath}/MacOS`;
-    const resourcesPath = `${contentsPath}/Resources`;
-
-    // Create directories
-    await spawn({
-      cmd: ['mkdir', '-p', macosPath, resourcesPath],
-      stdout: 'inherit',
-      stderr: 'inherit',
-    }).exited;
-
-    // Move binary into .app
-    await spawn({
-      cmd: ['mv', `dist/${outputName}-darwin-arm64`, `${macosPath}/${appName}`],
-      stdout: 'inherit',
-      stderr: 'inherit',
-    }).exited;
-
-    // Copy libwebview.dylib into .app
-    await spawn({
-      cmd: ['cp', 'deps/webview-prebuilt/libwebview.dylib', `${macosPath}/`],
-      stdout: 'inherit',
-      stderr: 'inherit',
-    }).exited;
-
-    // Copy icon.icns to Resources
-    await spawn({
-      cmd: ['cp', 'assets/icon.icns', `${resourcesPath}/`],
-      stdout: 'inherit',
-      stderr: 'inherit',
-    }).exited;
-
-    // Create Info.plist
-    const plist = `<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-  <key>CFBundleExecutable</key>
-  <string>${appName}</string>
-  <key>CFBundleIconFile</key>
-  <string>icon</string>
-  <key>CFBundleIdentifier</key>
-  <string>com.bakery.${appName}</string>
-  <key>CFBundleName</key>
-  <string>Bakery App</string>
-  <key>CFBundlePackageType</key>
-  <string>APPL</string>
-  <key>CFBundleShortVersionString</key>
-  <string>1.0.0</string>
-  <key>CFBundleVersion</key>
-  <string>1.0.0</string>
-  <key>LSMinimumSystemVersion</key>
-  <string>10.13</string>
-  <key>NSHighResolutionCapable</key>
-  <true/>
-</dict>
-</plist>`;
-
-    await Bun.write(`${contentsPath}/Info.plist`, plist);
-
-    console.log('\n✅ macOS build complete (txiki.js runtime)!');
-    console.log(`📦 App Bundle: dist/${appName}.app (~3.9 MB total)`);
-    console.log(`   Binary: ${appName}.app/Contents/MacOS/${appName} (3.6 MB)`);
-    console.log(`   Library: ${appName}.app/Contents/MacOS/libwebview.dylib (230 KB)`);
-    console.log(`   Icon: ${appName}.app/Contents/Resources/icon.icns (134 KB)`);
+    // Fall back to current directory
+    projectDir = resolve('.');
   }
   
-  console.log(`\n💡 To run: open dist/${outputName}.app`);
-}
+  // Check if socket.ini exists
+  const socketIniPath = join(projectDir, 'socket.ini');
+  if (!existsSync(socketIniPath)) {
+    console.error('❌ No socket.ini found in', projectDir);
+    console.log('💡 Run: bake init <project-name> to create a new project');
+    if (config) {
+      console.log('💡 Or set defaultProject in bakery.config.js');
+    }
+    process.exit(1);
+  }
 
-async function buildWinCommand(args: string[]) {
-  console.log('🪟 Building for Windows...');
-  console.log('🚧 Windows build coming soon!');
-}
+  console.log('📁 Project:', projectDir);
+  console.log('🔥 Starting development server...');
+  console.log('⏱️  First build may take ~10-15 seconds...');
+  console.log('💡 Hot reload is enabled - changes update instantly!\n');
 
-async function buildLinuxCommand(args: string[]) {
-  console.log('🐧 Building for Linux...');
-  console.log('🚧 Linux build coming soon!');
-}
-
-async function runCommand(args: string[]) {
-  console.log('🥐 Bakery Run\n');
-  
-  const entryPoint = args[0] || './test-hello.ts';
-  
-  const appProcess = spawn({
-    cmd: ['bun', 'run', resolve(entryPoint)],
-    stdout: 'inherit',
-    stderr: 'inherit',
-    stdin: 'inherit',
+  // Run Socket Runtime in dev mode with build and run
+  // -r flag runs the app after building
+  // Socket Runtime handles file watching and hot reload automatically
+  const ssc = spawn(['ssc', 'build', '-r'], {
+    cwd: projectDir,
+    stdio: ['inherit', 'inherit', 'inherit'],
   });
 
-  await appProcess.exited;
+  await ssc.exited;
 }
 
+// ==============================================
+// MINIFY HELPER - Minify project files
+// ==============================================
+async function minifyProject(projectDir: string) {
+  const srcDir = join(projectDir, 'src');
+  
+  if (!existsSync(srcDir)) {
+    console.log('⚠️  No src/ directory found, skipping minification');
+    return;
+  }
+
+  // Create a temporary minified directory
+  const minDir = join(projectDir, '.bakery-min');
+  if (existsSync(minDir)) {
+    rmSync(minDir, { recursive: true });
+  }
+  mkdirSync(minDir, { recursive: true });
+
+  // Find all JS/HTML/CSS files
+  const files = await findFiles(srcDir, ['.js', '.html', '.css', '.json']);
+  
+  for (const file of files) {
+    const ext = file.split('.').pop()?.toLowerCase();
+    const relativePath = file.replace(srcDir, '');
+    const outputPath = join(minDir, relativePath);
+    
+    // Ensure output directory exists
+    const outputDir = dirname(outputPath);
+    if (!existsSync(outputDir)) {
+      mkdirSync(outputDir, { recursive: true });
+    }
+
+    if (ext === 'js') {
+      // Minify JavaScript with esbuild
+      try {
+        const result = await Bun.build({
+          entrypoints: [file],
+          outdir: outputDir,
+          minify: true,
+          target: 'browser',
+          format: 'esm',
+        });
+        
+        if (!result.success) {
+          console.warn(`⚠️  Failed to minify ${file}, copying original`);
+          cpSync(file, outputPath);
+        } else {
+          const outputFile = join(outputDir, file.split('/').pop()!);
+          if (outputFile !== outputPath) {
+            cpSync(outputFile, outputPath);
+            rmSync(outputFile);
+          }
+        }
+      } catch (err) {
+        console.warn(`⚠️  Error minifying ${file}:`, (err as Error).message);
+        cpSync(file, outputPath);
+      }
+    } else if (ext === 'html') {
+      // Simple HTML minification (remove comments and extra whitespace)
+      let content = await Bun.file(file).text();
+      content = content
+        .replace(/<!--[\s\S]*?-->/g, '') // Remove HTML comments
+        .replace(/\s+/g, ' ') // Replace multiple spaces with single space
+        .replace(/>\s+</g, '><') // Remove spaces between tags
+        .trim();
+      writeFileSync(outputPath, content);
+    } else if (ext === 'css') {
+      // Simple CSS minification
+      let content = await Bun.file(file).text();
+      content = content
+        .replace(/\/\*[\s\S]*?\*\//g, '') // Remove CSS comments
+        .replace(/\s+/g, ' ') // Replace multiple spaces
+        .replace(/\s*([{}:;,])\s*/g, '$1') // Remove spaces around syntax
+        .trim();
+      writeFileSync(outputPath, content);
+    } else {
+      // Copy other files as-is (JSON, etc.)
+      cpSync(file, outputPath);
+    }
+  }
+
+  // Replace src/ with minified version
+  const srcBackup = join(projectDir, '.bakery-src-backup');
+  if (existsSync(srcBackup)) {
+    rmSync(srcBackup, { recursive: true });
+  }
+  cpSync(srcDir, srcBackup, { recursive: true });
+  rmSync(srcDir, { recursive: true });
+  cpSync(minDir, srcDir, { recursive: true });
+  rmSync(minDir, { recursive: true });
+
+  console.log(`   🗜️  Minified ${files.length} files`);
+  console.log(`   💾 Original src/ backed up to .bakery-src-backup/`);
+}
+
+// Helper to find files recursively
+async function findFiles(dir: string, extensions: string[]): Promise<string[]> {
+  const files: string[] = [];
+  
+  if (!existsSync(dir)) {
+    return files;
+  }
+  
+  const { readdir } = await import('fs/promises');
+  const entries = await readdir(dir, { withFileTypes: true });
+  
+  for (const entry of entries) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...await findFiles(fullPath, extensions));
+    } else if (entry.isFile()) {
+      const ext = '.' + entry.name.split('.').pop()?.toLowerCase();
+      if (extensions.includes(ext)) {
+        files.push(fullPath);
+      }
+    }
+  }
+  
+  return files;
+}
+
+// ==============================================
+// BUILD COMMAND - Build for platforms
+// ==============================================
+async function buildCommand(args: string[]) {
+  console.log('🥐 Bakery Build (Socket Runtime)\n');
+
+  const { values } = parseArgs({
+    args,
+    options: {
+      dir: { type: 'string', short: 'd' },
+      project: { type: 'string', short: 'p' },
+      platform: { type: 'string', default: 'mac' }, // mac, win, linux, all
+      run: { type: 'boolean', short: 'r', default: false },
+      minify: { type: 'boolean', short: 'm', default: true }, // Enable minify by default
+    },
+  });
+
+  // Load config
+  const config = await loadConfig();
+  
+  // Determine project directory (same logic as devCommand)
+  let projectDir: string;
+  
+  if (values.dir) {
+    projectDir = resolve(values.dir as string);
+  } else if (values.project && config?.projects) {
+    const projectName = values.project as string;
+    const projectPath = config.projects[projectName];
+    if (!projectPath) {
+      console.error(`❌ Project "${projectName}" not found in bakery.config.js`);
+      console.log('Available projects:', Object.keys(config.projects).join(', '));
+      process.exit(1);
+    }
+    projectDir = resolve(projectPath);
+  } else if (config?.defaultProject) {
+    projectDir = resolve(config.defaultProject);
+    console.log('📌 Using default project from config');
+  } else {
+    projectDir = resolve('.');
+  }
+  
+  const platform = values.platform as string;
+  const shouldRun = values.run as boolean;
+
+  // Check if socket.ini exists
+  const socketIniPath = join(projectDir, 'socket.ini');
+  if (!existsSync(socketIniPath)) {
+    console.error('❌ No socket.ini found in', projectDir);
+    console.log('💡 Run: bake init <project-name> to create a new project');
+    process.exit(1);
+  }
+
+  console.log('📁 Project:', projectDir);
+  console.log('🏗️  Platform:', platform);
+  console.log('');
+
+  const shouldMinify = values.minify as boolean;
+
+  // Minify source files before building (if enabled)
+  if (shouldMinify) {
+    console.log('🗜️  Minifying source files...\n');
+    await minifyProject(projectDir);
+    console.log('✅ Minification complete!\n');
+  }
+
+  // Build platforms
+  const platforms = platform === 'all' ? ['mac', 'win', 'linux'] : [platform];
+
+  for (const p of platforms) {
+    console.log(`\n🔨 Building for ${p}...`);
+    
+    // Socket Runtime build - just use 'ssc build' without -o flag
+    const buildArgs = ['ssc', 'build'];
+    
+    if (shouldRun && p === 'mac') {
+      buildArgs.push('-r');
+    }
+
+    const build = spawn(buildArgs, {
+      cwd: projectDir,
+      stdio: ['inherit', 'inherit', 'inherit'],
+    });
+
+    await build.exited;
+
+    if (build.exitCode !== 0) {
+      console.error(`❌ Build failed for ${p}`);
+      process.exit(1);
+    }
+
+    console.log(`✅ Build complete for ${p}!`);
+    
+    // Show output location
+    const buildDir = join(projectDir, 'build', p);
+    if (existsSync(buildDir)) {
+      console.log(`📦 Output: ${buildDir}`);
+    }
+  }
+
+  console.log('\n🎉 All builds complete!');
+  
+  // Restore original src/ if we minified
+  if (shouldMinify) {
+    console.log('\n🔄 Restoring original src/ files...');
+    await restoreOriginalSource(projectDir);
+    console.log('✅ Original files restored!');
+  }
+}
+
+// Restore original source after build
+async function restoreOriginalSource(projectDir: string) {
+  const srcDir = join(projectDir, 'src');
+  const srcBackup = join(projectDir, '.bakery-src-backup');
+  
+  if (existsSync(srcBackup)) {
+    rmSync(srcDir, { recursive: true });
+    cpSync(srcBackup, srcDir, { recursive: true });
+    rmSync(srcBackup, { recursive: true });
+  }
+}
+
+// ==============================================
+// INIT COMMAND - Create new project
+// ==============================================
+async function initCommand(args: string[]) {
+  const projectName = args[0];
+  
+  if (!projectName) {
+    console.error('❌ Please provide a project name');
+    console.log('Usage: bake init <project-name>');
+    process.exit(1);
+  }
+
+  console.log('🥐 Creating new Bakery project...\n');
+  console.log('📦 Project:', projectName);
+
+  const projectDir = resolve(projectName);
+
+  // Check if directory exists
+  if (existsSync(projectDir)) {
+    console.error('❌ Directory already exists:', projectDir);
+    process.exit(1);
+  }
+
+  // Create project directory
+  mkdirSync(projectDir);
+  mkdirSync(join(projectDir, 'src'));
+
+  // Create socket.ini
+  const socketIni = `
+; 🥐 Bakery Project Configuration
+; Powered by Socket Runtime
+
+[build]
+copy = "src"
+name = "${projectName}"
+output = "build"
+
+[webview]
+root = "/"
+watch = true
+
+[webview.watch]
+reload = true
+
+[meta]
+bundle_identifier = "com.${projectName.toLowerCase().replace(/[^a-z0-9]/g, '-')}"
+title = "${projectName}"
+version = 1.0.0
+
+[window]
+height = 600
+width = 800
+`.trim();
+
+  writeFileSync(join(projectDir, 'socket.ini'), socketIni);
+
+  // Create main.html
+  const mainHtml = `<!doctype html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="
+        connect-src https: file: ipc: socket: ws://localhost:*;
+        script-src https: socket: http://localhost:* 'unsafe-eval' 'unsafe-inline';
+        img-src https: data: file: http://localhost:*;
+        child-src 'none';
+        object-src 'none';
+      "
+    >
+    <style>
+      * { box-sizing: border-box; }
+      html, body { 
+        height: 100%; 
+        margin: 0;
+        padding: 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      }
+      body {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        text-align: center;
+        padding: 20px;
+      }
+      .container {
+        max-width: 600px;
+      }
+      h1 {
+        font-size: 48px;
+        margin: 0 0 20px 0;
+      }
+      p {
+        font-size: 18px;
+        opacity: 0.9;
+        margin: 10px 0;
+      }
+      .badge {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 6px 16px;
+        border-radius: 20px;
+        font-size: 14px;
+        margin: 5px;
+      }
+      button {
+        background: white;
+        color: #667eea;
+        border: none;
+        padding: 12px 24px;
+        font-size: 16px;
+        border-radius: 8px;
+        cursor: pointer;
+        margin: 20px 5px 0;
+        font-weight: 600;
+      }
+      button:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+      #info {
+        margin-top: 30px;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 20px;
+        border-radius: 12px;
+        font-family: 'Courier New', monospace;
+        font-size: 14px;
+        text-align: left;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>🥐 ${projectName}</h1>
+      <p>Powered by Bakery + Socket Runtime</p>
+      
+      <div>
+        <span class="badge">✅ 1.5 MB Binary</span>
+        <span class="badge">✅ Node.js APIs</span>
+        <span class="badge">✅ Cross-Platform</span>
+      </div>
+      
+      <button onclick="showInfo()">📊 Show System Info</button>
+      <button onclick="testFileSystem()">📁 Test File System</button>
+      
+      <div id="info"></div>
+    </div>
+
+    <script type="module">
+      const infoDiv = document.getElementById('info');
+      
+      window.showInfo = async () => {
+        try {
+          const os = await import('socket:os');
+          const process = await import('socket:process');
+          
+          const info = {
+            platform: os.platform(),
+            arch: os.arch(),
+            type: os.type(),
+            cpus: os.cpus().length + ' cores',
+            cwd: process.cwd,  // property, not function!
+            pid: process.pid
+          };
+          
+          infoDiv.innerHTML = '<strong>System Info:</strong><br><pre>' + 
+            JSON.stringify(info, null, 2) + '</pre>';
+        } catch (err) {
+          infoDiv.innerHTML = '<strong>Error:</strong><br>' + err.message;
+        }
+      };
+      
+      window.testFileSystem = async () => {
+        try {
+          const fs = await import('socket:fs/promises');
+          
+          const testData = {
+            message: 'Hello from ${projectName}!',
+            timestamp: Date.now()
+          };
+          
+          await fs.writeFile('test.json', JSON.stringify(testData, null, 2));
+          const content = await fs.readFile('test.json', 'utf8');
+          
+          infoDiv.innerHTML = '<strong>File System Test:</strong><br>' +
+            'Wrote to: test.json<br><pre>' + content + '</pre>';
+        } catch (err) {
+          infoDiv.innerHTML = '<strong>Error:</strong><br>' + err.message;
+        }
+      };
+    </script>
+  </body>
+</html>
+`;
+
+  writeFileSync(join(projectDir, 'src', 'index.html'), mainHtml);
+
+  // Create .gitignore
+  const gitignore = `
+build/
+node_modules/
+*.log
+.DS_Store
+`.trim();
+
+  writeFileSync(join(projectDir, '.gitignore'), gitignore);
+
+  console.log('');
+  console.log('✅ Project created!');
+  console.log('');
+  console.log('📁 Structure:');
+  console.log(`   ${projectName}/`);
+  console.log('   ├── socket.ini');
+  console.log('   ├── src/');
+  console.log('   │   └── index.html');
+  console.log('   └── .gitignore');
+  console.log('');
+  console.log('🚀 Next steps:');
+  console.log(`   cd ${projectName}`);
+  console.log('   bake dev           # Start development');
+  console.log('   bake build --mac   # Build for macOS');
+  console.log('');
+}
+
+// ==============================================
+// HELP COMMAND
+// ==============================================
 function helpCommand() {
   console.log(`
-🥐 Bakery - Blazing Fast Desktop Framework
+🥐 Bakery CLI - Socket Runtime Edition
 
-Usage:
-  bake <command> [options]
+Usage: bake <command> [options]
 
 Commands:
-  dev       Start development mode with hot reload
-  all       Build for all platforms (macOS, Windows, Linux)
-  mac       Build for macOS only
-  win       Build for Windows only
-  linux     Build for Linux only
-  run       Run an app without hot reload
-  help      Show this help message
-
-Development:
-  bake dev                      Start with default entry (test-hello.ts)
-  bake dev -e ./my-app.ts       Start with custom entry point
-  bake dev --persist            Keep dev server running after app closes
-
-Build:
-  bake all                      Build for all platforms
-  bake mac                      Build for macOS
-  bake win                      Build for Windows
-  bake linux                    Build for Linux
-
-Examples:
-  bake dev                      # Start dev mode (like 'neu run')
-  bake run ./my-app.ts          # Run without hot reload
-  bake all                      # Build for all platforms
+  dev                Start development server with hot reload
+  build              Build app for production
+  init <name>        Create new Bakery project
+  help               Show this help message
 
 Options:
-  -e, --entry <file>    Entry point file (default: ./test-hello.ts)
-  --persist             Keep dev server running after app closes
-  -h, --help            Show help
+  dev:
+    -d, --dir <path>       Project directory
+    -p, --project <name>   Named project from bakery.config.js
+    
+  build:
+    -d, --dir <path>       Project directory
+    -p, --project <name>   Named project from bakery.config.js
+    --platform <name>      Platform: mac, win, linux, all (default: mac)
+    -r, --run              Run after building (mac only)
+    -m, --minify           Minify JS/CSS/HTML (default: true)
 
-For more info: https://github.com/eddime/bakery
-  `);
+Configuration (bakery.config.js):
+  export default {
+    defaultProject: './examples/hello-world-socket',
+    projects: {
+      'hello': './examples/hello-world-socket',
+      'backend': './examples/backend-minimal'
+    }
+  }
+
+Examples:
+  bake init my-app           Create new project
+  bake dev                   Start default project (from config)
+  bake dev --project hello   Start named project
+  bake dev --dir ./my-app    Start specific directory
+  bake build --mac           Build for macOS
+  bake build --platform all  Build for all platforms
+  bake build --mac --run     Build and run on macOS
+
+Documentation: https://github.com/eddime/bakery
+`);
 }
 
-main().catch(console.error);
+// Run CLI
+main().catch((err) => {
+  console.error('❌ Error:', err.message);
+  process.exit(1);
+});
 

@@ -1,3 +1,0 @@
-[submodule "deps/txiki.js"]
-	path = deps/txiki.js
-	url = https://github.com/saghul/txiki.js.git

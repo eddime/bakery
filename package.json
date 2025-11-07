@@ -1,28 +1,25 @@
 {
   "name": "bakery",
-  "version": "0.1.0",
-  "description": "🥐 Blazing fast desktop framework - Small, fast, powerful",
+  "version": "1.0.0",
+  "description": "🥐 Blazing fast desktop framework - 1.5 MB, Node.js APIs, Cross-platform",
   "type": "module",
-  "main": "src/index.ts",
+  "main": "lib/bakery.ts",
   "bin": {
     "bake": "./cli.ts"
   },
   "scripts": {
-    "dev": "bun run scripts/dev.ts",
-    "build": "bun run scripts/build.ts",
-    "build:runtime": "bun run scripts/build-runtime.ts",
     "test": "bun test",
-    "clean": "rm -rf build dist tmp",
-    "hello": "bun run test-hello.ts"
+    "clean": "rm -rf build dist tmp"
   },
   "keywords": [
     "desktop",
     "electron-alternative",
+    "socket-runtime",
     "webview",
     "cross-platform",
     "framework",
     "gui",
-    "txiki.js",
+    "1.5mb",
     "performance"
   ],
   "author": "Bakery Team",

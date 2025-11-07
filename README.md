@@ -1,116 +1,238 @@
-# 🥐 Bakery - Blazing Fast Desktop Framework
+# 🥐 Bakery
 
-[![CI](https://github.com/eddime/bakery/actions/workflows/ci.yml/badge.svg)](https://github.com/eddime/bakery/actions)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.1.0-blue)](https://github.com/eddime/bakery)
+**Blazing fast desktop framework - 1.5 MB, Node.js APIs, Cross-platform**
 
-**Bakery** is a lightweight, high-performance desktop application framework that combines the best of both worlds:
-- 🚀 **Tiny** - 5-8 MB binaries (vs Electron's 150+ MB)
-- ⚡ **Fast** - <100ms startup, native performance
-- 🎮 **Game-Ready** - Hardware acceleration, high FPS support
-- 🌍 **Cross-Platform** - Build for all OS from any OS
-- 📦 **Single Binary** - Everything in one file
-- 🔧 **Node.js APIs** - Full compatibility with npm ecosystem
-
-## Why Bakery?
-
-| Feature | Bakery | Electron | Tauri | Neutralino |
-|---------|--------|----------|-------|------------|
-| Binary Size | **5-8 MB** | 150+ MB | 5-10 MB | 3-5 MB |
-| Startup | **<100ms** | 1-2s | 200ms | 200ms |
-| Node.js APIs | **✅ Full** | ✅ Full | ❌ Limited | ❌ Very Limited |
-| Native WebView | **✅** | ❌ Bundled | ✅ | ✅ |
-| Cross-Compile | **✅** | ✅ | ✅ | ✅ |
-| StreamWorker | **✅ Unique** | ❌ | ❌ | ❌ |
-| TypeScript | **✅ Native** | Via tools | Via tools | ❌ |
-
-## Architecture
-
-```
-┌─────────────────────────────────────────┐
-│         Bakery Framework                 │
-├─────────────────────────────────────────┤
-│  Native WebView (0 MB - system)         │
-│  + Consistency Layer (500 KB)           │
-│           ↕ Zero-Copy IPC                │
-│  txiki.js Runtime (5 MB)                │
-│  - QuickJS + libuv                      │
-│  - Full Node.js APIs                    │
-└─────────────────────────────────────────┘
-```
-
-## Quick Start
-
-```bash
-# Install Bakery CLI
-npm install -g bakery-cli
-
-# Create new project
-bake init my-app
-cd my-app
-
-# Development with hot reload
-bake dev
-
-# Build for all platforms
-bake all
-
-# Build for specific platform
-bake mac    # macOS
-bake win    # Windows
-bake linux  # Linux
-```
-
-## Example
-
-```typescript
-// main.ts
-import { app, Window } from 'bakery:app';
-
-app.on('ready', async () => {
-    const win = new Window({
-        title: 'My Bakery App',
-        width: 1200,
-        height: 800,
-    });
-    
-    await win.loadFile('./index.html');
-});
-```
-
-## Features
-
-- ⚡ **Lightning Fast** - txiki.js (QuickJS + libuv) runtime
-- 🎨 **Consistent Rendering** - Smart polyfills for WebView differences
-- 🎮 **Game-Ready** - Hardware acceleration, WebGL, high FPS
-- 🔄 **StreamWorker** - Unique streaming worker threads
-- 📦 **Single Binary** - Optional asset embedding
-- 🌍 **True Cross-Compile** - Build for any OS from any OS
-- 🔥 **Hot Reload** - Instant updates during development
-- 📝 **TypeScript First** - Native TS support
-
-## Project Status
-
-🚧 **Early Development** - Not ready for production yet!
-
-We're building Bakery to be the fastest, smallest, most powerful desktop framework.
-
-## Roadmap
-
-- [x] Project architecture
-- [ ] txiki.js integration
-- [ ] WebView FFI bindings
-- [ ] Cross-platform build system
-- [ ] CLI tool
-- [ ] Hot reload
-- [ ] StreamWorker API
-- [ ] Documentation & examples
-
-## License
-
-MIT
+Bakery is a modern desktop application framework powered by Socket Runtime. Build native apps with HTML, CSS, and JavaScript - with direct access to Node.js APIs!
 
 ---
 
-**Made with 🥐 and TypeScript**
+## ✨ Features
 
+- ✅ **Tiny Binary** - Only 1.5 MB (133x smaller than Electron!)
+- ✅ **Node.js APIs** - Direct access to `fs`, `path`, `os`, `process` in frontend
+- ✅ **Hot Reload** - Instant feedback during development
+- ✅ **Cross-Platform** - Build for macOS, Windows, and Linux from any OS
+- ✅ **Modern JavaScript** - ES2020+ support with `import`/`export`
+- ✅ **No Backend Needed** - Frontend can use Node.js APIs directly!
+
+---
+
+## 🚀 Quick Start
+
+### Install
+
+Bakery requires [Socket Runtime](https://socketsupply.co/) to be installed:
+
+```bash
+npm install -g @socketsupply/socket @socketsupply/socket-darwin-x64
+```
+
+Then install Bakery CLI:
+
+```bash
+cd /Users/eddi/Desktop/miniframework
+bun link
+```
+
+### Create Your First App
+
+```bash
+# Create new project
+bake init my-app
+
+# Start development
+cd my-app
+bake dev
+
+# Build for production
+bake build --mac
+```
+
+---
+
+## 📖 Usage
+
+### Development
+
+```bash
+bake dev                    # Start dev server with hot reload
+```
+
+### Building
+
+```bash
+bake build --mac            # Build for macOS
+bake build --win            # Build for Windows
+bake build --linux          # Build for Linux
+bake build --platform all   # Build for all platforms
+bake build --mac --run      # Build and run
+```
+
+---
+
+## 💻 Example App
+
+```html
+<!-- src/index.html -->
+<!doctype html>
+<html>
+  <head>
+    <title>My Bakery App</title>
+  </head>
+  <body>
+    <h1>Hello from Bakery! 🥐</h1>
+    <button onclick="showFiles()">Show Files</button>
+    <div id="output"></div>
+
+    <script type="module">
+      // Direct Node.js API access!
+      import fs from 'socket:fs/promises';
+      import path from 'socket:path';
+      import os from 'socket:os';
+
+      window.showFiles = async () => {
+        const files = await fs.readdir('.');
+        const output = document.getElementById('output');
+        
+        output.innerHTML = `
+          <h2>System Info</h2>
+          <p>Platform: ${os.platform()}</p>
+          <p>Architecture: ${os.arch()}</p>
+          
+          <h2>Files in current directory:</h2>
+          <ul>
+            ${files.map(f => `<li>${f}</li>`).join('')}
+          </ul>
+        `;
+      };
+    </script>
+  </body>
+</html>
+```
+
+---
+
+## 🎯 Why Bakery?
+
+| Framework | Binary Size | Node.js APIs | Hot Reload | Cross-Platform |
+|-----------|-------------|--------------|------------|----------------|
+| **Bakery** | **1.5 MB** ✅ | **✅ Direct!** | ✅ | ✅ |
+| Electron | 200 MB | ✅ Via IPC | ✅ | ✅ |
+| Tauri | 5 MB | ⚠️ Via Rust | ✅ | ✅ |
+| Neutralino | 3 MB | ⚠️ Limited | ✅ | ✅ |
+
+**Bakery is 133x smaller than Electron!** 🎉
+
+---
+
+## 📂 Project Structure
+
+```
+my-app/
+├── socket.ini          # Bakery configuration
+├── src/
+│   └── index.html      # Your app entry point
+├── build/              # Build output (auto-generated)
+│   ├── mac/
+│   ├── win/
+│   └── linux/
+└── .gitignore
+```
+
+---
+
+## 🔧 Configuration
+
+Edit `socket.ini` to configure your app:
+
+```ini
+[build]
+name = "my-app"
+copy = "src"
+
+[meta]
+title = "My App"
+version = 1.0.0
+bundle_identifier = "com.myapp"
+
+[window]
+width = 800
+height = 600
+```
+
+See [Socket Runtime docs](https://socketsupply.co/guides/) for all options.
+
+---
+
+## 📚 API Reference
+
+Bakery apps have direct access to Socket Runtime's Node.js-compatible APIs:
+
+### File System
+```javascript
+import fs from 'socket:fs/promises';
+
+const data = await fs.readFile('file.txt', 'utf8');
+await fs.writeFile('output.txt', data);
+```
+
+### Path
+```javascript
+import path from 'socket:path';
+
+const fullPath = path.join(__dirname, 'file.txt');
+const ext = path.extname('file.txt'); // '.txt'
+```
+
+### OS
+```javascript
+import os from 'socket:os';
+
+console.log(os.platform()); // 'darwin', 'win32', 'linux'
+console.log(os.arch());     // 'x64', 'arm64'
+console.log(os.cpus());     // CPU info
+```
+
+### Process
+```javascript
+import process from 'socket:process';
+
+console.log(process.platform); // 'darwin'
+console.log(process.arch);     // 'x64'
+console.log(process.cwd);      // Current directory
+console.log(process.pid);      // Process ID
+```
+
+---
+
+## 🎨 Examples
+
+Check out the `examples/` directory:
+
+- `hello-world-socket/` - Basic Bakery app
+- More coming soon!
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+---
+
+## 📄 License
+
+MIT License - see LICENSE file for details.
+
+---
+
+## 🙏 Credits
+
+- Powered by [Socket Runtime](https://socketsupply.co/)
+- Inspired by Electron, Tauri, and Neutralino
+
+---
+
+**Built with ❤️ by the Bakery Team**
+
+🥐 **Happy Baking!**
