@@ -1,60 +1,44 @@
 // 🥐 Bakery Configuration
-// Define the default project to run with 'bake dev'
+// Complete configuration for your desktop app
 
 export default {
-  // Default project for 'bake dev' (relative to this config file)
-  defaultProject: './examples/hello-world-socket',
-  
-  // You can also define multiple projects:
-  projects: {
-    'hello': './examples/hello-world-socket',
-    'backend': './examples/backend-minimal',
-    // Add more projects here
-  },
-
-  // Window configuration
+  // Window settings
   window: {
-    // Initial window size
-    width: 800,
-    height: 600,
-    
-    // Minimum window size (enforced at runtime)
-    minWidth: 400,
-    minHeight: 300,
-    
-    // Start in fullscreen
-    startFullscreen: false,
-    
-    // Window title (can be overridden by app)
-    title: 'Bakery App',
-    
-    // Window position (x, y) - optional, undefined = centered
-    // x: 100,
-    // y: 100,
-    
-    // Background color
-    backgroundColor: '#ffffff',
-    
-    // Always on top (not yet supported by Socket Runtime)
-    // alwaysOnTop: false,
+    title: "🥐 Bakery - Hello World",
+    width: 1200,
+    height: 800,
+    minWidth: 800,           // Minimum window width
+    minHeight: 600,          // Minimum window height
+    resizable: true,         // Allow window resizing
+    frameless: false,        // Hide window frame (titlebar, borders)
+    fullscreen: false,       // F11 to toggle fullscreen
+    startFullscreen: true,  // Auto-fullscreen on launch (games, kiosk mode)
+    alwaysOnTop: false,      // Keep window always on top
+    debug: true,             // Enable debug logs (WebView inspector)
   },
 
-  // Icons for different platforms
-  icons: {
-    mac: 'src/icon.png',
-    win: 'src/icon.png',
-    linux: 'src/icon.png',
+  // App metadata
+  app: {
+    name: "hello-world-socket",
+    version: "1.0.0",
+    description: "Hello World app built with Bakery Framework",
+    author: "Bakery Team",
   },
 
-  // Permissions
-  permissions: {
-    fullscreen: true,
-    clipboard: true,
-    geolocation: false,
-    notifications: true,
-    microphone: false,
-    camera: false,
-    bluetooth: false,
-  }
+  // Build settings
+  build: {
+    outdir: "dist",          // Output directory
+    outfile: "hello-world",  // Executable name (without extension)
+    
+    // Platform-specific settings
+    windows: {
+      icon: "assets/icon.ico",  // Windows .ico file
+    },
+    macos: {
+      icon: "assets/icon.icns", // macOS .icns file
+    },
+    linux: {
+      icon: "assets/icon.png",  // Linux .png file
+    },
+  },
 };
-

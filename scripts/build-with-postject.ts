@@ -73,8 +73,13 @@ async function main() {
   
   console.log(`📁 Project: ${projectDir}`);
   
-  // 2. Build Socket Runtime app first
-  console.log('📦 Building Socket Runtime app...');
+  // 2. Generate socket.ini from bakery.config.js
+  console.log('\n🔧 Generating socket.ini from bakery.config.js...');
+  const generateScript = join(ROOT, 'scripts/generate-socket-ini.ts');
+  await runCommand('bun', ['run', generateScript, projectDir]);
+  
+  // 3. Build Socket Runtime app
+  console.log('\n📦 Building Socket Runtime app...');
   await runCommand('ssc', ['build', '-o'], projectDir);
   
   const buildDir = join(projectDir, 'build/mac');
@@ -86,9 +91,75 @@ async function main() {
   const appPath = join(buildDir, appFiles[0]);
   console.log(`✅ Built: ${appPath}`);
   
-  // 2. Read Info.plist to get binary name
+  // 2. Load bakery.config.js to get window title and icon
+  const configPath = join(projectDir, 'bakery.config.js');
+  let windowTitle = 'Bakery App';
+  let macIcon = null;
+  if (existsSync(configPath)) {
+    try {
+      const config = await import(configPath);
+      windowTitle = config.default?.window?.title || windowTitle;
+      macIcon = config.default?.build?.macos?.icon || null;
+    } catch (err) {
+      console.warn('⚠️  Could not load config from bakery.config.js');
+    }
+  }
+  
+  // 3. Update Info.plist with correct title
   const plistPath = join(appPath, 'Contents/Info.plist');
-  const plistContent = readFileSync(plistPath, 'utf8');
+  let plistContent = readFileSync(plistPath, 'utf8');
+  
+  // Replace CFBundleDisplayName and CFBundleName with our title
+  plistContent = plistContent.replace(
+    /(<key>CFBundleDisplayName<\/key>\s*<string>)(.*?)(<\/string>)/,
+    `$1${windowTitle}$3`
+  );
+  plistContent = plistContent.replace(
+    /(<key>CFBundleName<\/key>\s*<string>)(.*?)(<\/string>)/,
+    `$1${windowTitle}$3`
+  );
+  
+  // If CFBundleDisplayName doesn't exist, add it
+  if (!plistContent.includes('CFBundleDisplayName')) {
+    plistContent = plistContent.replace(
+      /<\/dict>\s*<\/plist>/,
+      `  <key>CFBundleDisplayName</key>\n  <string>${windowTitle}</string>\n</dict>\n</plist>`
+    );
+  }
+  
+  // Add icon reference if configured
+  if (macIcon) {
+    const iconFilename = basename(macIcon);
+    const iconPath = join(projectDir, macIcon);
+    
+    if (existsSync(iconPath)) {
+      // Copy icon to Resources folder
+      const targetIconPath = join(appPath, 'Contents/Resources', iconFilename);
+      const { cpSync } = await import('fs');
+      cpSync(iconPath, targetIconPath);
+      
+      // Update Info.plist with icon reference
+      if (!plistContent.includes('CFBundleIconFile')) {
+        plistContent = plistContent.replace(
+          /<\/dict>\s*<\/plist>/,
+          `  <key>CFBundleIconFile</key>\n  <string>${iconFilename}</string>\n</dict>\n</plist>`
+        );
+      } else {
+        plistContent = plistContent.replace(
+          /(<key>CFBundleIconFile<\/key>\s*<string>)(.*?)(<\/string>)/,
+          `$1${iconFilename}$3`
+        );
+      }
+      
+      console.log(`✅ Added app icon: ${macIcon}`);
+    } else {
+      console.warn(`⚠️  Icon file not found: ${iconPath}`);
+    }
+  }
+  
+  writeFileSync(plistPath, plistContent);
+  console.log(`✅ Updated window title: ${windowTitle}`);
+  
   const binaryNameMatch = plistContent.match(/<key>CFBundleExecutable<\/key>\s*<string>(.*?)<\/string>/);
   if (!binaryNameMatch || !binaryNameMatch[1]) {
     throw new Error('Could not find CFBundleExecutable in Info.plist');
@@ -117,6 +188,8 @@ async function main() {
     binaryName: binaryName,
     binaryData: binaryData.toString('base64'),
     binarySize: binaryData.length,
+    windowTitle: windowTitle,  // Add window title for launcher to use
+    iconFile: macIcon ? basename(macIcon) : null,  // Add icon filename
     resources: resources
   };
   

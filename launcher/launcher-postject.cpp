@@ -158,7 +158,24 @@ int main(int argc, char* argv[]) {
         std::string appName = data["binaryName"].get<std::string>();
         appName = appName.substr(0, appName.find_last_of("-"));
         
-        std::string appBundle = tmpDir + "/" + appName + ".app";
+        // Try to get window title from embedded data for app bundle name
+        std::string displayName = appName;
+        if (data.contains("windowTitle")) {
+            displayName = data["windowTitle"].get<std::string>();
+            // Sanitize for filename (remove emoji and special chars)
+            std::string sanitized;
+            for (char c : displayName) {
+                if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || 
+                    (c >= '0' && c <= '9') || c == '-' || c == ' ') {
+                    sanitized += c;
+                }
+            }
+            if (!sanitized.empty()) {
+                displayName = sanitized;
+            }
+        }
+        
+        std::string appBundle = tmpDir + "/" + displayName + ".app";
         std::string contentsDir = appBundle + "/Contents";
         std::string macosDir = contentsDir + "/MacOS";
         std::string resourcesDir = contentsDir + "/Resources";
@@ -251,8 +268,24 @@ int main(int argc, char* argv[]) {
         
         std::cout << "✅ Extracted " << extracted_files << " resource files (parallel)" << std::endl;
         
-        // 7. Create Info.plist
+        // 7. Create Info.plist (with window title and icon from embedded data)
         std::string plistPath = contentsDir + "/Info.plist";
+        std::string windowTitle = appName;
+        std::string iconFile;
+        
+        // Try to get window title and icon from embedded metadata
+        if (data.contains("windowTitle")) {
+            windowTitle = data["windowTitle"].get<std::string>();
+        }
+        if (data.contains("iconFile") && !data["iconFile"].is_null()) {
+            iconFile = data["iconFile"].get<std::string>();
+        }
+        
+        std::string iconEntry;
+        if (!iconFile.empty()) {
+            iconEntry = "\n    <key>CFBundleIconFile</key>\n    <string>" + iconFile + "</string>";
+        }
+        
         std::string plistContent = R"(<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -262,11 +295,13 @@ int main(int argc, char* argv[]) {
     <key>CFBundleIdentifier</key>
     <string>com.bakery.app</string>
     <key>CFBundleName</key>
-    <string>)" + appName + R"(</string>
+    <string>)" + windowTitle + R"(</string>
+    <key>CFBundleDisplayName</key>
+    <string>)" + windowTitle + R"(</string>
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleVersion</key>
-    <string>1.0.0</string>
+    <string>1.0.0</string>)" + iconEntry + R"(
 </dict>
 </plist>)";
         
@@ -277,8 +312,8 @@ int main(int argc, char* argv[]) {
         // 8. Launch the app bundle and wait for it
         std::cout << "🚀 Launching app..." << std::endl;
         
-        // Use 'open -W' to wait for the app to terminate
-        std::string openCmd = "open -W " + appBundle + " 2>&1";
+        // Use 'open -W' to wait for the app to terminate (quote the path for spaces)
+        std::string openCmd = "open -W \"" + appBundle + "\" 2>&1";
         int exitCode = system(openCmd.c_str());
         
         // Cleanup
