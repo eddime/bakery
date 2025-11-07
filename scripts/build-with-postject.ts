@@ -64,16 +64,20 @@ async function main() {
   console.log('🥐 Bakery Build (Postject Edition)');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   
-  // 1. Build Socket Runtime app first
-  const exampleDir = join(ROOT, 'examples/hello-world-socket');
-  if (!existsSync(exampleDir)) {
-    throw new Error(`Example directory not found: ${exampleDir}`);
+  // 1. Determine project directory (from env or default)
+  const projectDir = process.env.BAKERY_PROJECT_DIR || join(ROOT, 'examples/hello-world-socket');
+  
+  if (!existsSync(projectDir)) {
+    throw new Error(`Project directory not found: ${projectDir}`);
   }
   
-  console.log('📦 Building Socket Runtime app...');
-  await runCommand('ssc', ['build', '-o'], exampleDir);
+  console.log(`📁 Project: ${projectDir}`);
   
-  const buildDir = join(exampleDir, 'build/mac');
+  // 2. Build Socket Runtime app first
+  console.log('📦 Building Socket Runtime app...');
+  await runCommand('ssc', ['build', '-o'], projectDir);
+  
+  const buildDir = join(projectDir, 'build/mac');
   const appFiles = readdirSync(buildDir).filter(f => f.endsWith('.app'));
   if (appFiles.length === 0) {
     throw new Error('No .app bundle found in build directory!');

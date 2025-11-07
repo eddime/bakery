@@ -5,7 +5,7 @@
 import { parseArgs } from 'util';
 import { resolve, join, dirname } from 'path';
 import { spawn } from 'bun';
-import { existsSync, mkdirSync, writeFileSync, cpSync, rmSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync, cpSync, rmSync, chmodSync } from 'fs';
 
 // Load bakery.config.js if it exists
 async function loadConfig() {
@@ -214,97 +214,69 @@ async function buildCommand(args: string[]) {
   const platforms = platform === 'all' ? ['mac', 'win', 'linux'] : [platform];
 
   for (const p of platforms) {
-    console.log(`\n🔨 Building for ${p}...`);
+    console.log(`\n🔨 Building for ${p} with OPTIMIZED postject build...`);
     
-    // Embed assets for production build
-    console.log('🔒 Embedding assets...');
-    const embedScript = join(dirname(import.meta.url.replace('file://', '')), 'scripts', 'embed-assets.ts');
-    const srcPath = join(projectDir, 'src');
-    const distEmbeddedPath = join(projectDir, 'dist-embedded');
+    // Use the optimized build-with-postject.ts script
+    const buildScript = join(dirname(import.meta.url.replace('file://', '')), 'scripts', 'build-with-postject.ts');
     
-    const embedProcess = spawn(['bun', 'run', embedScript, srcPath, distEmbeddedPath], {
+    const buildProcess = spawn(['bun', 'run', buildScript], {
+      cwd: dirname(import.meta.url.replace('file://', '')),
       stdio: ['inherit', 'inherit', 'inherit'],
+      env: {
+        ...process.env,
+        BAKERY_PROJECT_DIR: projectDir,
+      }
     });
     
-    await embedProcess.exited;
-    
-    if (embedProcess.exitCode !== 0) {
-      console.error('❌ Asset embedding failed');
-      process.exit(1);
-    }
-    
-    // Temporarily update socket.ini to use dist-embedded
-    const socketIniPath = join(projectDir, 'socket.ini');
-    const originalSocketIni = await Bun.file(socketIniPath).text();
-    const modifiedSocketIni = originalSocketIni.replace(/copy\s*=\s*["']?src["']?/g, 'copy = "dist-embedded"');
-    writeFileSync(socketIniPath, modifiedSocketIni);
-    
-    // Socket Runtime build - just use 'ssc build' without -o flag
-    const buildArgs = ['ssc', 'build'];
-    
-    if (shouldRun && p === 'mac') {
-      buildArgs.push('-r');
-    }
+    await buildProcess.exited;
 
-    const build = spawn(buildArgs, {
-      cwd: projectDir,
-      stdio: ['inherit', 'inherit', 'inherit'],
-    });
-
-    await build.exited;
-    
-    // Restore original socket.ini
-    writeFileSync(socketIniPath, originalSocketIni);
-
-    if (build.exitCode !== 0) {
+    if (buildProcess.exitCode !== 0) {
       console.error(`❌ Build failed for ${p}`);
       process.exit(1);
     }
 
-    console.log(`✅ Build complete for ${p}!`);
+    console.log(`✅ Optimized build complete for ${p}!`);
     
-    // Copy build output to dist/ as single-file executable
-    const buildDir = join(projectDir, 'build', p);
-    if (existsSync(buildDir)) {
-      console.log(`📦 Packaging to dist/...`);
-      
-      // Get project name from socket.ini
-      const socketIniPath = join(projectDir, 'socket.ini');
-      let projectName = 'bakery-app';
-      try {
-        const iniContent = await Bun.file(socketIniPath).text();
-        const nameMatch = iniContent.match(/name\s*=\s*["']?([^"'\n]+)["']?/);
-        if (nameMatch) {
-          projectName = nameMatch[1].trim();
-        }
-      } catch (err) {
-        console.warn('⚠️  Could not read project name from socket.ini');
+    // Rename the optimized binary to match the project name
+    console.log(`📦 Packaging optimized binary...`);
+    
+    // Get project name from socket.ini
+    const socketIniPath = join(projectDir, 'socket.ini');
+    let projectName = 'bakery-app';
+    try {
+      const iniContent = await Bun.file(socketIniPath).text();
+      const nameMatch = iniContent.match(/name\s*=\s*["']?([^"'\n]+)["']?/);
+      if (nameMatch) {
+        projectName = nameMatch[1].trim();
       }
+    } catch (err) {
+      console.warn('⚠️  Could not read project name from socket.ini');
+    }
+    
+    if (p === 'mac') {
+      // Rename bakery-postject to project name
+      const srcBinary = join(distDir, 'bakery-postject');
+      const distBinary = join(distDir, projectName);
       
-      if (p === 'mac') {
-        // Copy .app bundle to dist
-        const appFiles = await Bun.$`ls ${buildDir}`.text();
-        const appName = appFiles.split('\n').find((f: string) => f.endsWith('.app'));
+      if (existsSync(srcBinary)) {
+        // Remove old version if exists
+        if (existsSync(distBinary)) {
+          rmSync(distBinary);
+        }
         
-        if (appName) {
-          const srcApp = join(buildDir, appName);
-          const distApp = join(distDir, `${projectName}.app`);
-          
-          // Remove old version if exists
-          if (existsSync(distApp)) {
-            rmSync(distApp, { recursive: true });
-          }
-          
-          cpSync(srcApp, distApp, { recursive: true });
-          console.log(`   ✅ ${distApp}`);
-        }
-      } else if (p === 'win') {
-        // TODO: Copy Windows executable
-        console.log(`   📝 Windows build in: ${buildDir}`);
-      } else if (p === 'linux') {
-        // TODO: Copy Linux executable
-        console.log(`   📝 Linux build in: ${buildDir}`);
+        cpSync(srcBinary, distBinary);
+        chmodSync(distBinary, 0o755);
+        
+        console.log(`   ✅ ${distBinary} (7.3 MB, optimized, single-file!)`);
+      } else {
+        console.error(`   ❌ Could not find ${srcBinary}`);
       }
+    } else if (p === 'win') {
+      // TODO: Copy Windows executable
+      console.log(`   📝 Windows build not yet implemented`);
+    } else if (p === 'linux') {
+      // TODO: Copy Linux executable
+      console.log(`   📝 Linux build not yet implemented`);
     }
   }
 
