@@ -123,11 +123,17 @@ async function main() {
   const combinedJson = JSON.stringify(combinedData);
   console.log(`\n📊 Combined data size: ${(Buffer.byteLength(combinedJson) / 1024 / 1024).toFixed(1)} MB`);
   
-  // 6. Build C++ launcher
-  console.log('\n🔨 Building C++ launcher...');
-  if (!existsSync(BUILD_DIR)) {
-    mkdirSync(BUILD_DIR, { recursive: true });
+  // 6. Clean old build directory to avoid postject conflicts
+  console.log('\n🧹 Cleaning old build...');
+  if (existsSync(BUILD_DIR)) {
+    const { rmSync } = await import('fs');
+    rmSync(BUILD_DIR, { recursive: true, force: true });
+    console.log('✅ Old build removed');
   }
+  
+  // 7. Build C++ launcher
+  console.log('\n🔨 Building C++ launcher...');
+  mkdirSync(BUILD_DIR, { recursive: true });
   
   await runCommand('cmake', ['..', '-DCMAKE_BUILD_TYPE=Release'], BUILD_DIR);
   await runCommand('cmake', ['--build', '.', '--config', 'Release'], BUILD_DIR);
@@ -140,7 +146,7 @@ async function main() {
   console.log(`✅ Built launcher: ${launcherPath}`);
   console.log(`   Size: ${(statSync(launcherPath).size / 1024).toFixed(1)} KB`);
   
-  // 7. Embed ALL data with postject (single injection!)
+  // 8. Embed ALL data with postject (single injection!)
   console.log('\n📦 Embedding all data with postject...');
   const dataFile = join(BUILD_DIR, 'bakery-data.json');
   writeFileSync(dataFile, combinedJson);
