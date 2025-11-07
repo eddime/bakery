@@ -112,12 +112,12 @@ async function devCommand(args: string[]) {
   }
 
   console.log('📁 Project:', projectDir);
-  console.log('🔥 Starting development environment...\n');
+  console.log('🔥 Starting Bakery (Native WebView + Socket Runtime APIs)...\n');
 
   const frameworkDir = dirname(import.meta.url.replace('file://', ''));
   
-  // 1. Start dev server with Socket Runtime shims
-  console.log('🌐 Starting dev server with Socket Runtime shims on http://localhost:3000...');
+  // 1. Start dev server with Socket Runtime module support
+  console.log('🌐 Starting dev server on http://localhost:3000...');
   const devServerScript = join(frameworkDir, 'scripts', 'dev-server-socket.ts');
   const devServer = spawn(['bun', 'run', devServerScript, projectDir, '3000'], {
     cwd: frameworkDir,
@@ -127,8 +127,11 @@ async function devCommand(args: string[]) {
   // Wait for server to start
   await new Promise(resolve => setTimeout(resolve, 500));
   
-  // 2. Start native WebView launcher
-  console.log('📱 Opening app in native WebView...\n');
+  // 2. Open our Native WebView with bakery.config.js settings
+  console.log('📱 Opening Bakery native WebView...');
+  console.log('   ✅ All window settings from bakery.config.js');
+  console.log('   ✅ Socket Runtime modules available\n');
+  
   const launcherPath = join(frameworkDir, 'launcher', 'build', 'bakery-dev');
   
   if (!existsSync(launcherPath)) {
