@@ -9,6 +9,9 @@ dist/
 node_modules/
 .bun/
 deps/_build/
+deps/node-v22.10.0-darwin-arm64/
+examples/hello-world-socket/node-sea
+examples/hello-world-socket/*.blob
 
 # CMake
 CMakeCache.txt
