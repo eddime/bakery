@@ -141,7 +141,7 @@ endif()
 # ==================================================
 
 if(UNIX AND NOT APPLE)
-    # bakery-launcher-linux: Headless launcher with HTTP server + system browser (no WebView dependency)
+    # bakery-launcher-linux: Uses external bakery-assets file (universal for all games!)
     add_executable(bakery-launcher-linux bakery-launcher-linux.cpp)
     target_link_libraries(bakery-launcher-linux nlohmann_json::nlohmann_json pthread)
     
@@ -160,7 +160,8 @@ if(UNIX AND NOT APPLE)
         -finline-functions -funroll-loops
     )
     
-    if(NOT DEFINED ENV{CROSS_COMPILE})
+    # Only use -march=native if not cross-compiling
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR)
         target_compile_options(bakery-launcher-linux PRIVATE -march=native -mtune=native)
     endif()
     
@@ -170,9 +171,14 @@ if(UNIX AND NOT APPLE)
         COMMAND strip $<TARGET_FILE:bakery-launcher-linux>
         COMMENT "⚡ Stripping Linux launcher..."
     )
-
-    if(BAKERY_EMBEDDED_ASSETS)
-        target_compile_definitions(bakery-launcher-linux PRIVATE BAKERY_EMBEDDED_ASSETS)
-        target_include_directories(bakery-launcher-linux PRIVATE ${CMAKE_SOURCE_DIR}/launcher)
-    endif()
+    
+    # bakery-universal-launcher-linux: Wrapper that detects architecture
+    add_executable(bakery-universal-launcher-linux bakery-universal-launcher-linux.cpp)
+    target_link_libraries(bakery-universal-launcher-linux)
+    target_compile_options(bakery-universal-launcher-linux PRIVATE -O2)
+    
+    add_custom_command(TARGET bakery-universal-launcher-linux POST_BUILD
+        COMMAND strip $<TARGET_FILE:bakery-universal-launcher-linux>
+        COMMENT "⚡ Stripping universal launcher..."
+    )
 endif()
