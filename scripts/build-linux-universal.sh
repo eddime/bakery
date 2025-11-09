@@ -21,13 +21,9 @@ cd "$(dirname "$0")/.."
 PROJECT_NAME=$(basename "$PROJECT_DIR")
 
 # ============================================
-# 1. Embed assets ONCE (shared by all architectures)
+# 1. Create ENCRYPTED shared assets file
 # ============================================
-echo "📦 Embedding assets..."
-bun scripts/embed-assets-binary.ts "$PROJECT_DIR" launcher/embedded-assets.h
-
-# Create shared assets file
-echo "📦 Creating shared assets file..."
+echo "📦 Creating ENCRYPTED shared assets file..."
 bun scripts/embed-assets-shared.ts "$PROJECT_DIR" launcher/bakery-assets
 
 # ============================================

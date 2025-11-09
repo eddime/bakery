@@ -119,18 +119,8 @@ endif()
 # ==================================================
 
 if(WIN32)
-    # bakery-launcher-windows: WinSock2 HTTP server
-    # TODO: Rename to bakery-launcher-win.cpp and refactor to use bakery-http-server.h
-    add_executable(bakery-launcher-windows bakery-launcher-windows.cpp)
-    target_link_libraries(bakery-launcher-windows ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json)
-    
-    target_compile_options(bakery-launcher-windows PRIVATE /O2 /GL /Gy /DNDEBUG)
-    target_link_options(bakery-launcher-windows PRIVATE /LTCG /OPT:REF /OPT:ICF)
-    
-    # bakery-universal-launcher-windows: Wrapper that detects architecture
-    add_executable(bakery-universal-launcher-windows bakery-universal-launcher-windows.cpp)
-    target_link_libraries(bakery-universal-launcher-windows shlwapi)
-    target_compile_options(bakery-universal-launcher-windows PRIVATE /O2)
+    # NOTE: Windows launcher needs refactoring to use bakery-http-server.h
+    # For now, only embedded launcher is available
     
     # bakery-universal-launcher-windows-embedded: Single EXE with embedded binaries
     add_executable(bakery-universal-launcher-windows-embedded bakery-universal-launcher-windows-embedded.cpp)
