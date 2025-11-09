@@ -119,8 +119,13 @@ endif()
 # ==================================================
 
 if(WIN32)
-    # NOTE: Windows launcher needs refactoring to use bakery-http-server.h
-    # For now, only embedded launcher is available
+    # bakery-launcher-win: Uses external bakery-assets file (universal for all games!)
+    add_executable(bakery-launcher-win bakery-launcher-win.cpp)
+    target_link_libraries(bakery-launcher-win ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json ws2_32 shlwapi)
+    
+    # MAXIMUM PERFORMANCE optimizations + startup improvements
+    target_compile_options(bakery-launcher-win PRIVATE /O2 /GL /Gy /DNDEBUG)
+    target_link_options(bakery-launcher-win PRIVATE /LTCG /OPT:REF /OPT:ICF)
     
     # bakery-universal-launcher-windows-embedded: Single EXE with embedded binaries
     add_executable(bakery-universal-launcher-windows-embedded bakery-universal-launcher-windows-embedded.cpp)
@@ -133,10 +138,9 @@ endif()
 # ==================================================
 
 if(UNIX AND NOT APPLE)
-    # bakery-launcher-headless: HTTP server + system browser (no WebView dependency)
-    # TODO: Rename to bakery-launcher-linux.cpp and refactor to use bakery-http-server.h
-    add_executable(bakery-launcher-headless bakery-launcher-headless.cpp)
-    target_link_libraries(bakery-launcher-headless pthread)
+    # bakery-launcher-linux: Headless launcher with HTTP server + system browser (no WebView dependency)
+    add_executable(bakery-launcher-linux bakery-launcher-linux.cpp)
+    target_link_libraries(bakery-launcher-linux nlohmann_json::nlohmann_json pthread)
     
     if(NOT DEFINED TARGET_ARCH OR TARGET_ARCH STREQUAL "")
         execute_process(
@@ -146,19 +150,21 @@ if(UNIX AND NOT APPLE)
         )
     endif()
     
-    target_compile_options(bakery-launcher-headless PRIVATE
+    # MAXIMUM PERFORMANCE optimizations + startup improvements
+    target_compile_options(bakery-launcher-linux PRIVATE
         -O3 -flto -ffast-math -fomit-frame-pointer
         -ffunction-sections -fdata-sections -DNDEBUG
+        -finline-functions -funroll-loops
     )
     
     if(NOT DEFINED ENV{CROSS_COMPILE})
-        target_compile_options(bakery-launcher-headless PRIVATE -march=native -mtune=native)
+        target_compile_options(bakery-launcher-linux PRIVATE -march=native -mtune=native)
     endif()
     
-    target_link_options(bakery-launcher-headless PRIVATE -flto -Wl,--gc-sections -static-libstdc++ -static-libgcc)
+    target_link_options(bakery-launcher-linux PRIVATE -flto -Wl,--gc-sections -static-libstdc++ -static-libgcc)
     
-    add_custom_command(TARGET bakery-launcher-headless POST_BUILD
-        COMMAND strip $<TARGET_FILE:bakery-launcher-headless>
+    add_custom_command(TARGET bakery-launcher-linux POST_BUILD
+        COMMAND strip $<TARGET_FILE:bakery-launcher-linux>
         COMMENT "⚡ Stripping Linux launcher..."
     )
 endif()

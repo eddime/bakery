@@ -27,7 +27,7 @@ echo "📦 Creating ENCRYPTED shared assets file..."
 bun scripts/embed-assets-shared.ts "$PROJECT_DIR" launcher/bakery-assets
 
 # ============================================
-# 2. Build x86_64 binary (native on macOS x86 or cross-compile)
+# 2. Build x86_64 binary (cross-compile with musl)
 # ============================================
 echo ""
 echo "🔨 Building x86_64 binary..."
@@ -44,10 +44,14 @@ else
         echo "   Install with: brew install FiloSottile/musl-cross/musl-cross"
         exit 1
     fi
-    cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake
+    export CROSS_COMPILE=1
+    cmake .. -DCMAKE_C_COMPILER=x86_64-linux-musl-gcc \
+             -DCMAKE_CXX_COMPILER=x86_64-linux-musl-g++ \
+             -DCMAKE_SYSTEM_NAME=Linux \
+             -DCMAKE_SYSTEM_PROCESSOR=x86_64
 fi
 
-make bakery-launcher -j4
+make bakery-launcher-linux -j4
 echo "✅ x86_64 done!"
 
 cd ../..
@@ -70,10 +74,14 @@ else
         echo "   Install with: brew install FiloSottile/musl-cross/musl-cross"
         exit 1
     fi
-    cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake
+    export CROSS_COMPILE=1
+    cmake .. -DCMAKE_C_COMPILER=aarch64-linux-musl-gcc \
+             -DCMAKE_CXX_COMPILER=aarch64-linux-musl-g++ \
+             -DCMAKE_SYSTEM_NAME=Linux \
+             -DCMAKE_SYSTEM_PROCESSOR=aarch64
 fi
 
-make bakery-launcher -j4
+make bakery-launcher-linux -j4
 echo "✅ aarch64 done!"
 
 cd ../..
