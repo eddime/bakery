@@ -4,10 +4,10 @@
 set -e
 
 PROJECT_DIR="$1"
-OUTPUT_DIR="$2"
+APP_NAME="$2"
 
-if [ -z "$PROJECT_DIR" ] || [ -z "$OUTPUT_DIR" ]; then
-    echo "Usage: $0 <project_dir> <output_dir>"
+if [ -z "$PROJECT_DIR" ] || [ -z "$APP_NAME" ]; then
+    echo "Usage: $0 <project_dir> <app_name>"
     exit 1
 fi
 
@@ -17,8 +17,12 @@ echo ""
 
 cd "$(dirname "$0")/.."
 
-# Get project name
-PROJECT_NAME=$(basename "$PROJECT_DIR")
+# Output to dist/linux
+OUTPUT_DIR="$PROJECT_DIR/dist/linux"
+mkdir -p "$OUTPUT_DIR"
+
+# Get project name (use APP_NAME for consistency)
+PROJECT_NAME="$APP_NAME"
 
 # ============================================
 # 1. Create ENCRYPTED shared assets file
