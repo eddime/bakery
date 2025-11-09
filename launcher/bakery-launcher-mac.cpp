@@ -1,5 +1,5 @@
 /**
- * 🥐 Bakery Launcher - macOS (Embedded Assets)
+ * 🥐 Bakery Launcher - macOS (Shared Assets from bakery-assets file)
  * Clean, shared-code version with zero duplication
  */
 
@@ -9,19 +9,26 @@
 #include <vector>
 #include <atomic>
 #include <chrono>
+#include <sys/resource.h>  // For setpriority on macOS/Linux
 
 #include <nlohmann/json.hpp>
 #include "webview/webview.h"
-#include "webview-extensions.h"
 #include "webview-universal-performance.h"
 
 // NEW: Shared HTTP server and asset loader!
 #include "bakery-http-server.h"
 #include "bakery-asset-loader.h"
-#include "embedded-assets.h"
-#include "bakery-config-reader.cpp"
 
 using json = nlohmann::json;
+
+struct BakeryConfig {
+    struct {
+        std::string title;
+        int width;
+        int height;
+    } window;
+    std::string entrypoint;
+};
 
 std::atomic<bool> g_running{true};
 
@@ -46,7 +53,6 @@ void runServer(bakery::http::HTTPServer* server) {
     // MAXIMUM PERFORMANCE socket options
     int opt = 1;
     setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt));
-    setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
     setsockopt(fd, IPPROTO_TCP, TCP_NODELAY, &opt, sizeof(opt));
     
     // Larger buffers
@@ -81,89 +87,113 @@ void runServer(bakery::http::HTTPServer* server) {
     close(fd);
 }
 
-class SteamworksMock {
-public:
-    static std::string getPlayerName() { return "TestPlayer"; }
-    static std::string getSteamId() { return "76561198000000000"; }
-    static int getPlayerLevel() { return 42; }
-};
-
-int main() {
-    std::cout << "🥐 Bakery Launcher (macOS Embedded)" << std::endl;
+int main(int argc, char* argv[]) {
+    auto appStart = std::chrono::high_resolution_clock::now();
+    
+    std::cout << "🥐 Bakery Launcher (macOS Shared Assets)" << std::endl;
     std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
     std::cout << std::endl;
     
-    // Load embedded assets
-    bakery::assets::EmbeddedAssetLoader assetLoader;
-    assetLoader.load(bakery::embedded::ASSETS, bakery::embedded::ASSETS_COUNT);
+    // OPTIMIZATION 1: Process Priority (macOS)
+    #ifdef __APPLE__
+    // Set high priority for main process
+    setpriority(PRIO_PROCESS, 0, -10);
+    std::cout << "⚡ Process priority: HIGH" << std::endl;
+    #endif
     
-    // Load config
+    // OPTIMIZATION 2: Load assets + config in parallel
+    bakery::assets::SharedAssetLoader assetLoader;
     BakeryConfig config;
-    auto configAsset = assetLoader.getAsset("bakery.config.json");
-    if (configAsset.data) {
-        std::string configJson((const char*)configAsset.data, configAsset.size);
-        config = parseBakeryConfigFromJson(configJson);
+    std::atomic<bool> assetsLoaded{false};
+    
+    std::thread assetLoadThread([&assetLoader, &assetsLoaded]() {
+        assetsLoaded = assetLoader.load();
+    });
+    
+    // While assets load, prepare config (parallel!)
+    config.window.title = "Bakery App";
+    config.window.width = 800;
+    config.window.height = 600;
+    config.entrypoint = "index.html";
+    
+    std::string configPath = bakery::assets::getExecutableDir() + "/bakery.config.json";
+    std::ifstream configFile(configPath);
+    if (configFile) {
+        json j;
+        configFile >> j;
+        if (j.contains("window")) {
+            if (j["window"].contains("title")) config.window.title = j["window"]["title"];
+            if (j["window"].contains("width")) config.window.width = j["window"]["width"];
+            if (j["window"].contains("height")) config.window.height = j["window"]["height"];
+        }
+        if (j.contains("entrypoint")) {
+            config.entrypoint = j["entrypoint"];
+        } else if (j.contains("app") && j["app"].contains("entrypoint")) {
+            config.entrypoint = j["app"]["entrypoint"];
+        }
     }
     
-    std::cout << "🎮 " << config.title << std::endl;
+    // Wait for assets
+    assetLoadThread.join();
+    if (!assetsLoaded) {
+        std::cerr << "❌ Failed to load shared assets!" << std::endl;
+        return 1;
+    }
+    
+    std::cout << "🎮 " << config.window.title << std::endl;
     std::cout << "📄 Entrypoint: " << config.entrypoint << std::endl;
     std::cout << std::endl;
     
-    // Setup HTTP server with shared code!
+    // OPTIMIZATION 3: Setup server + Build cache in PARALLEL with WebView creation
     bakery::http::HTTPServer server(8765);
     server.setEntrypoint(config.entrypoint);
     server.setAssetProvider([&assetLoader](const std::string& path) {
         return assetLoader.getAsset(path);
     });
     
-    // Pre-cache all responses
-    auto start = std::chrono::high_resolution_clock::now();
-    server.buildCache(assetLoader.getAllPaths());
-    auto end = std::chrono::high_resolution_clock::now();
-    auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::atomic<bool> cacheReady{false};
+    std::thread cacheThread([&server, &assetLoader, &cacheReady]() {
+        auto start = std::chrono::high_resolution_clock::now();
+        server.buildCache(assetLoader.getAllPaths());
+        auto end = std::chrono::high_resolution_clock::now();
+        auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+        std::cout << "⚡ Pre-cached " << server.getCacheSize() << " responses in " << ms << "μs" << std::endl;
+        cacheReady = true;
+    });
     
-    std::cout << "⚡ Pre-cached " << server.getCacheSize() << " responses in " << ms << "μs" << std::endl;
-    std::cout << std::endl;
-    
-    // Start server in background
-    std::thread serverThread(runServer, &server);
-    serverThread.detach();
-    
-    // Create WebView
+    // While cache builds, create WebView (parallel!)
     webview::webview w(false, nullptr);
-    w.set_title(config.title.c_str());
-    w.set_size(config.width, config.height, WEBVIEW_HINT_NONE);
+    w.set_title(config.window.title.c_str());
+    w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     
     // Enable universal performance optimizations
     bakery::universal::enableUniversalPerformance(w);
-    
-    // Setup Steamworks mock
-    w.bind("steamworks_getPlayerName", [](std::string) -> std::string {
-        return "\"" + SteamworksMock::getPlayerName() + "\"";
-    });
-    
-    w.bind("steamworks_getSteamId", [](std::string) -> std::string {
-        return "\"" + SteamworksMock::getSteamId() + "\"";
-    });
-    
-    w.bind("steamworks_getPlayerLevel", [](std::string) -> std::string {
-        return std::to_string(SteamworksMock::getPlayerLevel());
-    });
     
     w.init(R"JS(
     window.Bakery = {
         version: '1.0.0',
         platform: 'macos',
-        mode: 'universal',
-        steamworks: {
-            getPlayerName: () => steamworks_getPlayerName(),
-            getSteamId: () => steamworks_getSteamId(),
-            getPlayerLevel: () => steamworks_getPlayerLevel()
-        }
+        mode: 'shared-assets'
     };
     )JS");
     
+    // Wait for cache to be ready before navigation
+    cacheThread.join();
+    
+    // OPTIMIZATION 4: Start HTTP server BEFORE navigation (faster first request)
+    std::thread serverThread(runServer, &server);
+    serverThread.detach();
+    
+    // Small delay to ensure server is listening (avoids connection refused)
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    
+    auto appReady = std::chrono::high_resolution_clock::now();
+    auto startupMs = std::chrono::duration_cast<std::chrono::milliseconds>(appReady - appStart).count();
+    
+    std::cout << "⚡ STARTUP TIME: " << startupMs << "ms (all optimizations active)" << std::endl;
     std::cout << "🚀 Launching WebView..." << std::endl;
+    std::cout << std::endl;
+    
     w.navigate("http://127.0.0.1:8765");
     w.run();
     

@@ -37,14 +37,14 @@ cmake -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_OSX_ARCHITECTURES=arm64 \
       -DBAKERY_SHARED_ASSETS=ON \
       "$FRAMEWORK_DIR/launcher"
-cmake --build . --target bakery-launcher-mac-shared -j4
+cmake --build . --target bakery-launcher-mac -j4
 
-if [ ! -f "bakery-launcher-mac-shared" ]; then
+if [ ! -f "bakery-launcher-mac" ]; then
     echo "❌ ARM64 launcher build failed!"
     exit 1
 fi
 
-mv bakery-launcher-mac-shared "$BUILD_DIR/bakery-arm64"
+mv bakery-launcher-mac "$BUILD_DIR/bakery-arm64"
 echo "✅ ARM64 launcher: $(du -h "$BUILD_DIR/bakery-arm64" | awk '{print $1}')"
 echo ""
 
@@ -58,14 +58,14 @@ cmake -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_OSX_ARCHITECTURES=x86_64 \
       -DBAKERY_SHARED_ASSETS=ON \
       "$FRAMEWORK_DIR/launcher"
-cmake --build . --target bakery-launcher-mac-shared -j4
+cmake --build . --target bakery-launcher-mac -j4
 
-if [ ! -f "bakery-launcher-mac-shared" ]; then
+if [ ! -f "bakery-launcher-mac" ]; then
     echo "❌ x64 launcher build failed!"
     exit 1
 fi
 
-mv bakery-launcher-mac-shared "$BUILD_DIR/bakery-x86_64"
+mv bakery-launcher-mac "$BUILD_DIR/bakery-x86_64"
 echo "✅ x64 launcher: $(du -h "$BUILD_DIR/bakery-x86_64" | awk '{print $1}')"
 echo ""
 

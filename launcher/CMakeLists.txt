@@ -72,11 +72,11 @@ endif()
 # ==================================================
 
 if(APPLE)
-    # bakery-launcher-mac: Embedded assets (for small games like Candy Catch)
+    # bakery-launcher-mac: Uses external bakery-assets file (universal for all games!)
     add_executable(bakery-launcher-mac bakery-launcher-mac.cpp)
     target_link_libraries(bakery-launcher-mac ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json pthread)
     
-    # MAXIMUM PERFORMANCE optimizations
+    # MAXIMUM PERFORMANCE optimizations + startup improvements
     target_compile_options(bakery-launcher-mac PRIVATE
         -O3 -flto -ffast-math -fomit-frame-pointer
         -ffunction-sections -fdata-sections -DNDEBUG
@@ -96,31 +96,6 @@ if(APPLE)
     add_custom_command(TARGET bakery-launcher-mac POST_BUILD
         COMMAND strip $<TARGET_FILE:bakery-launcher-mac>
         COMMENT "⚡ Stripping macOS launcher..."
-    )
-    
-    # bakery-launcher-mac-shared: External bakery-assets file (for large games like Runner)
-    add_executable(bakery-launcher-mac-shared bakery-launcher-mac-shared.cpp)
-    target_link_libraries(bakery-launcher-mac-shared ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json pthread)
-    
-    target_compile_options(bakery-launcher-mac-shared PRIVATE
-        -O3 -flto -ffast-math -fomit-frame-pointer
-        -ffunction-sections -fdata-sections -DNDEBUG
-        -finline-functions -funroll-loops
-    )
-    
-    if(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
-        target_compile_options(bakery-launcher-mac-shared PRIVATE -mcpu=apple-m1)
-    elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
-        target_compile_options(bakery-launcher-mac-shared PRIVATE -march=x86-64 -mtune=generic)
-    else()
-        target_compile_options(bakery-launcher-mac-shared PRIVATE -march=native -mtune=native)
-    endif()
-    
-    target_link_options(bakery-launcher-mac-shared PRIVATE -flto -Wl,-dead_strip)
-    
-    add_custom_command(TARGET bakery-launcher-mac-shared POST_BUILD
-        COMMAND strip $<TARGET_FILE:bakery-launcher-mac-shared>
-        COMMENT "⚡ Stripping macOS shared launcher..."
     )
     
     # bakery-universal-launcher: Wrapper that detects architecture and launches correct binary
