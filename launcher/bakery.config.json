@@ -1,0 +1,8 @@
+{
+  "window": {
+    "title": "🍬 Candy Catch - Powered by Bakery",
+    "width": 800,
+    "height": 600
+  },
+  "entrypoint": "index-lazy.html"
+}

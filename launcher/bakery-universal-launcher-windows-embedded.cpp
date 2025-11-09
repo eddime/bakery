@@ -152,6 +152,8 @@ int main(int argc, char* argv[]) {
         }
     }
     
+    SetEnvironmentVariableA("BAKERY_ASSET_DIR", tempDir.c_str());
+    
     // Launch architecture-specific binary
     std::string binaryPath = tempDir + "\\bakery-" + arch + ".exe";
     

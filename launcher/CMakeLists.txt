@@ -121,7 +121,10 @@ endif()
 if(WIN32)
     # bakery-launcher-win: Uses external bakery-assets file (universal for all games!)
     add_executable(bakery-launcher-win bakery-launcher-win.cpp)
-    target_link_libraries(bakery-launcher-win ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json ws2_32 shlwapi)
+    target_include_directories(bakery-launcher-win PRIVATE
+        ${CMAKE_SOURCE_DIR}/deps/webview/core/include/webview/detail/platform/windows/webview2-headers
+        ${CMAKE_SOURCE_DIR}/deps/webview/core/include)
+    target_link_libraries(bakery-launcher-win ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json ws2_32 shlwapi ole32 shell32 user32)
     
     # MAXIMUM PERFORMANCE optimizations + startup improvements
     target_compile_options(bakery-launcher-win PRIVATE /O2 /GL /Gy /DNDEBUG)
@@ -167,4 +170,9 @@ if(UNIX AND NOT APPLE)
         COMMAND strip $<TARGET_FILE:bakery-launcher-linux>
         COMMENT "⚡ Stripping Linux launcher..."
     )
+
+    if(BAKERY_EMBEDDED_ASSETS)
+        target_compile_definitions(bakery-launcher-linux PRIVATE BAKERY_EMBEDDED_ASSETS)
+        target_include_directories(bakery-launcher-linux PRIVATE ${CMAKE_SOURCE_DIR}/launcher)
+    endif()
 endif()

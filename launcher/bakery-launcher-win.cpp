@@ -10,13 +10,11 @@
 #include <atomic>
 #include <chrono>
 
-#include <windows.h>
 #include <winsock2.h>
+#include <windows.h>
 #include <ws2tcpip.h>
 #include <shlwapi.h>
-
-#pragma comment(lib, "ws2_32.lib")
-#pragma comment(lib, "shlwapi.lib")
+#include <cstdlib>
 
 #include <nlohmann/json.hpp>
 #include "webview/webview.h"
@@ -118,7 +116,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     });
     
     // OPTIMIZATION 3: Config Loading (while assets load!)
-    std::string execDir = bakery::assets::getExecutableDir();
+    const char* assetOverride = std::getenv("BAKERY_ASSET_DIR");
+    std::string execDir = assetOverride && assetOverride[0] != '\0'
+        ? std::string(assetOverride)
+        : bakery::assets::getExecutableDir();
     std::string configPath = execDir + "/bakery.config.json";
     
     std::ifstream configFile(configPath);
@@ -134,7 +135,13 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     config.window.title = configJson["window"]["title"].get<std::string>();
     config.window.width = configJson["window"]["width"].get<int>();
     config.window.height = configJson["window"]["height"].get<int>();
-    config.entrypoint = configJson["entrypoint"].get<std::string>();
+    if (configJson.contains("entrypoint")) {
+        config.entrypoint = configJson["entrypoint"].get<std::string>();
+    } else if (configJson.contains("app") && configJson["app"].contains("entrypoint")) {
+        config.entrypoint = configJson["app"]["entrypoint"].get<std::string>();
+    } else {
+        config.entrypoint = "index.html";
+    }
     
     std::cout << "🎮 " << config.window.title << std::endl;
     std::cout << "📄 Entrypoint: " << config.entrypoint << std::endl;
@@ -150,6 +157,10 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
     
     // OPTIMIZATION 4: Build HTTP Cache (parallel!)
     bakery::http::HTTPServer server(8765);
+    server.setEntrypoint(config.entrypoint);
+    server.setAssetProvider([&assetLoader](const std::string& path) {
+        return assetLoader.getAsset(path);
+    });
     std::atomic<bool> cacheReady{false};
     
     std::thread cacheThread([&server, &assetLoader, &cacheReady]() {
