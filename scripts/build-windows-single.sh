@@ -39,14 +39,12 @@ mkdir -p launcher/build-windows-x64
 cd launcher/build-windows-x64
 
 export CROSS_COMPILE=1
-WEBVIEW2_HEADERS="$FRAMEWORK_DIR/deps/webview/core/include/webview/detail/platform/windows/webview2-headers"
 cmake .. \
     -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
     -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
     -DCMAKE_SYSTEM_NAME=Windows \
     -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_CXX_FLAGS="-I$WEBVIEW2_HEADERS"
+    -DCMAKE_BUILD_TYPE=Release
 cmake --build . --target bakery-launcher-win -j4
 
 if [ ! -f "bakery-launcher-win.exe" ]; then
@@ -87,17 +85,12 @@ cd "$FRAMEWORK_DIR"
 echo ""
 echo "📦 Packing into single EXE..."
 
-# Convert config to JSON
-TEMP_CONFIG="$FRAMEWORK_DIR/launcher/bakery.config.json"
-bun scripts/convert-config-to-json.ts "$PROJECT_DIR" "$TEMP_CONFIG"
-CONFIG_PATH="$TEMP_CONFIG"
-
 PACKED_OUTPUT="$OUTPUT_DIR/${APP_NAME}.exe"
 bun scripts/pack-windows-single-exe.ts \
     launcher/build-windows-embedded/bakery-universal-launcher-windows-embedded.exe \
     launcher/build-windows-x64/bakery-launcher-win.exe \
     launcher/bakery-assets \
-    "$CONFIG_PATH" \
+    "$PROJECT_DIR/bakery.config.json" \
     "$PACKED_OUTPUT"
 
 # ============================================

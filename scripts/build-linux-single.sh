@@ -23,10 +23,11 @@ cd "$FRAMEWORK_DIR"
 echo "📦 Creating ENCRYPTED shared assets file..."
 bun scripts/embed-assets-shared.ts "$PROJECT_DIR" launcher/bakery-assets
 
-# Convert config to JSON
-TEMP_CONFIG="$FRAMEWORK_DIR/launcher/bakery.config.json"
-bun scripts/convert-config-to-json.ts "$PROJECT_DIR" "$TEMP_CONFIG"
-CONFIG_PATH="$TEMP_CONFIG"
+CONFIG_PATH="$PROJECT_DIR/bakery.config.json"
+if [ ! -f "$CONFIG_PATH" ]; then
+    echo "❌ bakery.config.json not found in project!"
+    exit 1
+fi
 
 # Helper to build a specific architecture and pack into single binary
 build_arch() {
@@ -50,7 +51,6 @@ build_arch() {
             cd "$FRAMEWORK_DIR"
             return
         fi
-        export CROSS_COMPILE=1
         cmake .. \
             -DCMAKE_C_COMPILER="$COMPILER_C" \
             -DCMAKE_CXX_COMPILER="$COMPILER_CXX" \
@@ -58,7 +58,6 @@ build_arch() {
             -DCMAKE_SYSTEM_PROCESSOR="$TARGET_NAME" \
             -DCMAKE_BUILD_TYPE=Release \
             -DBAKERY_EMBEDDED_ASSETS=ON
-        unset CROSS_COMPILE
     fi
 
     cmake --build . --target bakery-launcher-linux -j4
@@ -71,9 +70,8 @@ build_arch() {
     fi
 
     # Strip if available
-    local STRIP_TOOL="${COMPILER_C%-gcc}-strip"
-    if command -v "$STRIP_TOOL" >/dev/null 2>&1; then
-        "$STRIP_TOOL" "$BINARY_PATH" 2>/dev/null || true
+    if command -v "$COMPILER_C" >/dev/null 2>&1; then
+        "$COMPILER_C" -s "$BINARY_PATH" 2>/dev/null || true
     elif command -v strip >/dev/null 2>&1; then
         strip "$BINARY_PATH" 2>/dev/null || true
     fi

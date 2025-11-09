@@ -21,7 +21,6 @@
 
 #include <nlohmann/json.hpp>
 #include "webview/webview.h"
-#include "webview-universal-performance.h"
 
 // NEW: Shared HTTP server and asset loader!
 #include "bakery-http-server.h"
@@ -188,9 +187,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     webview::webview w(true, nullptr);
     w.set_title(config.window.title);
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
-    
-    // Apply universal performance optimizations
-    bakery::performance::applyUniversalOptimizations(w);
     
     // Inject Bakery API
     w.init(R"(

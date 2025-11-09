@@ -15,7 +15,6 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
-#include <cstdlib>
 #include "bakery-http-server.h"
 
 #ifdef __APPLE__
@@ -175,15 +174,8 @@ public:
      * Load from external bakery-assets file (with XOR decryption!)
      */
     bool load() {
-        const char* overrideDir = std::getenv("BAKERY_ASSET_DIR");
-        std::string baseDir;
-        if (overrideDir && overrideDir[0] != '\0') {
-            baseDir = overrideDir;
-            std::cout << "📦 Using overridden asset directory: " << baseDir << std::endl;
-        } else {
-            baseDir = getExecutableDir();
-        }
-        std::string assetsPath = baseDir + "/bakery-assets";
+        std::string execDir = getExecutableDir();
+        std::string assetsPath = execDir + "/bakery-assets";
         
         std::ifstream file(assetsPath, std::ios::binary);
         if (!file) {

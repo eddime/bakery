@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=runner
+Exec=AppRun
+Icon=runner
+Categories=Game;
+Terminal=false

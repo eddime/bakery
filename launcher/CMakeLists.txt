@@ -127,13 +127,23 @@ if(WIN32)
     target_link_libraries(bakery-launcher-win ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json ws2_32 shlwapi ole32 shell32 user32)
     
     # MAXIMUM PERFORMANCE optimizations + startup improvements
-    target_compile_options(bakery-launcher-win PRIVATE /O2 /GL /Gy /DNDEBUG)
-    target_link_options(bakery-launcher-win PRIVATE /LTCG /OPT:REF /OPT:ICF)
+    if(MSVC)
+        target_compile_options(bakery-launcher-win PRIVATE /O2 /GL /Gy /DNDEBUG)
+        target_link_options(bakery-launcher-win PRIVATE /LTCG /OPT:REF /OPT:ICF)
+    else()
+        # MinGW/GCC
+        target_compile_options(bakery-launcher-win PRIVATE -O3 -flto -ffast-math -DNDEBUG)
+        target_link_options(bakery-launcher-win PRIVATE -flto -Wl,--gc-sections -static-libstdc++ -static-libgcc)
+    endif()
     
     # bakery-universal-launcher-windows-embedded: Single EXE with embedded binaries
     add_executable(bakery-universal-launcher-windows-embedded bakery-universal-launcher-windows-embedded.cpp)
     target_link_libraries(bakery-universal-launcher-windows-embedded shlwapi)
-    target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE /O2)
+    if(MSVC)
+        target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE /O2)
+    else()
+        target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE -O2)
+    endif()
 endif()
 
 # ==================================================

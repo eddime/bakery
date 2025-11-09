@@ -1,8 +1,8 @@
 {
   "window": {
-    "title": "🍬 Candy Catch - Powered by Bakery",
-    "width": 800,
-    "height": 600
+    "title": "🍬 Candy Catch",
+    "width": 1280,
+    "height": 720
   },
   "entrypoint": "index.html"
 }

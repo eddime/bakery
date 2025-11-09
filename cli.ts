@@ -290,19 +290,17 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   cpSync(assetsFile, join(macOSDir, 'bakery-assets'));
 
   // Copy bakery.config.json to MacOS dir (so launcher can find it)
-  // Use the conversion script to normalize the config structure
-  const tempConfigPath = join(frameworkDir, 'launcher', 'bakery.config.json');
-  const convertScript = join(frameworkDir, 'scripts', 'convert-config-to-json.ts');
-  
-  const convertProc = Bun.spawn(['bun', convertScript, projectDir, tempConfigPath], {
-    cwd: frameworkDir,
-    stdout: 'inherit',
-    stderr: 'inherit',
-  });
-  await convertProc.exited;
-  
-  if (existsSync(tempConfigPath)) {
-    cpSync(tempConfigPath, join(macOSDir, 'bakery.config.json'));
+  const configJsonPath = join(projectDir, 'bakery.config.json');
+  if (existsSync(configJsonPath)) {
+    cpSync(configJsonPath, join(macOSDir, 'bakery.config.json'));
+  } else {
+    // Create from JS config
+    const configJsPath = join(projectDir, 'bakery.config.js');
+    if (existsSync(configJsPath)) {
+      const configModule = await import(`file://${configJsPath}`);
+      const config = configModule.default;
+      writeFileSync(join(macOSDir, 'bakery.config.json'), JSON.stringify(config, null, 2));
+    }
   }
 
   console.log('✅ Universal launcher (detects architecture)');
@@ -356,7 +354,7 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   
   if (shouldRun) {
     console.log('🚀 Running app...\n');
-    const launcher = bunSpawn(['open', '-W', appBundle], {
+    const launcher = spawn(['open', '-W', appBundle], {
       stdio: ['inherit', 'inherit', 'inherit'],
     });
     await launcher.exited;
@@ -364,44 +362,163 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
 }
 
 async function buildWindows(projectDir: string, projectConfig: any, appName: string, frameworkDir: string) {
-  console.log('🪟 Building for Windows (Single EXE)...\n');
-
-  const buildScript = join(frameworkDir, 'scripts', 'build-windows-single.sh');
-  const buildProc = Bun.spawn([buildScript, projectDir, appName], {
+  console.log('🪟 Building for Windows (Universal Binary)...\n');
+  
+  // Step 1: Embed assets
+  console.log('📦 Embedding assets...');
+  const embedScript = join(frameworkDir, 'scripts', 'embed-assets-binary.ts');
+  const embedProc = Bun.spawn(['bun', embedScript, projectDir, join(frameworkDir, 'launcher', 'embedded-assets.h')], {
     cwd: frameworkDir,
     stdout: 'inherit',
     stderr: 'inherit',
   });
-  const exitCode = await buildProc.exited;
-
-  if (exitCode !== 0) {
-    console.error('❌ Windows build failed!');
-    console.log('💡 Ensure mingw-w64 is installed (brew install mingw-w64).');
-    console.log('   WebView2 SDK is required when building on Windows.');
-    return;
-  }
-
-  console.log('\n✅ Windows build complete!');
+  await embedProc.exited;
+  
+  // Step 2: Build x64 binary
+  console.log('\n🔨 Building x64 binary...');
+  const buildDir = join(frameworkDir, 'launcher', 'build-windows-native');
+  mkdirSync(buildDir, { recursive: true });
+  
+  const cmakeProc = Bun.spawn([
+    'cmake', '..', 
+    '-DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-w64.cmake'
+  ], {
+    cwd: buildDir,
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  await cmakeProc.exited;
+  
+  const makeProc = Bun.spawn(['make', 'bakery-launcher-windows', '-j4'], {
+    cwd: buildDir,
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  await makeProc.exited;
+  
+  // Step 3: Build Universal Launcher
+  console.log('\n🔨 Building Universal Launcher...');
+  const launcherBuildDir = join(frameworkDir, 'launcher', 'build-windows-universal-launcher');
+  mkdirSync(launcherBuildDir, { recursive: true });
+  
+  const cmakeLauncherProc = Bun.spawn([
+    'cmake', '..', 
+    '-DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-w64.cmake'
+  ], {
+    cwd: launcherBuildDir,
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  await cmakeLauncherProc.exited;
+  
+  const makeLauncherProc = Bun.spawn(['make', 'bakery-universal-launcher-windows', '-j4'], {
+    cwd: launcherBuildDir,
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  await makeLauncherProc.exited;
+  
+  // Step 4: Pack into SINGLE EXE
+  console.log('\n📦 Packing into SINGLE EXE...');
+  const distDir = join(projectDir, 'dist', 'windows');
+  mkdirSync(distDir, { recursive: true });
+  
+  const x64Exe = join(buildDir, 'bakery-launcher-windows.exe');
+  const universalExe = join(launcherBuildDir, 'bakery-universal-launcher-windows.exe');
+  const outputExe = join(distDir, `${appName}.exe`);
+  
+  // Build embedded launcher
+  console.log('🔨 Building embedded launcher...');
+  const embeddedBuildDir = join(frameworkDir, 'launcher', 'build-windows-embedded');
+  mkdirSync(embeddedBuildDir, { recursive: true });
+  
+  const cmakeEmbeddedProc = Bun.spawn([
+    'cmake', '..', 
+    '-DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-w64.cmake'
+  ], {
+    cwd: embeddedBuildDir,
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  await cmakeEmbeddedProc.exited;
+  
+  const makeEmbeddedProc = Bun.spawn(['make', 'bakery-universal-launcher-windows-embedded', '-j4'], {
+    cwd: embeddedBuildDir,
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  await makeEmbeddedProc.exited;
+  
+  // Pack everything into single EXE
+  const embeddedLauncher = join(embeddedBuildDir, 'bakery-universal-launcher-windows-embedded.exe');
+  const packScript = join(frameworkDir, 'scripts', 'pack-windows-single-exe.ts');
+  
+  const packProc = Bun.spawn(['bun', packScript, embeddedLauncher, x64Exe, outputExe], {
+    cwd: frameworkDir,
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  await packProc.exited;
+  
+  console.log('\n✅ Windows SINGLE EXE complete!');
+  console.log('📦 Output:');
+  console.log(`   ${appName}.exe → ~11MB (ONE FILE!)`);
+  console.log('');
+  console.log('🎯 User sees ONE file, clicks once!');
+  console.log('   → Everything embedded (launcher + x64 binary)');
+  console.log('   → Detects CPU architecture');
+  console.log('   → Extracts & launches optimized binary!');
+  console.log('');
+  console.log('💡 Just like macOS .app - everything in one!');
 }
 
 async function buildLinux(projectDir: string, projectConfig: any, appName: string, frameworkDir: string) {
-  console.log('🐧 Building for Linux (Single Executables)...\n');
-
-  const buildScript = join(frameworkDir, 'scripts', 'build-linux-single.sh');
-  const buildProc = Bun.spawn([buildScript, projectDir, appName], {
+  console.log('🐧 Building for Linux (Headless - Cross-Platform)...\n');
+  
+  // Create dist directory
+  const distDir = join(projectDir, 'dist', 'linux');
+  mkdirSync(distDir, { recursive: true });
+  
+  // Build using headless launcher (NO GTK dependencies!)
+  const buildScript = join(frameworkDir, 'scripts', 'build-linux-crossplatform.sh');
+  const buildProc = Bun.spawn([buildScript, projectDir, distDir], {
     cwd: frameworkDir,
     stdout: 'inherit',
     stderr: 'inherit',
   });
   const exitCode = await buildProc.exited;
-
+  
   if (exitCode !== 0) {
     console.error('❌ Linux build failed!');
-    console.log('💡 Make sure musl-cross is installed (brew install FiloSottile/musl-cross/musl-cross).');
+    console.log('💡 Make sure musl-cross is installed:');
+    console.log('   brew install FiloSottile/musl-cross/musl-cross');
     return;
   }
 
-  console.log('\n✅ Linux build complete!');
+  // Check if AppDirs were created
+  const x64AppDir = join(distDir, `${appName}-x86_64.AppDir`);
+  const arm64AppDir = join(distDir, `${appName}-aarch64.AppDir`);
+  
+  console.log('\n✅ Linux AppDirs complete!');
+  console.log('📦 Output:');
+  
+  if (existsSync(x64AppDir)) {
+    console.log(`   ✓ ${appName}-x86_64.AppDir`);
+  }
+  if (existsSync(arm64AppDir)) {
+    console.log(`   ✓ ${appName}-aarch64.AppDir`);
+  }
+  
+  console.log('');
+  console.log('🎯 Each AppDir contains:');
+  console.log('   ├── AppRun               → Headless launcher');
+  console.log('   ├── .desktop file');
+  console.log('   ├── Icon');
+  console.log('   └── All assets embedded');
+  console.log('');
+  console.log('💡 Headless mode - opens system browser!');
+  console.log('   ✓ NO GTK/WebView dependencies');
+  console.log('   ✓ Cross-compile from ANY OS');
 }
 
 // ==============================================

@@ -2,7 +2,7 @@
 
 export default {
   // Default project to use when no --dir or --project is specified
-  defaultProject: "examples/candy-catch",
+  defaultProject: "examples/runner",
   
   // Example projects configuration
   projects: {
