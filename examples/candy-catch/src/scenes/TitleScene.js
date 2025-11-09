@@ -5,28 +5,15 @@ export class TitleScene extends Phaser.Scene {
     }
 
     preload() {
-        console.log('🎮 TitleScene: Loading assets...');
-        
         // Load assets
         this.load.image('background', 'assets/images/background.jpg');
         this.load.image('basket', 'assets/images/basket.png');
         this.load.atlas('candy', 'assets/spritesheets/candy_spritesheet.png', 'assets/spritesheets/candy_spritesheet.json');
         this.load.audio('pop', 'assets/audio/pop.mp3');
         this.load.audio('bg', 'assets/audio/bg.mp3');
-        
-        // Debug loading
-        this.load.on('filecomplete', (key) => {
-            console.log('✅ Loaded:', key);
-        });
-        
-        this.load.on('loaderror', (file) => {
-            console.error('❌ Failed to load:', file.src);
-        });
     }
 
     create() {
-        console.log('🎮 TitleScene: Creating scene...');
-        
         // create background
         this.add.image(0, 0, 'background').setOrigin(0, 0);
         // add in text

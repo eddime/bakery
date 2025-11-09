@@ -4,20 +4,10 @@ export default {
     title: "🍬 Candy Catch - Powered by Bakery",
     width: 800,
     height: 600,
-    minWidth: 800,
-    minHeight: 600,
     resizable: false,
-    frameless: false,
-    startFullscreen: false,
-    alwaysOnTop: false,
-    debug: true,
   },
   
-  app: {
-    name: "candy-catch",
-    version: "1.0.0",
-    entrypoint: "index-lazy.html", // Lazy load Phaser AFTER window opens!
-  },
+  entrypoint: "index.html",
   
   build: {
     outdir: "dist",
