@@ -1,5 +1,10 @@
 // 🥐 Bakery Config - Candy Catch Game
 export default {
+  app: {
+    name: "candy-catch",
+    version: "1.0.0",
+  },
+  
   window: {
     title: "🍬 Candy Catch - Powered by Bakery",
     width: 800,
