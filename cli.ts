@@ -290,17 +290,19 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   cpSync(assetsFile, join(macOSDir, 'bakery-assets'));
 
   // Copy bakery.config.json to MacOS dir (so launcher can find it)
-  const configJsonPath = join(projectDir, 'bakery.config.json');
-  if (existsSync(configJsonPath)) {
-    cpSync(configJsonPath, join(macOSDir, 'bakery.config.json'));
-  } else {
-    // Create from JS config
-    const configJsPath = join(projectDir, 'bakery.config.js');
-    if (existsSync(configJsPath)) {
-      const configModule = await import(`file://${configJsPath}`);
-      const config = configModule.default;
-      writeFileSync(join(macOSDir, 'bakery.config.json'), JSON.stringify(config, null, 2));
-    }
+  // Use the conversion script to normalize the config structure
+  const tempConfigPath = join(frameworkDir, 'launcher', 'bakery.config.json');
+  const convertScript = join(frameworkDir, 'scripts', 'convert-config-to-json.ts');
+  
+  const convertProc = Bun.spawn(['bun', convertScript, projectDir, tempConfigPath], {
+    cwd: frameworkDir,
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  await convertProc.exited;
+  
+  if (existsSync(tempConfigPath)) {
+    cpSync(tempConfigPath, join(macOSDir, 'bakery.config.json'));
   }
 
   console.log('✅ Universal launcher (detects architecture)');
