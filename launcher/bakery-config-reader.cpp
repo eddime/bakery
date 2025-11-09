@@ -1,9 +1,10 @@
 /**
  * 🥐 Bakery Config Reader
- * Reads bakery.config.js and applies settings to WebView
+ * Reads bakery.config.js/.json and applies settings to WebView
  */
 
 #include "webview/webview.h"
+#include <nlohmann/json.hpp>
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -31,6 +32,7 @@ struct BakeryConfig {
     // App metadata
     std::string appName = "bakery-app";
     std::string version = "1.0.0";
+    std::string entrypoint = "index.html"; // Relative to src/
 };
 
 // Simple JS value extractor (no full parser needed)
@@ -69,13 +71,110 @@ bool extractBool(const std::string& content, const std::string& key, bool defaul
     return (value == "true");
 }
 
+// Parse config from JSON string (for embedded configs)
+BakeryConfig parseBakeryConfigFromJson(const std::string& jsonString) {
+    BakeryConfig config;
+    
+    try {
+        nlohmann::json j = nlohmann::json::parse(jsonString);
+        
+        // Extract settings (flat config - for simple configs)
+        if (j.contains("title")) config.title = j["title"].get<std::string>();
+        if (j.contains("width")) config.width = j["width"].get<int>();
+        if (j.contains("height")) config.height = j["height"].get<int>();
+        if (j.contains("minWidth")) config.minWidth = j["minWidth"].get<int>();
+        if (j.contains("minHeight")) config.minHeight = j["minHeight"].get<int>();
+        if (j.contains("resizable")) config.resizable = j["resizable"].get<bool>();
+        if (j.contains("frameless")) config.frameless = j["frameless"].get<bool>();
+        if (j.contains("startFullscreen")) config.startFullscreen = j["startFullscreen"].get<bool>();
+        if (j.contains("alwaysOnTop")) config.alwaysOnTop = j["alwaysOnTop"].get<bool>();
+        if (j.contains("debug")) config.debug = j["debug"].get<bool>();
+        if (j.contains("entrypoint")) config.entrypoint = j["entrypoint"].get<std::string>();
+        
+        // Try window object (for nested configs like candy-catch)
+        if (j.contains("window")) {
+            auto& w = j["window"];
+            if (w.contains("title")) config.title = w["title"].get<std::string>();
+            if (w.contains("width")) config.width = w["width"].get<int>();
+            if (w.contains("height")) config.height = w["height"].get<int>();
+            if (w.contains("minWidth")) config.minWidth = w["minWidth"].get<int>();
+            if (w.contains("minHeight")) config.minHeight = w["minHeight"].get<int>();
+            if (w.contains("resizable")) config.resizable = w["resizable"].get<bool>();
+            if (w.contains("frameless")) config.frameless = w["frameless"].get<bool>();
+            if (w.contains("startFullscreen")) config.startFullscreen = w["startFullscreen"].get<bool>();
+            if (w.contains("alwaysOnTop")) config.alwaysOnTop = w["alwaysOnTop"].get<bool>();
+            if (w.contains("debug")) config.debug = w["debug"].get<bool>();
+        }
+        
+        // Try app object (for entrypoint)
+        if (j.contains("app")) {
+            auto& a = j["app"];
+            if (a.contains("entrypoint")) config.entrypoint = a["entrypoint"].get<std::string>();
+        }
+        
+    } catch (const std::exception& e) {
+        std::cerr << "Failed to parse embedded config JSON: " << e.what() << std::endl;
+    }
+    
+    return config;
+}
+
 BakeryConfig loadBakeryConfig(const std::string& projectDir) {
     BakeryConfig config;
     
+    // Try JSON first (production build)
+    std::string jsonPath = projectDir + "/bakery.config.json";
+    if (fs::exists(jsonPath)) {
+        std::cout << "📖 Reading bakery.config.json..." << std::endl;
+        std::ifstream file(jsonPath);
+        try {
+            nlohmann::json j;
+            file >> j;
+            file.close();
+            
+            // Extract window settings
+            if (j.contains("window")) {
+                auto& w = j["window"];
+                if (w.contains("title")) config.title = w["title"].get<std::string>();
+                if (w.contains("width")) config.width = w["width"].get<int>();
+                if (w.contains("height")) config.height = w["height"].get<int>();
+                if (w.contains("minWidth")) config.minWidth = w["minWidth"].get<int>();
+                if (w.contains("minHeight")) config.minHeight = w["minHeight"].get<int>();
+                if (w.contains("resizable")) config.resizable = w["resizable"].get<bool>();
+                if (w.contains("frameless")) config.frameless = w["frameless"].get<bool>();
+                if (w.contains("startFullscreen")) config.startFullscreen = w["startFullscreen"].get<bool>();
+                if (w.contains("alwaysOnTop")) config.alwaysOnTop = w["alwaysOnTop"].get<bool>();
+                if (w.contains("debug")) config.debug = w["debug"].get<bool>();
+            }
+            
+            // Extract app settings
+            if (j.contains("app")) {
+                auto& a = j["app"];
+                if (a.contains("name")) config.appName = a["name"].get<std::string>();
+                if (a.contains("version")) config.version = a["version"].get<std::string>();
+                if (a.contains("entrypoint")) config.entrypoint = a["entrypoint"].get<std::string>();
+            }
+            
+            std::cout << "✅ Config loaded:" << std::endl;
+            std::cout << "   Title: " << config.title << std::endl;
+            std::cout << "   Size: " << config.width << "x" << config.height << std::endl;
+            std::cout << "   MinSize: " << config.minWidth << "x" << config.minHeight << std::endl;
+            std::cout << "   Resizable: " << (config.resizable ? "yes" : "no") << std::endl;
+            std::cout << "   Frameless: " << (config.frameless ? "yes" : "no") << std::endl;
+            std::cout << "   StartFullscreen: " << (config.startFullscreen ? "yes" : "no") << std::endl;
+            std::cout << "   AlwaysOnTop: " << (config.alwaysOnTop ? "yes" : "no") << std::endl;
+            
+            return config;
+        } catch (const std::exception& e) {
+            std::cerr << "⚠️  Failed to parse JSON: " << e.what() << std::endl;
+        }
+    }
+    
+    // Fall back to JS parsing for dev mode
     std::string configPath = projectDir + "/bakery.config.js";
     
     if (!fs::exists(configPath)) {
-        std::cout << "⚠️  No bakery.config.js found, using defaults" << std::endl;
+        std::cout << "⚠️  No bakery.config found, using defaults" << std::endl;
         return config;
     }
     

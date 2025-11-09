@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Minimal Test</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(45deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            font-family: Arial, sans-serif;
+            color: white;
+        }
+        
+        #info {
+            text-align: center;
+        }
+        
+        #fps {
+            font-size: 72px;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        #box {
+            width: 100px;
+            height: 100px;
+            background: white;
+            margin: 20px auto;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .metric {
+            font-size: 18px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="info">
+        <h1>⚡ Bakery Performance Test</h1>
+        <div id="fps">-- FPS</div>
+        <div id="box"></div>
+        <div class="metric">Start Time: <span id="startTime">--</span>ms</div>
+        <div class="metric">Memory: <span id="memory">--</span> MB</div>
+        <div class="metric">Platform: <span id="platform">--</span></div>
+        <div class="metric">GPU: <span id="gpu">--</span></div>
+    </div>
+
+    <script>
+        const startTime = performance.now();
+        
+        // FPS Counter
+        let frames = 0;
+        let lastTime = performance.now();
+        let fps = 0;
+        
+        function updateFPS() {
+            frames++;
+            const now = performance.now();
+            const delta = now - lastTime;
+            
+            if (delta >= 1000) {
+                fps = Math.round(frames * 1000 / delta);
+                document.getElementById('fps').textContent = fps + ' FPS';
+                frames = 0;
+                lastTime = now;
+            }
+            
+            requestAnimationFrame(updateFPS);
+        }
+        updateFPS();
+        
+        // Update metrics
+        function updateMetrics() {
+            // Start time
+            document.getElementById('startTime').textContent = 
+                Math.round(performance.now() - startTime);
+            
+            // Memory (if available)
+            if (performance.memory) {
+                const mb = (performance.memory.usedJSHeapSize / 1048576).toFixed(1);
+                document.getElementById('memory').textContent = mb;
+            } else {
+                document.getElementById('memory').textContent = 'N/A';
+            }
+            
+            // Platform
+            document.getElementById('platform').textContent = navigator.platform;
+            
+            // GPU
+            const canvas = document.createElement('canvas');
+            const gl = canvas.getContext('webgl');
+            if (gl) {
+                const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                if (debugInfo) {
+                    document.getElementById('gpu').textContent = 
+                        gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                } else {
+                    document.getElementById('gpu').textContent = 'WebGL Available';
+                }
+            } else {
+                document.getElementById('gpu').textContent = 'WebGL NOT Available';
+            }
+        }
+        
+        updateMetrics();
+        setInterval(updateMetrics, 1000);
+        
+        console.log('⚡ Minimal test loaded in:', Math.round(performance.now() - startTime), 'ms');
+        console.log('🎮 User Agent:', navigator.userAgent);
+        console.log('💾 Memory:', performance.memory);
+    </script>
+</body>
+</html>
+

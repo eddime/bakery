@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy-Catch</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            line-height: 1;
+            font-family: Arial, sans-serif;
+            background-color: #040218;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        #loading {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+        
+        #loading h1 {
+            color: white;
+            font-size: 48px;
+            margin-bottom: 20px;
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        
+        #loading p {
+            color: rgba(255,255,255,0.8);
+            font-size: 18px;
+        }
+        
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px 0;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+    </style>
+</head>
+<body>
+    <div id="loading">
+        <h1>🍬 Candy Catch</h1>
+        <div class="spinner"></div>
+        <p>Loading game...</p>
+    </div>
+    <div id="game-container"></div>
+    
+    <script>
+        // Hide loading screen when Phaser is ready
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                var loading = document.getElementById('loading');
+                if (loading && typeof Phaser !== 'undefined') {
+                    loading.style.display = 'none';
+                }
+            }, 1000);
+        });
+    </script>
+    <script src="./phaser.js"></script>
+    <script src="./game-bundled.js"></script>
+</body>
+</html>
+

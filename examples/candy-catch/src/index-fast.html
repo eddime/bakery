@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy-Catch</title>
+    <style>
+        *,
+        *::before,
+        *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            width: 100%;
+            height: 100%;
+        }
+
+        body {
+            line-height: 1;
+            font-family: Arial, sans-serif;
+            background-color: #040218;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+    
+    <script>
+        console.log('⚡ FAST LOADING MODE - Using Blob URLs');
+        
+        // Fetch and create Blob URL for Phaser (MUCH faster!)
+        fetch('./phaser.js')
+            .then(r => r.blob())
+            .then(blob => {
+                const blobUrl = URL.createObjectURL(blob);
+                const script = document.createElement('script');
+                script.src = blobUrl;
+                script.onload = function() {
+                    console.log('✅ Phaser loaded via Blob URL!');
+                    URL.revokeObjectURL(blobUrl);
+                    
+                    // Now load game
+                    fetch('./game-bundled.js')
+                        .then(r => r.blob())
+                        .then(blob => {
+                            const blobUrl = URL.createObjectURL(blob);
+                            const script = document.createElement('script');
+                            script.src = blobUrl;
+                            script.onload = function() {
+                                console.log('✅ Game loaded via Blob URL!');
+                                URL.revokeObjectURL(blobUrl);
+                            };
+                            document.head.appendChild(script);
+                        });
+                };
+                document.head.appendChild(script);
+            })
+            .catch(e => console.error('❌ Loading failed:', e));
+    </script>
+</body>
+</html>
+

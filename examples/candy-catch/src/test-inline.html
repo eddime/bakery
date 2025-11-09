@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Script Load Test</title>
+    <style>
+        body {
+            background: #222;
+            color: white;
+            font-family: monospace;
+            padding: 20px;
+        }
+        .status {
+            background: #444;
+            padding: 20px;
+            margin: 10px 0;
+            border-left: 5px solid #00ff00;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Script Load Test</h1>
+    <div id="status"></div>
+    
+    <script>
+        console.log('=== INLINE SCRIPT RUNNING ===');
+        
+        var statusDiv = document.getElementById('status');
+        function log(msg) {
+            console.log(msg);
+            statusDiv.innerHTML += '<div class="status">' + msg + '</div>';
+        }
+        
+        log('✅ Inline JavaScript is working!');
+        log('📦 Loading Phaser...');
+        
+        // Manually load Phaser
+        var phaserScript = document.createElement('script');
+        phaserScript.src = './phaser.js';
+        phaserScript.onload = function() {
+            log('✅ Phaser loaded! Version: ' + (typeof Phaser !== 'undefined' ? Phaser.VERSION : 'unknown'));
+            log('🎮 Loading game...');
+            
+            // Load game script
+            var gameScript = document.createElement('script');
+            gameScript.src = './game-bundled.js';
+            gameScript.onload = function() {
+                log('✅ Game script loaded!');
+            };
+            gameScript.onerror = function(e) {
+                log('❌ Game script FAILED: ' + e);
+            };
+            document.head.appendChild(gameScript);
+        };
+        phaserScript.onerror = function(e) {
+            log('❌ Phaser FAILED to load: ' + e);
+        };
+        
+        log('📡 Appending Phaser script tag...');
+        document.head.appendChild(phaserScript);
+    </script>
+</body>
+</html>
+

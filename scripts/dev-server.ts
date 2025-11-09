@@ -1,74 +1,111 @@
 #!/usr/bin/env bun
 /**
- * 🥐 Bakery Development Server
- * Serves app files for native WebView during development
+ * 🥐 Bakery Dev Server
+ * Ultra-fast development server (no compilation needed!)
+ * 
+ * Features:
+ * - Instant startup (<50ms)
+ * - Hot reload ready
+ * - Serves files directly from src/
+ * - No asset embedding needed
  */
 
-import { serve } from "bun";
-import { readFileSync, existsSync } from "fs";
-import { join, extname } from "path";
+import { existsSync } from 'fs';
+import { join } from 'path';
 
-const projectDir = process.argv[2] || ".";
-const port = parseInt(process.argv[3] || "3000");
+const projectDir = process.argv[2] || process.cwd();
+const srcDir = join(projectDir, 'src');
+const assetsDir = join(projectDir, 'assets');
+const nodeModulesDir = join(projectDir, 'node_modules');
 
-const MIME_TYPES: Record<string, string> = {
-  ".html": "text/html",
-  ".css": "text/css",
-  ".js": "application/javascript",
-  ".json": "application/json",
-  ".png": "image/png",
-  ".jpg": "image/jpeg",
-  ".jpeg": "image/jpeg",
-  ".svg": "image/svg+xml",
-  ".ico": "image/x-icon",
-  ".woff": "font/woff",
-  ".woff2": "font/woff2",
-  ".ttf": "font/ttf",
-  ".eot": "application/vnd.ms-fontobject",
-};
-
-serve({
-  port,
-  fetch(req) {
-    const url = new URL(req.url);
-    let pathname = url.pathname;
-    
-    // Default to index.html
-    if (pathname === "/" || pathname === "") {
-      pathname = "/index.html";
+// Load bakery.config.js to get entrypoint
+let entrypoint = 'index.html';
+const configPath = join(projectDir, 'bakery.config.js');
+if (existsSync(configPath)) {
+  try {
+    const config = await import(configPath);
+    entrypoint = config.default?.app?.entrypoint || 'index.html';
+    // Remove 'src/' prefix if present
+    if (entrypoint.startsWith('src/')) {
+      entrypoint = entrypoint.substring(4);
     }
+  } catch (err) {
+    console.warn('⚠️  Could not load bakery.config.js, using default entrypoint');
+  }
+}
+
+console.log('⚡ Bakery Dev Server');
+console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+console.log('📁 Project:', projectDir);
+console.log('🌐 Serving:', srcDir);
+console.log('📄 Entrypoint:', entrypoint);
+console.log('');
+
+const server = Bun.serve({
+  port: 8765,
+  async fetch(req) {
+    const url = new URL(req.url);
+    let path = url.pathname === '/' ? `/${entrypoint}` : url.pathname;
     
     // Remove leading slash
-    const filePath = join(projectDir, "src", pathname.slice(1));
+    if (path.startsWith('/')) path = path.substring(1);
     
-    console.log(`📄 ${req.method} ${pathname} → ${filePath}`);
+    // Try multiple locations
+    let fullPath: string | null = null;
     
-    // Check if file exists
-    if (!existsSync(filePath)) {
-      console.log(`   ❌ Not found`);
-      return new Response("Not Found", { status: 404 });
+    // 1. Try src/
+    let testPath = join(srcDir, path);
+    if (existsSync(testPath)) {
+      fullPath = testPath;
     }
     
-    // Read file
-    const content = readFileSync(filePath);
-    const ext = extname(filePath);
-    const mimeType = MIME_TYPES[ext] || "application/octet-stream";
+    // 2. Try assets/
+    if (!fullPath) {
+      testPath = join(assetsDir, path);
+      if (existsSync(testPath)) {
+        fullPath = testPath;
+      }
+    }
     
-    console.log(`   ✅ ${mimeType} (${(content.length / 1024).toFixed(1)} KB)`);
+    // 3. Try node_modules/ (for phaser.js etc)
+    if (!fullPath && path.includes('phaser')) {
+      testPath = join(nodeModulesDir, 'phaser', 'dist', path);
+      if (existsSync(testPath)) {
+        fullPath = testPath;
+      }
+    }
     
-    return new Response(content, {
-      headers: {
-        "Content-Type": mimeType,
-        "Cache-Control": "no-cache",
-        "Access-Control-Allow-Origin": "*",
-      },
-    });
+    if (!fullPath) {
+      console.log('❌ Not found:', path);
+      return new Response('Not Found: ' + path, { status: 404 });
+    }
+    
+    console.log('✅ Serving:', path);
+    
+    try {
+      const file = Bun.file(fullPath);
+      return new Response(file);
+    } catch (error) {
+      console.error('❌ Error:', error);
+      return new Response('Error', { status: 500 });
+    }
   },
 });
 
-console.log(`🥐 Bakery Dev Server`);
-console.log(`📁 Project: ${projectDir}`);
-console.log(`🌐 Listening on http://localhost:${port}`);
-console.log(`💡 Serving files from: ${join(projectDir, "src")}`);
-console.log(``);
+console.log(`⚡ Dev server: http://localhost:${server.port}`);
+console.log('✅ Ready! (Press Ctrl+C to stop)');
+console.log('');
 
+// Keep process alive
+process.on('SIGTERM', () => {
+  console.log('\n👋 Dev server shutting down...');
+  process.exit(0);
+});
+
+process.on('SIGINT', () => {
+  console.log('\n👋 Dev server shutting down...');
+  process.exit(0);
+});
+
+// Prevent process from exiting
+await new Promise(() => {});

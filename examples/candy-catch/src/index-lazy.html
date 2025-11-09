@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Candy Catch - Powered by Bakery</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        #game-container {
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+        
+    </style>
+</head>
+<body>
+    <div id="game-container"></div>
+
+    <script>
+        console.log('⚡ Window opened instantly!');
+        const startTime = performance.now();
+        
+        // Load Phaser.js ASYNCHRONOUSLY in background
+        async function loadPhaser() {
+            try {
+                // Fetch phaser.js from embedded assets
+                const response = await fetch('./phaser.js');
+                const code = await response.text();
+                
+                // Execute Phaser code
+                eval(code);
+                
+                console.log('✅ Phaser loaded in:', Math.round(performance.now() - startTime), 'ms');
+                
+                // Load game code
+                const gameScript = document.createElement('script');
+                gameScript.src = './game-bundled.js';
+                gameScript.onload = () => {
+                    console.log('✅ Game ready!');
+                };
+                document.head.appendChild(gameScript);
+                
+            } catch (error) {
+                console.error('❌ Failed to load Phaser:', error);
+            }
+        }
+        
+        // Start loading AFTER window is shown
+        setTimeout(loadPhaser, 100);
+    </script>
+</body>
+</html>
+

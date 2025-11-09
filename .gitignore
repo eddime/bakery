@@ -1,16 +1,31 @@
-# 🥐 Bakery - Socket Runtime Edition
-
-# Build outputs
+# Build directories
 build/
+build-*/
 dist/
-*.dmg
-*.deb
-*.rpm
-*.zip
-*.tar.gz
+*.app
+*.exe
 
 # Dependencies
 node_modules/
+.bun/
+deps/_build/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+*.cmake
+
+# Compiled binaries
+*.o
+*.a
+*.so
+*.dylib
+*.dll
+
+# Embedded assets (generated)
+launcher/embedded-assets.h
 
 # IDE
 .vscode/
@@ -19,20 +34,14 @@ node_modules/
 *.swo
 *~
 
-# OS
+# macOS
 .DS_Store
-Thumbs.db
+*.dSYM/
 
 # Logs
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
 
-# Temporary files
-*.tmp
-.cache/
-
-# Socket Runtime specific
-examples/*/build/
-examples/*/socket.ini.bak
+# Environment
+.env
+.env.local

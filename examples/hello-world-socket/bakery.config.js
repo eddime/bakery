@@ -24,7 +24,7 @@ export default {
     description: "Hello World app built with Bakery Framework",
     author: "Bakery Team",
   },
-
+    
   // Build settings
   build: {
     outdir: "dist",          // Output directory

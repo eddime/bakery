@@ -1,59 +1,58 @@
 #!/usr/bin/env bun
-// 🥐 Bakery Asset Embedding
-// Converts all src/ files to Base64 data URLs and creates a single embedded HTML
+/**
+ * 🥐 Bakery Asset Embedder
+ * Converts all project assets into a C++ header file for binary embedding
+ */
 
-import { readFileSync, writeFileSync, existsSync, mkdirSync, readdirSync, statSync } from 'fs';
-import { join, extname, relative, dirname } from 'path';
+import { readdirSync, statSync, readFileSync, writeFileSync } from 'fs';
+import { join, relative, extname } from 'path';
 
-interface EmbeddedAssets {
-  [path: string]: string;
+interface EmbeddedFile {
+  path: string;
+  data: string; // Base64 encoded
+  size: number;
+  mimeType: string;
 }
 
-// MIME types for common file extensions
-const MIME_TYPES: Record<string, string> = {
-  '.html': 'text/html',
-  '.css': 'text/css',
-  '.js': 'application/javascript',
-  '.json': 'application/json',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.gif': 'image/gif',
-  '.svg': 'image/svg+xml',
-  '.ico': 'image/x-icon',
-  '.woff': 'font/woff',
-  '.woff2': 'font/woff2',
-  '.ttf': 'font/ttf',
-};
-
-function getMimeType(filepath: string): string {
-  const ext = extname(filepath).toLowerCase();
-  return MIME_TYPES[ext] || 'application/octet-stream';
+function getMimeType(filePath: string): string {
+  const ext = extname(filePath).toLowerCase();
+  const mimeTypes: Record<string, string> = {
+    '.html': 'text/html',
+    '.css': 'text/css',
+    '.js': 'application/javascript',
+    '.json': 'application/json',
+    '.png': 'image/png',
+    '.jpg': 'image/jpeg',
+    '.jpeg': 'image/jpeg',
+    '.gif': 'image/gif',
+    '.svg': 'image/svg+xml',
+    '.webp': 'image/webp',
+    '.ico': 'image/x-icon',
+    '.woff': 'font/woff',
+    '.woff2': 'font/woff2',
+    '.ttf': 'font/ttf',
+    '.mp3': 'audio/mpeg',
+    '.ogg': 'audio/ogg',
+    '.wav': 'audio/wav',
+    '.mp4': 'video/mp4',
+    '.webm': 'video/webm',
+  };
+  return mimeTypes[ext] || 'application/octet-stream';
 }
 
-function fileToDataUrl(filepath: string): string {
-  const content = readFileSync(filepath);
-  const base64 = content.toString('base64');
-  const mimeType = getMimeType(filepath);
-  return `data:${mimeType};base64,${base64}`;
-}
-
-function getAllFiles(dir: string, baseDir: string = dir): string[] {
+function getAllFiles(dir: string, baseDir: string): string[] {
   const files: string[] = [];
   
-  if (!existsSync(dir)) {
-    return files;
-  }
-
-  const entries = readdirSync(dir);
-  
-  for (const entry of entries) {
-    const fullPath = join(dir, entry);
+  const items = readdirSync(dir);
+  for (const item of items) {
+    const fullPath = join(dir, item);
     const stat = statSync(fullPath);
     
     if (stat.isDirectory()) {
+      // Skip node_modules, .git, etc.
+      if (item === 'node_modules' || item === '.git' || item === 'dist') continue;
       files.push(...getAllFiles(fullPath, baseDir));
-    } else if (stat.isFile()) {
+    } else {
       files.push(fullPath);
     }
   }
@@ -61,123 +60,108 @@ function getAllFiles(dir: string, baseDir: string = dir): string[] {
   return files;
 }
 
-function embedAssets(srcDir: string, outputDir: string) {
-  console.log('🔒 Embedding assets for production...');
+function embedAssets(projectDir: string, outputFile: string) {
+  console.log('🥐 Bakery Asset Embedder');
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+  console.log('📁 Project:', projectDir);
   
-  if (!existsSync(srcDir)) {
-    console.error(`❌ Source directory not found: ${srcDir}`);
-    process.exit(1);
-  }
-
-  // Create output directory
-  if (!existsSync(outputDir)) {
-    mkdirSync(outputDir, { recursive: true });
-  }
-
   // Get all files from src/
-  const files = getAllFiles(srcDir);
+  const srcDir = join(projectDir, 'src');
+  const allFiles = getAllFiles(srcDir, srcDir);
   
-  if (files.length === 0) {
-    console.error(`❌ No files found in ${srcDir}`);
-    process.exit(1);
-  }
-
-  console.log(`📦 Found ${files.length} files to embed`);
-
-  // Convert all files to data URLs
-  const assets: EmbeddedAssets = {};
-  let indexHtmlPath: string | null = null;
-  let indexHtmlContent: string | null = null;
-
-  for (const file of files) {
-    const relativePath = '/' + relative(srcDir, file).replace(/\\/g, '/');
+  console.log(`📦 Found ${allFiles.length} files to embed\n`);
+  
+  const embeddedFiles: EmbeddedFile[] = [];
+  let totalSize = 0;
+  
+  for (const filePath of allFiles) {
+    const relativePath = relative(srcDir, filePath);
+    const content = readFileSync(filePath);
+    const base64 = content.toString('base64');
+    const mimeType = getMimeType(filePath);
     
-    // Special handling for index.html
-    if (file.endsWith('index.html')) {
-      indexHtmlPath = file;
-      indexHtmlContent = readFileSync(file, 'utf8');
-      console.log(`  📄 ${relativePath} (entry point)`);
-      continue;
-    }
+    embeddedFiles.push({
+      path: relativePath,
+      data: base64,
+      size: content.length,
+      mimeType,
+    });
+    
+    totalSize += content.length;
+    console.log(`   ✅ ${relativePath} (${(content.length / 1024).toFixed(2)} KB)`);
+  }
+  
+  console.log(`\n📊 Total: ${(totalSize / 1024 / 1024).toFixed(2)} MB\n`);
+  
+  // Generate C++ header
+  let cppHeader = `// Auto-generated by Bakery Asset Embedder
+// DO NOT EDIT THIS FILE MANUALLY
 
-    const dataUrl = fileToDataUrl(file);
-    assets[relativePath] = dataUrl;
-    console.log(`  📦 ${relativePath} → ${(dataUrl.length / 1024).toFixed(1)}KB`);
+#ifndef BAKERY_EMBEDDED_ASSETS_H
+#define BAKERY_EMBEDDED_ASSETS_H
+
+#include <string>
+#include <map>
+#include <vector>
+
+namespace bakery {
+namespace embedded {
+
+struct Asset {
+    const char* path;
+    const char* data; // Base64 encoded
+    size_t size;
+    const char* mimeType;
+};
+
+`;
+
+  // Add asset data
+  for (let i = 0; i < embeddedFiles.length; i++) {
+    const file = embeddedFiles[i];
+    cppHeader += `// ${file.path} (${(file.size / 1024).toFixed(2)} KB)\n`;
+    cppHeader += `static const char ASSET_${i}_PATH[] = "${file.path.replace(/\\/g, '/')}";\n`;
+    cppHeader += `static const char ASSET_${i}_DATA[] = "${file.data}";\n`;
+    cppHeader += `static const char ASSET_${i}_MIME[] = "${file.mimeType}";\n\n`;
   }
 
-  if (!indexHtmlPath || !indexHtmlContent) {
-    console.error('❌ index.html not found in src/');
-    process.exit(1);
+  // Add asset array
+  cppHeader += `static const Asset ASSETS[] = {\n`;
+  for (let i = 0; i < embeddedFiles.length; i++) {
+    const file = embeddedFiles[i];
+    cppHeader += `    { ASSET_${i}_PATH, ASSET_${i}_DATA, ${file.size}, ASSET_${i}_MIME },\n`;
   }
-
-  // Generate embedded HTML with all assets inline
-  const embeddedHtml = generateEmbeddedHtml(indexHtmlContent, assets);
+  cppHeader += `};\n\n`;
   
-  // Write embedded HTML
-  const outputPath = join(outputDir, 'index.html');
-  writeFileSync(outputPath, embeddedHtml);
+  cppHeader += `static const size_t ASSETS_COUNT = ${embeddedFiles.length};\n\n`;
   
-  const outputSize = (embeddedHtml.length / 1024).toFixed(1);
-  console.log(`\n✅ Embedded HTML created: ${outputPath}`);
-  console.log(`📊 Size: ${outputSize}KB`);
-  console.log(`🔒 Assets are now embedded in the binary!`);
+  // Add helper function to get asset by path
+  cppHeader += `inline const Asset* getAsset(const std::string& path) {
+    for (size_t i = 0; i < ASSETS_COUNT; i++) {
+        if (path == ASSETS[i].path) {
+            return &ASSETS[i];
+        }
+    }
+    return nullptr;
 }
 
-function generateEmbeddedHtml(originalHtml: string, assets: EmbeddedAssets): string {
-  let html = originalHtml;
+} // namespace embedded
+} // namespace bakery
 
-  // Replace external CSS links with inline styles
-  html = html.replace(/<link[^>]+rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi, (match, href) => {
-    const dataUrl = assets[href];
-    if (dataUrl) {
-      // Extract CSS from data URL
-      const base64Content = dataUrl.split(',')[1];
-      const cssContent = Buffer.from(base64Content, 'base64').toString('utf8');
-      return `<style>${cssContent}</style>`;
-    }
-    return match;
-  });
+#endif // BAKERY_EMBEDDED_ASSETS_H
+`;
 
-  // Replace external JS with inline scripts
-  html = html.replace(/<script[^>]+src=["']([^"']+)["'][^>]*><\/script>/gi, (match, src) => {
-    const dataUrl = assets[src];
-    if (dataUrl) {
-      // Extract JS from data URL
-      const base64Content = dataUrl.split(',')[1];
-      const jsContent = Buffer.from(base64Content, 'base64').toString('utf8');
-      // Preserve type="module" if it exists
-      const typeMatch = match.match(/type=["']([^"']+)["']/);
-      const type = typeMatch ? ` type="${typeMatch[1]}"` : '';
-      return `<script${type}>\n${jsContent}\n</script>`;
-    }
-    return match;
-  });
-
-  // Replace image sources with data URLs
-  html = html.replace(/<img[^>]+src=["']([^"']+)["'][^>]*>/gi, (match, src) => {
-    const dataUrl = assets[src];
-    if (dataUrl) {
-      return match.replace(src, dataUrl);
-    }
-    return match;
-  });
-
-  // Add embedded assets map for runtime loading (if needed)
-  const assetsJson = JSON.stringify(assets, null, 2);
-  html = html.replace('</head>', `
-  <script>
-    // 🥐 Bakery Embedded Assets
-    window.__BAKERY_EMBEDDED_ASSETS__ = ${assetsJson};
-  </script>
-</head>`);
-
-  return html;
+  // Write header file
+  writeFileSync(outputFile, cppHeader);
+  console.log(`✅ Generated: ${outputFile}\n`);
+  console.log(`📦 ${embeddedFiles.length} files embedded into binary`);
+  console.log(`📊 Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB\n`);
 }
 
-// CLI Usage
-const args = process.argv.slice(2);
-const srcDir = args[0] || './src';
-const outputDir = args[1] || './dist-embedded';
+// CLI
+const projectDir = process.argv[2] || process.cwd();
+const outputFile = process.argv[3] || join(projectDir, 'embedded-assets.h');
 
-embedAssets(srcDir, outputDir);
+embedAssets(projectDir, outputFile);
+
 
