@@ -3,7 +3,7 @@
  * 
  * Loads assets from:
  * 1. Embedded C++ arrays (embedded-assets.h)
- * 2. External binary file (bakery-assets)
+ * 2. External binary file (bakery-assets) 🔒 WITH XOR DECRYPTION
  */
 
 #ifndef BAKERY_ASSET_LOADER_H
@@ -14,6 +14,7 @@
 #include <unordered_map>
 #include <iostream>
 #include <fstream>
+#include <cstring>
 #include "bakery-http-server.h"
 
 #ifdef __APPLE__
@@ -27,6 +28,18 @@
 
 namespace bakery {
 namespace assets {
+
+/**
+ * 🔒 XOR Decryption with multi-key rotation (matches TypeScript version!)
+ */
+inline void xorDecrypt(uint8_t* data, size_t len, const uint8_t* key, size_t keyLen) {
+    // Multi-key rotation for better security (same algorithm as TypeScript)
+    for (size_t i = 0; i < len; i++) {
+        // Use position-dependent key rotation
+        size_t keyIdx = (i + (i >> 8)) % keyLen;
+        data[i] ^= key[keyIdx];
+    }
+}
 
 /**
  * Get executable directory (cross-platform)
@@ -158,7 +171,7 @@ private:
     
 public:
     /**
-     * Load from external bakery-assets file
+     * Load from external bakery-assets file (with XOR decryption!)
      */
     bool load() {
         std::string execDir = getExecutableDir();
@@ -170,7 +183,22 @@ public:
             return false;
         }
         
-        // Read header (asset count)
+        // 🔒 Read magic header (8 bytes: "BAKERY1\0")
+        char magicHeader[8];
+        file.read(magicHeader, 8);
+        
+        if (std::memcmp(magicHeader, "BAKERY1\0", 8) != 0) {
+            std::cerr << "❌ Invalid bakery-assets file (wrong magic header)" << std::endl;
+            return false;
+        }
+        
+        std::cout << "🔐 Encrypted assets detected" << std::endl;
+        
+        // 🔑 Read encryption key (32 bytes)
+        uint8_t encryptionKey[32];
+        file.read((char*)encryptionKey, 32);
+        
+        // Read file count
         uint32_t fileCount;
         file.read((char*)&fileCount, 4);
         
@@ -216,11 +244,15 @@ public:
                 continue;
             }
             
-            // Read data
+            // Read ENCRYPTED data
             AssetData asset;
             asset.path = path;
             asset.data.resize(static_cast<size_t>(size64));
             file.read((char*)asset.data.data(), asset.data.size());
+            
+            // 🔓 Decrypt the data using XOR with the embedded key!
+            xorDecrypt(asset.data.data(), asset.data.size(), encryptionKey, 32);
+            
             asset.mimeType = http::getMimeType(path);
             
             if (!file) {
