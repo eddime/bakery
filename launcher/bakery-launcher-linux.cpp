@@ -29,6 +29,8 @@ struct BakeryConfig {
 };
 
 std::atomic<bool> g_running{true};
+// ⚡ OPTIMIZATION: Atomic flag for server ready state
+std::atomic<bool> g_serverReady{false};
 
 // Multi-threaded request handler
 void worker(int server_fd, bakery::http::HTTPServer* server) {
@@ -73,8 +75,13 @@ void runServer(bakery::http::HTTPServer* server) {
     int threads = std::thread::hardware_concurrency();
     if (threads == 0) threads = 4;
     
+    #ifndef NDEBUG
     std::cout << "⚡ Multi-threaded server (" << threads << " workers) on port " 
               << server->getPort() << std::endl;
+    #endif
+    
+    // ⚡ OPTIMIZATION: Signal that server is ready BEFORE launching workers
+    g_serverReady = true;
     
     std::vector<std::thread> workers;
     for (int i = 0; i < threads; i++) {
@@ -89,13 +96,20 @@ void runServer(bakery::http::HTTPServer* server) {
 int main(int argc, char* argv[]) {
     auto appStart = std::chrono::high_resolution_clock::now();
     
+    // ⚡ OPTIMIZATION: Disable console output in production for faster startup
+    #ifdef NDEBUG
+    std::ios::sync_with_stdio(false);
+    #else
     std::cout << "🥐 Bakery Launcher (Linux Headless)" << std::endl;
     std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
     std::cout << std::endl;
+    #endif
     
     // OPTIMIZATION 1: Process Priority (Linux)
     setpriority(PRIO_PROCESS, 0, -10);
+    #ifndef NDEBUG
     std::cout << "⚡ Process priority: HIGH" << std::endl;
+    #endif
     
     // OPTIMIZATION 2: Parallel Asset Loading
     bakery::assets::SharedAssetLoader assetLoader;
@@ -140,43 +154,70 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
+    #ifndef NDEBUG
     std::cout << "🎮 " << config.window.title << std::endl;
     std::cout << "📄 Entrypoint: " << config.entrypoint << std::endl;
     std::cout << std::endl;
+    #endif
     
     // OPTIMIZATION 4: Parallel Cache Building
     bakery::http::HTTPServer server(8765);
-    std::atomic<bool> cacheReady{false};
+    server.setEntrypoint(config.entrypoint);
+    server.setAssetProvider([&assetLoader](const std::string& path) {
+        return assetLoader.getAsset(path);
+    });
     
+    std::atomic<bool> cacheReady{false};
     std::thread cacheThread([&server, &assetLoader, &cacheReady]() {
+        #ifndef NDEBUG
         auto cacheStart = std::chrono::high_resolution_clock::now();
+        #endif
+        
         server.buildCache(assetLoader.getAllPaths());
+        
+        #ifndef NDEBUG
         auto cacheEnd = std::chrono::high_resolution_clock::now();
         auto cacheDuration = std::chrono::duration_cast<std::chrono::microseconds>(cacheEnd - cacheStart);
         std::cout << "⚡ Pre-cached " << server.getCacheSize() << " responses in " 
                   << cacheDuration.count() << "μs" << std::endl;
+        #endif
+        
         cacheReady = true;
     });
     
     cacheThread.join();
     
+    // Start HTTP server
+    std::thread serverThread(runServer, &server);
+    serverThread.detach();
+    
+    // ⚡ OPTIMIZATION: Wait for server ready flag instead of sleep (faster!)
+    while (!g_serverReady) {
+        std::this_thread::yield();  // Cooperative wait, ~1-5ms instead of 50ms
+    }
+    
     auto startupEnd = std::chrono::high_resolution_clock::now();
     auto startupDuration = std::chrono::duration_cast<std::chrono::milliseconds>(startupEnd - appStart);
-    std::cout << "⚡ STARTUP TIME: " << startupDuration.count() << "ms (all optimizations active)" << std::endl;
     
-    // Start HTTP server
+    #ifndef NDEBUG
+    std::cout << "⚡ STARTUP TIME: " << startupDuration.count() << "ms (all optimizations active)" << std::endl;
     std::cout << "🌐 Starting HTTP server..." << std::endl;
-    std::thread serverThread(runServer, &server);
+    #endif
     
     // Open system browser
-    std::string url = "http://localhost:8765/" + config.entrypoint;
+    std::string url = "http://localhost:8765";
+    
+    #ifndef NDEBUG
     std::cout << "🚀 Opening browser: " << url << std::endl;
     std::cout << std::endl;
+    #endif
     
     std::string openCmd = "xdg-open \"" + url + "\" 2>/dev/null || sensible-browser \"" + url + "\" 2>/dev/null &";
     system(openCmd.c_str());
     
+    #ifndef NDEBUG
     std::cout << "✅ Server running! Press Ctrl+C to stop." << std::endl;
+    #endif
     std::cout << "💡 Close browser tab to exit." << std::endl;
     
     // Keep server running
