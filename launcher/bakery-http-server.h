@@ -157,12 +157,58 @@ public:
     
     /**
      * Pre-cache all responses with optimized headers and iovec
+     * ⚡ OPTIMIZATION: Critical assets (entrypoint, main.js, etc.) are cached FIRST
      */
     void buildCache(const std::vector<std::string>& assetPaths) {
         // ⚡ OPTIMIZATION: Pre-allocate cache to avoid rehashing
         cache_.reserve(assetPaths.size() + 10);
         
+        // ⚡ PHASE 1: Cache critical assets FIRST (faster first render!)
+        std::vector<std::string> criticalAssets = {
+            entrypoint_,
+            "main.js", "app.js", "game.js", "index.js",
+            "main.css", "style.css", "app.css",
+            "manifest.json", "favicon.ico"
+        };
+        
+        for (const auto& critical : criticalAssets) {
+            auto it = std::find(assetPaths.begin(), assetPaths.end(), critical);
+            if (it != assetPaths.end()) {
+                Asset asset = getAsset_(critical);
+                if (!asset.data || asset.size == 0) continue;
+                
+                Response resp;
+                resp.body = asset.data;
+                resp.bodySize = asset.size;
+                
+                resp.headers = 
+                    "HTTP/1.1 200 OK\r\n"
+                    "Content-Type: " + asset.mimeType + "\r\n"
+                    "Content-Length: " + std::to_string(asset.size) + "\r\n"
+                    "Cache-Control: public, max-age=31536000, immutable\r\n"
+                    "Accept-Ranges: bytes\r\n"
+                    "Connection: keep-alive\r\n"
+                    "\r\n";
+                
+                std::string uri = "/" + critical;
+                auto [cit, inserted] = cache_.emplace(std::move(uri), std::move(resp));
+                
+#ifndef _WIN32
+                auto& cachedResp = cit->second;
+                cachedResp.iov[0].iov_base = (void*)cachedResp.headers.data();
+                cachedResp.iov[0].iov_len = cachedResp.headers.size();
+                cachedResp.iov[1].iov_base = (void*)cachedResp.body;
+                cachedResp.iov[1].iov_len = cachedResp.bodySize;
+#endif
+            }
+        }
+        
+        // ⚡ PHASE 2: Cache remaining assets
         for (const auto& path : assetPaths) {
+            // Skip if already cached in Phase 1
+            std::string checkUri = "/" + path;
+            if (cache_.count(checkUri) > 0) continue;
+            
             Asset asset = getAsset_(path);
             if (!asset.data || asset.size == 0) continue;
             

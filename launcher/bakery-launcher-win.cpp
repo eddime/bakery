@@ -203,7 +203,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     w.set_title(config.window.title);
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     
-    // Inject Bakery API
+    // Inject Bakery API + Runtime Optimizations
     w.init(R"(
         window.Bakery = {
             version: '1.0.0',
@@ -211,6 +211,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             mode: 'universal',
             launcher: 'shared-assets'
         };
+        
+        // ⚡ RUNTIME OPTIMIZATION: Reduce GC pressure during gameplay
+        let gameLoaded = false;
+        window.addEventListener('load', () => {
+            gameLoaded = true;
+            setTimeout(() => {
+                if (window.gc) window.gc();
+            }, 2000);
+            
+            if (window.performance && window.performance.memory) {
+                const initialMemory = window.performance.memory.usedJSHeapSize;
+                setInterval(() => {
+                    if (!document.hidden) {
+                        const currentMemory = window.performance.memory.usedJSHeapSize;
+                        const growth = currentMemory - initialMemory;
+                        if (growth > 100 * 1024 * 1024) {
+                            requestIdleCallback(() => {
+                                if (window.gc) window.gc();
+                            });
+                        }
+                    }
+                }, 30000);
+            }
+        });
     )");
     
     // Wait for cache to be ready

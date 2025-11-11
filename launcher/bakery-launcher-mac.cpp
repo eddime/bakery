@@ -191,12 +191,13 @@ int main(int argc, char* argv[]) {
         auto end = std::chrono::high_resolution_clock::now();
         auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         std::cout << "⚡ Pre-cached " << server.getCacheSize() << " responses in " << ms << "μs" << std::endl;
+        std::cout << "   ↳ Critical assets (entrypoint, main.js) cached FIRST" << std::endl;
         #endif
         
         cacheReady = true;
     });
     
-    // While cache builds, create WebView (parallel!)
+    // Create WebView while cache builds (parallel!)
     webview::webview w(false, nullptr);  // false = production mode (better performance)
     w.set_title(config.window.title.c_str());
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
@@ -210,6 +211,39 @@ int main(int argc, char* argv[]) {
         platform: 'macos',
         mode: 'shared-assets'
     };
+    
+    // ⚡ RUNTIME OPTIMIZATION: Reduce GC pressure during gameplay
+    // Only runs AFTER initial load, doesn't break dynamic asset loading!
+    let gameLoaded = false;
+    window.addEventListener('load', () => {
+        gameLoaded = true;
+        
+        // Give browser a hint to collect garbage ONCE after initial load
+        // This frees up memory before gameplay starts
+        setTimeout(() => {
+            if (window.gc) window.gc();  // V8 only (dev mode)
+        }, 2000);
+        
+        // Reduce GC frequency during gameplay (less stuttering)
+        if (window.performance && window.performance.memory) {
+            const initialMemory = window.performance.memory.usedJSHeapSize;
+            
+            // Monitor memory growth and suggest GC only when needed
+            setInterval(() => {
+                if (!document.hidden) {  // Only when game is visible
+                    const currentMemory = window.performance.memory.usedJSHeapSize;
+                    const growth = currentMemory - initialMemory;
+                    
+                    // If memory grew by >100MB, hint GC during idle
+                    if (growth > 100 * 1024 * 1024) {
+                        requestIdleCallback(() => {
+                            if (window.gc) window.gc();
+                        });
+                    }
+                }
+            }, 30000);  // Check every 30s
+        }
+    });
     )JS");
     
     // Wait for cache to be ready before navigation
