@@ -209,24 +209,44 @@ async function buildCommand(args: string[]) {
   // Handle "all" platform - build for all supported platforms
   const platforms = platform === 'all' ? ['mac', 'win', 'linux'] : [platform];
   
+  // ⚡ OPTIMIZATION: Build assets ONCE for all platforms (they're platform-independent!)
+  if (platforms.length > 1) {
+    console.log('⚡ Building shared assets once for all platforms...\n');
+    // Build to primary location
+    const assetsPath = join(frameworkDir, 'launcher', 'bakery-assets');
+    const embedProc = Bun.spawn(['bun', join(frameworkDir, 'scripts', 'embed-assets-shared.ts'), projectDir, assetsPath], {
+      cwd: frameworkDir,
+      stdout: 'inherit',
+      stderr: 'inherit',
+    });
+    await embedProc.exited;
+    
+    // Copy to macOS build location (build-shared expects it there)
+    const buildDir = join(frameworkDir, 'launcher', 'build-shared');
+    mkdirSync(buildDir, { recursive: true });
+    cpSync(assetsPath, join(buildDir, 'bakery-assets'));
+    
+    console.log('✅ Shared assets ready for all platforms!\n');
+  }
+  
   for (const targetPlatform of platforms) {
     console.log(`\n🏗️  Building for ${targetPlatform}...\n`);
-    await buildForPlatform(targetPlatform, projectDir, projectConfig, appName, shouldRun, frameworkDir);
+    await buildForPlatform(targetPlatform, projectDir, projectConfig, appName, shouldRun, frameworkDir, platforms.length > 1);
   }
   
   console.log('\n✅ All builds complete!');
 }
 
-async function buildForPlatform(platform: string, projectDir: string, projectConfig: any, appName: string, shouldRun: boolean, frameworkDir: string) {
+async function buildForPlatform(platform: string, projectDir: string, projectConfig: any, appName: string, shouldRun: boolean, frameworkDir: string, skipAssetsBuild: boolean = false) {
   switch (platform) {
     case 'mac':
-      await buildMacOS(projectDir, projectConfig, appName, shouldRun, frameworkDir);
+      await buildMacOS(projectDir, projectConfig, appName, shouldRun, frameworkDir, skipAssetsBuild);
       break;
     case 'win':
-      await buildWindows(projectDir, projectConfig, appName, frameworkDir);
+      await buildWindows(projectDir, projectConfig, appName, frameworkDir, skipAssetsBuild);
       break;
     case 'linux':
-      await buildLinux(projectDir, projectConfig, appName, frameworkDir);
+      await buildLinux(projectDir, projectConfig, appName, frameworkDir, skipAssetsBuild);
       break;
     default:
       console.warn(`⚠️  Platform ${platform} not supported`);

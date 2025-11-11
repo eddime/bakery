@@ -19,11 +19,16 @@ cd "$(dirname "$0")/.."
 FRAMEWORK_DIR="$(pwd)"
 
 # ============================================
-# 1. Create ENCRYPTED shared assets
+# 1. Create ENCRYPTED shared assets (skip if already exists)
 # ============================================
-echo "📦 Creating ENCRYPTED shared assets..."
-bun scripts/embed-assets-shared.ts "$PROJECT_DIR" launcher/bakery-assets
-echo ""
+if [ -f "$FRAMEWORK_DIR/launcher/bakery-assets" ]; then
+    echo "⚡ Using existing shared assets (already built for multi-platform)"
+    echo ""
+else
+    echo "📦 Creating ENCRYPTED shared assets..."
+    bun scripts/embed-assets-shared.ts "$PROJECT_DIR" launcher/bakery-assets
+    echo ""
+fi
 
 # ============================================
 # 2. Build x64 launcher with encryption support

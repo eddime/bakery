@@ -19,13 +19,19 @@ echo ""
 echo "💡 Strategy: 3 launchers + 1 shared assets file"
 echo ""
 
-# 1. Create shared assets file
-echo "📦 Creating shared assets file..."
+# 1. Create shared assets file (skip if already exists from multi-platform build)
 ASSETS_PATH="$BUILD_DIR/bakery-assets"
 mkdir -p "$BUILD_DIR"
-bun "$FRAMEWORK_DIR/scripts/embed-assets-shared.ts" "$PROJECT_DIR" "$ASSETS_PATH"
-if [ $? -ne 0 ]; then echo "❌ Assets build failed!"; exit 1; fi
-echo ""
+
+if [ -f "$ASSETS_PATH" ]; then
+    echo "⚡ Using existing shared assets (already built for multi-platform)"
+    echo ""
+else
+    echo "📦 Creating shared assets file..."
+    bun "$FRAMEWORK_DIR/scripts/embed-assets-shared.ts" "$PROJECT_DIR" "$ASSETS_PATH"
+    if [ $? -ne 0 ]; then echo "❌ Assets build failed!"; exit 1; fi
+    echo ""
+fi
 
 # 2. Build ARM64 launcher
 echo "🏗️  Building ARM64 launcher..."
