@@ -177,8 +177,8 @@ int main(int argc, char* argv[]) {
     w.set_title(config.window.title.c_str());
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     
-    // Enable universal performance optimizations
-    bakery::universal::enableUniversalPerformance(w);
+    // DISABLED: Performance optimizations causing issues with some games
+    // bakery::universal::enableUniversalPerformance(w);
     
     w.init(R"JS(
     window.Bakery = {
