@@ -173,8 +173,7 @@ int main(int argc, char* argv[]) {
     });
     
     // While cache builds, create WebView (parallel!)
-    // DEBUG MODE: Enable inspector
-    webview::webview w(true, nullptr);  // true = enable dev tools
+    webview::webview w(false, nullptr);  // false = production mode (better performance)
     w.set_title(config.window.title.c_str());
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     
