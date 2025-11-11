@@ -138,8 +138,8 @@ int main(int argc, char* argv[]) {
     
     // While assets load, prepare config (parallel!)
     config.window.title = "Bakery App";
-    config.window.width = 800;
-    config.window.height = 600;
+    config.window.width = 1280;
+    config.window.height = 720;
     config.entrypoint = "index.html";
     
     std::string configPath = bakery::assets::getExecutableDir() + "/bakery.config.json";
