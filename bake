@@ -1,0 +1,415 @@
+#!/usr/bin/env bun
+// 🥐 Bakery CLI - Standalone Edition
+// No dependencies, just Bun!
+
+import { parseArgs } from 'util';
+import { resolve, join, dirname } from 'path';
+import { spawn as bunSpawn } from 'bun';
+import { existsSync, mkdirSync, writeFileSync, cpSync, rmSync, chmodSync } from 'fs';
+
+// Get framework directory (where this script is located)
+const FRAMEWORK_DIR = dirname(import.meta.url.replace('file://', ''));
+
+// Load bakery.config.js if it exists
+async function loadConfig() {
+  const configPath = resolve('./bakery.config.js');
+  if (existsSync(configPath)) {
+    try {
+      const config = await import(configPath);
+      return config.default || config;
+    } catch (err) {
+      console.warn('⚠️  Warning: Failed to load bakery.config.js:', err.message);
+    }
+  }
+  return null;
+}
+
+const commands = {
+  dev: devCommand,
+  build: buildCommand,
+  mac: (args: string[]) => buildCommand(['--platform', 'mac', ...args]),
+  win: (args: string[]) => buildCommand(['--platform', 'win', ...args]),
+  linux: (args: string[]) => buildCommand(['--platform', 'linux', ...args]),
+  all: (args: string[]) => buildCommand(['--platform', 'all', ...args]),
+  help: helpCommand,
+};
+
+async function main() {
+  const args = process.argv.slice(2);
+  const command = args[0] || 'help';
+
+  if (command === '--help' || command === '-h') {
+    helpCommand();
+    process.exit(0);
+  }
+
+  const handler = commands[command as keyof typeof commands];
+  if (!handler) {
+    console.error(`❌ Unknown command: ${command}`);
+    helpCommand();
+    process.exit(1);
+  }
+
+  await handler(args.slice(1));
+}
+
+// ==============================================
+// DEV COMMAND
+// ==============================================
+async function devCommand(args: string[]) {
+  console.log('🥐 Bakery Development Mode\n');
+
+  const { values } = parseArgs({
+    args,
+    options: {
+      dir: { type: 'string', short: 'd' },
+      project: { type: 'string', short: 'p' },
+    },
+  });
+
+  const config = await loadConfig();
+  
+  let projectDir: string;
+  
+  if (values.dir) {
+    projectDir = resolve(values.dir as string);
+  } else if (values.project && config?.projects) {
+    const projectName = values.project as string;
+    const projectPath = config.projects[projectName];
+    if (!projectPath) {
+      console.error(`❌ Project "${projectName}" not found in bakery.config.js`);
+      console.log('Available projects:', Object.keys(config.projects).join(', '));
+      process.exit(1);
+    }
+    projectDir = resolve(projectPath);
+  } else {
+    const currentDir = resolve('.');
+    const hasConfig = existsSync(join(currentDir, 'bakery.config.js'));
+    const hasSrc = existsSync(join(currentDir, 'src'));
+    
+    if (hasConfig && hasSrc) {
+      projectDir = currentDir;
+    } else if (config?.defaultProject) {
+      projectDir = resolve(config.defaultProject);
+      console.log('📌 Using default project from config');
+    } else {
+      console.error('❌ No project directory specified');
+      console.error('💡 Usage: ./bake dev --dir <project-dir>');
+      console.error('💡 Or set defaultProject in bakery.config.js');
+      process.exit(1);
+    }
+  }
+  
+  const configPath = join(projectDir, 'bakery.config.js');
+  if (!existsSync(configPath)) {
+    console.error('❌ No bakery.config.js found in', projectDir);
+    process.exit(1);
+  }
+
+  const runDevScript = join(FRAMEWORK_DIR, 'scripts', 'run-dev.sh');
+  
+  if (!existsSync(runDevScript)) {
+    console.error('❌ run-dev.sh not found:', runDevScript);
+    process.exit(1);
+  }
+
+  const proc = Bun.spawn([runDevScript, projectDir], {
+    cwd: FRAMEWORK_DIR,
+    stdout: 'inherit',
+    stderr: 'inherit',
+    stdin: 'inherit',
+  });
+
+  await proc.exited;
+}
+
+// ==============================================
+// BUILD COMMAND
+// ==============================================
+async function buildCommand(args: string[]) {
+  console.log('🥐 Bakery Build\n');
+
+  const { values } = parseArgs({
+    args,
+    options: {
+      dir: { type: 'string', short: 'd' },
+      project: { type: 'string', short: 'p' },
+      platform: { type: 'string', default: 'mac' },
+      run: { type: 'boolean', short: 'r', default: false },
+    },
+  });
+
+  const config = await loadConfig();
+  
+  let projectDir: string;
+  
+  if (values.dir) {
+    projectDir = resolve(values.dir as string);
+  } else if (values.project && config?.projects) {
+    const projectName = values.project as string;
+    const projectPath = config.projects[projectName];
+    if (!projectPath) {
+      console.error(`❌ Project "${projectName}" not found in bakery.config.js`);
+      console.log('Available projects:', Object.keys(config.projects).join(', '));
+      process.exit(1);
+    }
+    projectDir = resolve(projectPath);
+  } else if (config?.defaultProject) {
+    projectDir = resolve(config.defaultProject);
+    console.log('📌 Using default project from config');
+  } else {
+    console.error('❌ No project specified');
+    console.error('💡 Usage: ./bake all --dir <project-dir>');
+    console.error('💡 Or set defaultProject in bakery.config.js');
+    process.exit(1);
+  }
+  
+  const platform = values.platform as string;
+  const shouldRun = values.run as boolean;
+
+  const configPath = join(projectDir, 'bakery.config.js');
+  if (!existsSync(configPath)) {
+    console.error('❌ No bakery.config.js found in', projectDir);
+    process.exit(1);
+  }
+
+  const projectConfig = await import(configPath);
+  const appName = projectConfig.default?.app?.name || 'BakeryApp';
+
+  console.log('📁 Project:', projectDir);
+  console.log('🏗️  Platform:', platform);
+  console.log('📦 App Name:', appName);
+  console.log('');
+  
+  const platforms = platform === 'all' ? ['mac', 'win', 'linux'] : [platform];
+  
+  // ⚡ OPTIMIZATION: Build assets ONCE for all platforms
+  if (platforms.length > 1) {
+    console.log('⚡ Building shared assets once for all platforms...\n');
+    const assetsPath = join(FRAMEWORK_DIR, 'launcher', 'bakery-assets');
+    const embedProc = Bun.spawn(['bun', join(FRAMEWORK_DIR, 'scripts', 'embed-assets-shared.ts'), projectDir, assetsPath], {
+      cwd: FRAMEWORK_DIR,
+      stdout: 'inherit',
+      stderr: 'inherit',
+    });
+    await embedProc.exited;
+    
+    // Copy to macOS build location
+    const buildDir = join(FRAMEWORK_DIR, 'launcher', 'build-shared');
+    mkdirSync(buildDir, { recursive: true });
+    cpSync(assetsPath, join(buildDir, 'bakery-assets'));
+    
+    console.log('✅ Shared assets ready for all platforms!\n');
+  }
+  
+  for (const targetPlatform of platforms) {
+    console.log(`\n🏗️  Building for ${targetPlatform}...\n`);
+    await buildForPlatform(targetPlatform, projectDir, projectConfig, appName, shouldRun, FRAMEWORK_DIR);
+  }
+  
+  console.log('\n✅ All builds complete!');
+}
+
+async function buildForPlatform(platform: string, projectDir: string, projectConfig: any, appName: string, shouldRun: boolean, frameworkDir: string) {
+  switch (platform) {
+    case 'mac':
+      await buildMacOS(projectDir, projectConfig, appName, shouldRun, frameworkDir);
+      break;
+    case 'win':
+      await buildWindows(projectDir, projectConfig, appName, frameworkDir);
+      break;
+    case 'linux':
+      await buildLinux(projectDir, projectConfig, appName, frameworkDir);
+      break;
+    default:
+      console.warn(`⚠️  Platform ${platform} not supported`);
+  }
+}
+
+async function buildMacOS(projectDir: string, projectConfig: any, appName: string, shouldRun: boolean, frameworkDir: string) {
+  console.log('🍎 Building macOS Universal Binary (x64 + ARM64)...\n');
+
+  const buildScript = join(frameworkDir, 'scripts', 'build-shared-universal.sh');
+  const buildProc = Bun.spawn([buildScript, projectDir], {
+    cwd: frameworkDir,
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  await buildProc.exited;
+
+  const sharedDir = join(frameworkDir, 'launcher', 'build-shared');
+  const launcherPath = join(sharedDir, 'bakery-universal');
+  const arm64Binary = join(sharedDir, 'bakery-arm64');
+  const x64Binary = join(sharedDir, 'bakery-x86_64');
+  const assetsFile = join(sharedDir, 'bakery-assets');
+  
+  if (!existsSync(launcherPath) || !existsSync(arm64Binary) || !existsSync(x64Binary) || !existsSync(assetsFile)) {
+    console.error('❌ Shared universal build failed!');
+    process.exit(1);
+  }
+  
+  console.log('✅ Shared universal build ready!\n');
+
+  const distDir = join(projectDir, 'dist', 'mac');
+  const appBundle = join(distDir, `${appName}.app`);
+  const contentsDir = join(appBundle, 'Contents');
+  const macOSDir = join(contentsDir, 'MacOS');
+  const resourcesDir = join(contentsDir, 'Resources');
+
+  console.log('🏗️  Creating shared universal .app bundle...');
+  
+  if (existsSync(appBundle)) {
+    rmSync(appBundle, { recursive: true });
+  }
+  mkdirSync(macOSDir, { recursive: true });
+  mkdirSync(resourcesDir, { recursive: true });
+
+  const appExecutable = join(macOSDir, appName);
+  cpSync(launcherPath, appExecutable);
+  chmodSync(appExecutable, 0o755);
+  
+  cpSync(arm64Binary, join(macOSDir, `${appName}-arm64`));
+  chmodSync(join(macOSDir, `${appName}-arm64`), 0o755);
+  
+  cpSync(x64Binary, join(macOSDir, `${appName}-x86_64`));
+  chmodSync(join(macOSDir, `${appName}-x86_64`), 0o755);
+  
+  cpSync(assetsFile, join(macOSDir, 'bakery-assets'));
+
+  const configJsonPath = join(projectDir, 'bakery.config.json');
+  if (existsSync(configJsonPath)) {
+    cpSync(configJsonPath, join(macOSDir, 'bakery.config.json'));
+  } else {
+    const configJsPath = join(projectDir, 'bakery.config.js');
+    if (existsSync(configJsPath)) {
+      const configModule = await import(`file://${configJsPath}`);
+      const config = configModule.default;
+      writeFileSync(join(macOSDir, 'bakery.config.json'), JSON.stringify(config, null, 2));
+    }
+  }
+
+  console.log('✅ Universal launcher (detects architecture)');
+  console.log('✅ ARM64 launcher (228 KB)');
+  console.log('✅ x64 launcher (240 KB)');
+  console.log('✅ Shared assets (8.8 MB, used by both) ✅');
+  console.log('✅ Config copied');
+  
+  const iconPath = join(projectDir, 'assets', 'icon.icns');
+  if (existsSync(iconPath)) {
+    cpSync(iconPath, join(resourcesDir, 'icon.icns'));
+    console.log('📦 Icon copied');
+  }
+
+  const infoPlist = `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>${appName}</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.bakery.${appName.toLowerCase()}</string>
+    <key>CFBundleName</key>
+    <string>${appName}</string>
+    <key>CFBundleDisplayName</key>
+    <string>${appName}</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleVersion</key>
+    <string>1.0.0</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0.0</string>
+    <key>CFBundleIconFile</key>
+    <string>icon.icns</string>
+    <key>LSMinimumSystemVersion</key>
+    <string>10.13</string>
+    <key>NSHighResolutionCapable</key>
+    <true/>
+</dict>
+</plist>`;
+
+  writeFileSync(join(contentsDir, 'Info.plist'), infoPlist);
+
+  console.log('✅ Build complete!\n');
+  console.log('📦 Output:', appBundle);
+  console.log('📊 Size: ~9.2 MB (3 launchers + 1 shared assets file)');
+  console.log('💡 Assets shared between ARM64 and x64 = 50% smaller!');
+  console.log('');
+  
+  if (shouldRun) {
+    console.log('🚀 Running app...\n');
+    const launcher = Bun.spawn(['open', '-W', appBundle], {
+      stdio: ['inherit', 'inherit', 'inherit'],
+    });
+    await launcher.exited;
+  }
+}
+
+async function buildWindows(projectDir: string, projectConfig: any, appName: string, frameworkDir: string) {
+  console.log('🪟 Building for Windows...\n');
+  
+  const buildScript = join(frameworkDir, 'scripts', 'build-windows-single-exe.sh');
+  const buildProc = Bun.spawn([buildScript, projectDir, appName], {
+    cwd: frameworkDir,
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  await buildProc.exited;
+}
+
+async function buildLinux(projectDir: string, projectConfig: any, appName: string, frameworkDir: string) {
+  console.log('🐧 Building for Linux...\n');
+  
+  const buildScript = join(frameworkDir, 'scripts', 'build-linux-single-executables.sh');
+  const buildProc = Bun.spawn([buildScript, projectDir, appName], {
+    cwd: frameworkDir,
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  await buildProc.exited;
+}
+
+// ==============================================
+// HELP COMMAND
+// ==============================================
+function helpCommand() {
+  console.log(`
+🥐 Bakery CLI - Standalone Edition
+
+Usage: ./bake <command> [options]
+
+Commands:
+  dev                Start development server
+  build              Build app for production
+  mac                Build for macOS
+  win                Build for Windows
+  linux              Build for Linux
+  all                Build for all platforms
+  help               Show this help message
+
+Options:
+  dev:
+    -d, --dir <path>       Project directory
+    -p, --project <name>   Named project from bakery.config.js
+    
+  build:
+    -d, --dir <path>       Project directory
+    -p, --project <name>   Named project from bakery.config.js
+    --platform <name>      Platform: mac, win, linux, all (default: mac)
+    -r, --run              Run after building (mac only)
+
+Examples:
+  ./bake dev                   Start default project
+  ./bake dev --dir ./my-app    Start specific directory
+  ./bake build --mac           Build for macOS
+  ./bake all                   Build for all platforms
+
+Documentation: https://github.com/eddime/bakery
+`);
+}
+
+// Run CLI
+main().catch((err) => {
+  console.error('❌ Error:', err.message);
+  process.exit(1);
+});
+
