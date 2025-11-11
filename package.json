@@ -1,0 +1,12 @@
+{
+  "name": "bakery",
+  "version": "1.0.0",
+  "type": "module",
+  "bin": {
+    "bake": "./bake"
+  },
+  "scripts": {
+    "install": "bun link"
+  }
+}
+

@@ -373,9 +373,9 @@ async function buildLinux(projectDir: string, projectConfig: any, appName: strin
 // ==============================================
 function helpCommand() {
   console.log(`
-🥐 Bakery CLI - Standalone Edition
+🥐 Bakery CLI
 
-Usage: ./bake <command> [options]
+Usage: bake <command> [options]
 
 Commands:
   dev                Start development server
@@ -398,10 +398,10 @@ Options:
     -r, --run              Run after building (mac only)
 
 Examples:
-  ./bake dev                   Start default project
-  ./bake dev --dir ./my-app    Start specific directory
-  ./bake build --mac           Build for macOS
-  ./bake all                   Build for all platforms
+  bake dev                   Start default project
+  bake dev --dir ./my-app    Start specific directory
+  bake mac                   Build for macOS
+  bake all                   Build for all platforms
 
 Documentation: https://github.com/eddime/bakery
 `);
