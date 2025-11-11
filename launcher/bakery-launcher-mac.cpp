@@ -49,6 +49,10 @@ void worker(int server_fd, bakery::http::HTTPServer* server) {
 // Multi-threaded HTTP server
 void runServer(bakery::http::HTTPServer* server) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd < 0) {
+        std::cerr << "❌ Failed to create socket!" << std::endl;
+        return;
+    }
     
     // MAXIMUM PERFORMANCE socket options
     int opt = 1;
@@ -68,8 +72,15 @@ void runServer(bakery::http::HTTPServer* server) {
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     addr.sin_port = htons(server->getPort());
     
-    bind(fd, (struct sockaddr*)&addr, sizeof(addr));
-    listen(fd, 512);
+    if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
+        std::cerr << "❌ Failed to bind to port " << server->getPort() << "!" << std::endl;
+        return;
+    }
+    
+    if (listen(fd, 512) < 0) {
+        std::cerr << "❌ Failed to listen on port " << server->getPort() << "!" << std::endl;
+        return;
+    }
     
     // Launch worker threads
     int threads = std::thread::hardware_concurrency();
@@ -162,7 +173,8 @@ int main(int argc, char* argv[]) {
     });
     
     // While cache builds, create WebView (parallel!)
-    webview::webview w(false, nullptr);
+    // DEBUG MODE: Enable inspector
+    webview::webview w(true, nullptr);  // true = enable dev tools
     w.set_title(config.window.title.c_str());
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     

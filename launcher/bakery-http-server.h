@@ -177,23 +177,34 @@ public:
                 "Connection: keep-alive\r\n"
                 "\r\n";
             
-#ifndef _WIN32
-            // Pre-build iovec for writev() (zero-copy scatter-gather I/O)
-            resp.iov[0].iov_base = (void*)resp.headers.data();
-            resp.iov[0].iov_len = resp.headers.size();
-            resp.iov[1].iov_base = (void*)resp.body;
-            resp.iov[1].iov_len = resp.bodySize;
-#endif
-            
             // Cache with leading slash
             std::string uri = "/" + path;
             cache_[uri] = resp;
+            
+#ifndef _WIN32
+            // CRITICAL: Set iov pointers AFTER inserting into map!
+            // (inserting into map copies the Response, invalidating pointers)
+            auto& cachedResp = cache_[uri];
+            cachedResp.iov[0].iov_base = (void*)cachedResp.headers.data();
+            cachedResp.iov[0].iov_len = cachedResp.headers.size();
+            cachedResp.iov[1].iov_base = (void*)cachedResp.body;
+            cachedResp.iov[1].iov_len = cachedResp.bodySize;
+#endif
         }
         
         // Set root to entrypoint
         std::string entryUri = "/" + entrypoint_;
         if (cache_.count(entryUri) > 0) {
             cache_["/"] = cache_[entryUri];
+            
+#ifndef _WIN32
+            // FIX: Re-initialize iov pointers after copy (they point to old addresses!)
+            auto& rootResp = cache_["/"];
+            rootResp.iov[0].iov_base = (void*)rootResp.headers.data();
+            rootResp.iov[0].iov_len = rootResp.headers.size();
+            rootResp.iov[1].iov_base = (void*)rootResp.body;
+            rootResp.iov[1].iov_len = rootResp.bodySize;
+#endif
         }
     }
     
