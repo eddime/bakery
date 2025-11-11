@@ -212,37 +212,93 @@ int main(int argc, char* argv[]) {
         mode: 'shared-assets'
     };
     
-    // ⚡ RUNTIME OPTIMIZATION: Reduce GC pressure during gameplay
-    // Only runs AFTER initial load, doesn't break dynamic asset loading!
+    // ⚡ RUNTIME OPTIMIZATION 1: Passive Event Listeners (less overhead)
+    (function() {
+        const passiveEvents = new Set(['scroll', 'wheel', 'touchstart', 'touchmove', 'touchend', 'mousewheel']);
+        const originalAddEventListener = EventTarget.prototype.addEventListener;
+        
+        EventTarget.prototype.addEventListener = function(type, listener, options) {
+            if (passiveEvents.has(type) && typeof options !== 'object') {
+                options = { passive: true, capture: false };
+            } else if (passiveEvents.has(type) && typeof options === 'object' && options.passive === undefined) {
+                options.passive = true;
+            }
+            return originalAddEventListener.call(this, type, listener, options);
+        };
+    })();
+    
+    // ⚡ RUNTIME OPTIMIZATION 2: Image Decode Hints
+    if ('decode' in HTMLImageElement.prototype) {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                mutation.addedNodes.forEach((node) => {
+                    if (node.tagName === 'IMG' && node.src) {
+                        node.decode().catch(() => {});
+                    }
+                });
+            });
+        });
+        
+        document.addEventListener('DOMContentLoaded', () => {
+            observer.observe(document.body, { childList: true, subtree: true });
+        });
+    }
+    
+    // ⚡ RUNTIME OPTIMIZATION 3: Smart GC (only when needed)
     let gameLoaded = false;
     window.addEventListener('load', () => {
         gameLoaded = true;
         
-        // Give browser a hint to collect garbage ONCE after initial load
-        // This frees up memory before gameplay starts
+        // Initial cleanup after load
         setTimeout(() => {
-            if (window.gc) window.gc();  // V8 only (dev mode)
+            if (window.gc) window.gc();
         }, 2000);
         
-        // Reduce GC frequency during gameplay (less stuttering)
+        // Monitor memory growth
         if (window.performance && window.performance.memory) {
             const initialMemory = window.performance.memory.usedJSHeapSize;
             
-            // Monitor memory growth and suggest GC only when needed
             setInterval(() => {
-                if (!document.hidden) {  // Only when game is visible
+                if (!document.hidden) {
                     const currentMemory = window.performance.memory.usedJSHeapSize;
                     const growth = currentMemory - initialMemory;
                     
-                    // If memory grew by >100MB, hint GC during idle
                     if (growth > 100 * 1024 * 1024) {
                         requestIdleCallback(() => {
                             if (window.gc) window.gc();
                         });
                     }
                 }
-            }, 30000);  // Check every 30s
+            }, 30000);
         }
+    });
+    
+    // ⚡ RUNTIME OPTIMIZATION 4: Disable unnecessary features
+    // Disable context menu (right-click) for better performance
+    document.addEventListener('contextmenu', (e) => e.preventDefault());
+    
+    // Disable text selection (less repaints)
+    document.addEventListener('selectstart', (e) => {
+        if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+            e.preventDefault();
+        }
+    });
+    
+    // ⚡ RUNTIME OPTIMIZATION 5: CSS Hardware Acceleration Hints
+    const style = document.createElement('style');
+    style.textContent = `
+        * {
+            -webkit-transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            -webkit-perspective: 1000;
+        }
+        canvas, video {
+            -webkit-transform: translate3d(0,0,0);
+            transform: translate3d(0,0,0);
+        }
+    `;
+    document.addEventListener('DOMContentLoaded', () => {
+        document.head.appendChild(style);
     });
     )JS");
     

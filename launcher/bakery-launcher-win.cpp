@@ -212,7 +212,39 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             launcher: 'shared-assets'
         };
         
-        // ⚡ RUNTIME OPTIMIZATION: Reduce GC pressure during gameplay
+        // ⚡ RUNTIME OPTIMIZATION 1: Passive Event Listeners
+        (function() {
+            const passiveEvents = new Set(['scroll', 'wheel', 'touchstart', 'touchmove', 'touchend', 'mousewheel']);
+            const originalAddEventListener = EventTarget.prototype.addEventListener;
+            
+            EventTarget.prototype.addEventListener = function(type, listener, options) {
+                if (passiveEvents.has(type) && typeof options !== 'object') {
+                    options = { passive: true, capture: false };
+                } else if (passiveEvents.has(type) && typeof options === 'object' && options.passive === undefined) {
+                    options.passive = true;
+                }
+                return originalAddEventListener.call(this, type, listener, options);
+            };
+        })();
+        
+        // ⚡ RUNTIME OPTIMIZATION 2: Image Decode Hints
+        if ('decode' in HTMLImageElement.prototype) {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.tagName === 'IMG' && node.src) {
+                            node.decode().catch(() => {});
+                        }
+                    });
+                });
+            });
+            
+            document.addEventListener('DOMContentLoaded', () => {
+                observer.observe(document.body, { childList: true, subtree: true });
+            });
+        }
+        
+        // ⚡ RUNTIME OPTIMIZATION 3: Smart GC
         let gameLoaded = false;
         window.addEventListener('load', () => {
             gameLoaded = true;
@@ -234,6 +266,31 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     }
                 }, 30000);
             }
+        });
+        
+        // ⚡ RUNTIME OPTIMIZATION 4: Disable unnecessary features
+        document.addEventListener('contextmenu', (e) => e.preventDefault());
+        document.addEventListener('selectstart', (e) => {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
+                e.preventDefault();
+            }
+        });
+        
+        // ⚡ RUNTIME OPTIMIZATION 5: CSS Hardware Acceleration
+        const style = document.createElement('style');
+        style.textContent = `
+            * {
+                -webkit-transform: translateZ(0);
+                -webkit-backface-visibility: hidden;
+                -webkit-perspective: 1000;
+            }
+            canvas, video {
+                -webkit-transform: translate3d(0,0,0);
+                transform: translate3d(0,0,0);
+            }
+        `;
+        document.addEventListener('DOMContentLoaded', () => {
+            document.head.appendChild(style);
         });
     )");
     
