@@ -29,6 +29,9 @@ Makefile
 
 # Embedded assets (generated)
 launcher/embedded-assets.h
+launcher/bakery-assets
+launcher/build-*/
+examples/*/dist/
 
 # IDE
 .vscode/

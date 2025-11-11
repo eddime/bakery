@@ -207,7 +207,14 @@ public:
         uint32_t loaded = 0;
         uint32_t skipped = 0;
         
-        // Read each file
+        // ⚡ OPTIMIZATION: Pre-allocate assets map
+        assets_.reserve(fileCount);
+        
+        // ⚡ OPTIMIZATION: Load all assets first, then decrypt in parallel
+        std::vector<AssetData> tempAssets;
+        tempAssets.reserve(fileCount);
+        
+        // PHASE 1: Sequential read from file (I/O bound)
         for (uint32_t i = 0; i < fileCount; i++) {
             // Read path length
             uint32_t pathLen;
@@ -244,25 +251,58 @@ public:
                 continue;
             }
             
-            // Read ENCRYPTED data
+            // Read ENCRYPTED data (don't decrypt yet!)
             AssetData asset;
-            asset.path = path;
+            asset.path = std::move(path);
             asset.data.resize(static_cast<size_t>(size64));
             file.read((char*)asset.data.data(), asset.data.size());
             
-            // 🔓 Decrypt the data using XOR with the embedded key!
-            xorDecrypt(asset.data.data(), asset.data.size(), encryptionKey, 32);
-            
-            asset.mimeType = http::getMimeType(path);
-            
             if (!file) {
-                std::cerr << "⚠️  Failed to read data for " << path << std::endl;
+                std::cerr << "⚠️  Failed to read data for " << asset.path << std::endl;
                 skipped++;
                 continue;
             }
             
-            assets_[path] = std::move(asset);
+            tempAssets.push_back(std::move(asset));
             loaded++;
+        }
+        
+        file.close();
+        
+        // PHASE 2: Parallel decryption (CPU bound)
+        if (!tempAssets.empty()) {
+            const size_t numThreads = std::min<size_t>(
+                std::thread::hardware_concurrency(),
+                std::max<size_t>(1, tempAssets.size() / 50)  // At least 50 assets per thread
+            );
+            
+            if (numThreads > 1) {
+                std::vector<std::thread> workers;
+                workers.reserve(numThreads);
+                
+                for (size_t t = 0; t < numThreads; t++) {
+                    workers.emplace_back([&tempAssets, &encryptionKey, t, numThreads]() {
+                        for (size_t i = t; i < tempAssets.size(); i += numThreads) {
+                            xorDecrypt(tempAssets[i].data.data(), tempAssets[i].data.size(), encryptionKey, 32);
+                        }
+                    });
+                }
+                
+                for (auto& worker : workers) {
+                    worker.join();
+                }
+            } else {
+                // Single-threaded fallback
+                for (auto& asset : tempAssets) {
+                    xorDecrypt(asset.data.data(), asset.data.size(), encryptionKey, 32);
+                }
+            }
+            
+            // PHASE 3: Move to final map with MIME types
+            for (auto& asset : tempAssets) {
+                asset.mimeType = http::getMimeType(asset.path);
+                assets_[asset.path] = std::move(asset);
+            }
         }
         
         if (skipped > 0) {

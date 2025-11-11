@@ -159,6 +159,9 @@ public:
      * Pre-cache all responses with optimized headers and iovec
      */
     void buildCache(const std::vector<std::string>& assetPaths) {
+        // ⚡ OPTIMIZATION: Pre-allocate cache to avoid rehashing
+        cache_.reserve(assetPaths.size() + 10);
+        
         for (const auto& path : assetPaths) {
             Asset asset = getAsset_(path);
             if (!asset.data || asset.size == 0) continue;
@@ -179,12 +182,14 @@ public:
             
             // Cache with leading slash
             std::string uri = "/" + path;
-            cache_[uri] = resp;
+            
+            // ⚡ OPTIMIZATION: Use emplace to avoid copy
+            auto [it, inserted] = cache_.emplace(std::move(uri), std::move(resp));
             
 #ifndef _WIN32
             // CRITICAL: Set iov pointers AFTER inserting into map!
-            // (inserting into map copies the Response, invalidating pointers)
-            auto& cachedResp = cache_[uri];
+            // Use iterator to access the inserted element
+            auto& cachedResp = it->second;
             cachedResp.iov[0].iov_base = (void*)cachedResp.headers.data();
             cachedResp.iov[0].iov_len = cachedResp.headers.size();
             cachedResp.iov[1].iov_base = (void*)cachedResp.body;

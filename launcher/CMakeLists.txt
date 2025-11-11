@@ -76,6 +76,18 @@ if(APPLE)
     add_executable(bakery-launcher-mac bakery-launcher-mac.cpp)
     target_link_libraries(bakery-launcher-mac ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json pthread)
     
+    # ⚡ OPTIMIZATION: Precompiled headers for faster builds
+    target_precompile_headers(bakery-launcher-mac PRIVATE
+        <iostream>
+        <string>
+        <vector>
+        <unordered_map>
+        <thread>
+        <atomic>
+        <chrono>
+        <fstream>
+    )
+    
     # MAXIMUM PERFORMANCE optimizations + startup improvements
     target_compile_options(bakery-launcher-mac PRIVATE
         -O3 -flto -ffast-math -fomit-frame-pointer
@@ -126,6 +138,18 @@ if(WIN32)
         ${CMAKE_SOURCE_DIR}/deps/webview/core/include)
     target_link_libraries(bakery-launcher-win ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json ws2_32 shlwapi ole32 shell32 user32)
     
+    # ⚡ OPTIMIZATION: Precompiled headers for faster builds
+    target_precompile_headers(bakery-launcher-win PRIVATE
+        <iostream>
+        <string>
+        <vector>
+        <unordered_map>
+        <thread>
+        <atomic>
+        <chrono>
+        <fstream>
+    )
+    
     # MAXIMUM PERFORMANCE optimizations + startup improvements
     if(MSVC)
         target_compile_options(bakery-launcher-win PRIVATE /O2 /GL /Gy /DNDEBUG)
@@ -154,6 +178,18 @@ if(UNIX AND NOT APPLE)
     # bakery-launcher-linux: Uses external bakery-assets file (universal for all games!)
     add_executable(bakery-launcher-linux bakery-launcher-linux.cpp)
     target_link_libraries(bakery-launcher-linux nlohmann_json::nlohmann_json pthread)
+    
+    # ⚡ OPTIMIZATION: Precompiled headers for faster builds
+    target_precompile_headers(bakery-launcher-linux PRIVATE
+        <iostream>
+        <string>
+        <vector>
+        <unordered_map>
+        <thread>
+        <atomic>
+        <chrono>
+        <fstream>
+    )
     
     if(NOT DEFINED TARGET_ARCH OR TARGET_ARCH STREQUAL "")
         execute_process(
