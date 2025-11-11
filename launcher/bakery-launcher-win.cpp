@@ -212,77 +212,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             launcher: 'shared-assets'
         };
         
-        // ⚡ RUNTIME OPTIMIZATION 1: Passive Event Listeners
-        (function() {
-            const passiveEvents = new Set(['scroll', 'wheel', 'touchstart', 'touchmove', 'touchend', 'mousewheel']);
-            const originalAddEventListener = EventTarget.prototype.addEventListener;
-            
-            EventTarget.prototype.addEventListener = function(type, listener, options) {
-                if (passiveEvents.has(type) && typeof options !== 'object') {
-                    options = { passive: true, capture: false };
-                } else if (passiveEvents.has(type) && typeof options === 'object' && options.passive === undefined) {
-                    options.passive = true;
-                }
-                return originalAddEventListener.call(this, type, listener, options);
-            };
-        })();
-        
-        // ⚡ RUNTIME OPTIMIZATION 2: Image Decode Hints
-        if ('decode' in HTMLImageElement.prototype) {
-            const observer = new MutationObserver((mutations) => {
-                mutations.forEach((mutation) => {
-                    mutation.addedNodes.forEach((node) => {
-                        if (node.tagName === 'IMG' && node.src) {
-                            node.decode().catch(() => {});
-                        }
-                    });
-                });
-            });
-            
-            document.addEventListener('DOMContentLoaded', () => {
-                observer.observe(document.body, { childList: true, subtree: true });
-            });
-        }
-        
-        // ⚡ RUNTIME OPTIMIZATION 3: Smart GC
-        let gameLoaded = false;
-        window.addEventListener('load', () => {
-            gameLoaded = true;
-            setTimeout(() => {
-                if (window.gc) window.gc();
-            }, 2000);
-            
-            if (window.performance && window.performance.memory) {
-                const initialMemory = window.performance.memory.usedJSHeapSize;
-                setInterval(() => {
-                    if (!document.hidden) {
-                        const currentMemory = window.performance.memory.usedJSHeapSize;
-                        const growth = currentMemory - initialMemory;
-                        if (growth > 100 * 1024 * 1024) {
-                            requestIdleCallback(() => {
-                                if (window.gc) window.gc();
-                            });
-                        }
-                    }
-                }, 30000);
-            }
-        });
-        
-        // ⚡ RUNTIME OPTIMIZATION 4: Disable unnecessary features
-        document.addEventListener('contextmenu', (e) => e.preventDefault());
-        document.addEventListener('selectstart', (e) => {
-            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
-                e.preventDefault();
-            }
-        });
-        
-        // ⚡ FIX: Disable ALL OS beep sounds
-        document.addEventListener('keydown', (e) => {
-            e.preventDefault();
-        }, true);
-        
-        // ⚡ RUNTIME OPTIMIZATION 5: Let game engines handle rendering
-        // CSS transforms interfere with WebGL/3D pipelines
+        // ⚡ MINIMAL RUNTIME: No interference with game engines
+        // Let WebGL/GDevelop/Three.js handle everything themselves
     )");
     
     // Wait for cache to be ready
