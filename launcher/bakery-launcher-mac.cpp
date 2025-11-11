@@ -207,8 +207,12 @@ int main(int argc, char* argv[]) {
     w.set_title(config.window.title.c_str());
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     
-    // DISABLED: Performance optimizations causing issues with some games
-    // bakery::universal::enableUniversalPerformance(w);
+    // ⚡ OPTIMIZATION: Enable OS-level performance (but NOT JavaScript injections!)
+    #ifdef __APPLE__
+    bakery::universal::setHighProcessPriority();
+    bakery::universal::preventAppNap();
+    bakery::universal::enableMetalAcceleration(w);
+    #endif
     
     w.init(R"JS(
     window.Bakery = {
