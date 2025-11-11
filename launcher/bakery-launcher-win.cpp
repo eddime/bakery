@@ -276,22 +276,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         });
         
-        // ⚡ RUNTIME OPTIMIZATION 5: CSS Hardware Acceleration
-        const style = document.createElement('style');
-        style.textContent = `
-            * {
-                -webkit-transform: translateZ(0);
-                -webkit-backface-visibility: hidden;
-                -webkit-perspective: 1000;
-            }
-            canvas, video {
-                -webkit-transform: translate3d(0,0,0);
-                transform: translate3d(0,0,0);
-            }
-        `;
-        document.addEventListener('DOMContentLoaded', () => {
-            document.head.appendChild(style);
-        });
+        // ⚡ FIX: Disable ALL OS beep sounds
+        document.addEventListener('keydown', (e) => {
+            e.preventDefault();
+        }, true);
+        
+        // ⚡ RUNTIME OPTIMIZATION 5: Let game engines handle rendering
+        // CSS transforms interfere with WebGL/3D pipelines
     )");
     
     // Wait for cache to be ready

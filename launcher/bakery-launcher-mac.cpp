@@ -182,15 +182,15 @@ int main(int argc, char* argv[]) {
     std::atomic<bool> cacheReady{false};
     std::thread cacheThread([&server, &assetLoader, &cacheReady]() {
         #ifndef NDEBUG
-        auto start = std::chrono::high_resolution_clock::now();
+    auto start = std::chrono::high_resolution_clock::now();
         #endif
         
-        server.buildCache(assetLoader.getAllPaths());
+    server.buildCache(assetLoader.getAllPaths());
         
         #ifndef NDEBUG
-        auto end = std::chrono::high_resolution_clock::now();
-        auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-        std::cout << "⚡ Pre-cached " << server.getCacheSize() << " responses in " << ms << "μs" << std::endl;
+    auto end = std::chrono::high_resolution_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
+    std::cout << "⚡ Pre-cached " << server.getCacheSize() << " responses in " << ms << "μs" << std::endl;
         std::cout << "   ↳ Critical assets (entrypoint, main.js) cached FIRST" << std::endl;
         #endif
         
@@ -211,6 +211,13 @@ int main(int argc, char* argv[]) {
         platform: 'macos',
         mode: 'shared-assets'
     };
+    
+    // ⚡ FIX: Disable ALL OS beep sounds on key press
+    document.addEventListener('keydown', (e) => {
+        // Prevent default for ALL keys to stop beep sounds
+        // Game will still receive the event, just no system sound
+        e.preventDefault();
+    }, true);  // Use capture phase
     
     // ⚡ RUNTIME OPTIMIZATION 1: Passive Event Listeners (less overhead)
     (function() {
@@ -284,22 +291,9 @@ int main(int argc, char* argv[]) {
         }
     });
     
-    // ⚡ RUNTIME OPTIMIZATION 5: CSS Hardware Acceleration Hints
-    const style = document.createElement('style');
-    style.textContent = `
-        * {
-            -webkit-transform: translateZ(0);
-            -webkit-backface-visibility: hidden;
-            -webkit-perspective: 1000;
-        }
-        canvas, video {
-            -webkit-transform: translate3d(0,0,0);
-            transform: translate3d(0,0,0);
-        }
-    `;
-    document.addEventListener('DOMContentLoaded', () => {
-        document.head.appendChild(style);
-    });
+    // ⚡ RUNTIME OPTIMIZATION 5: Let game engines handle their own rendering
+    // NOTE: CSS transforms can interfere with WebGL/3D rendering pipelines
+    // Games like GDevelop manage their own GPU acceleration
     )JS");
     
     // Wait for cache to be ready before navigation
