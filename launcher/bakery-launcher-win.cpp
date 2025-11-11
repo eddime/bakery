@@ -212,8 +212,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             launcher: 'shared-assets'
         };
         
-        // ⚡ MINIMAL RUNTIME: No interference with game engines
-        // Let WebGL/GDevelop/Three.js handle everything themselves
+        // ⚡ FIX: Disable beep sound ONLY on document level
+        document.addEventListener('keydown', (e) => {
+            if (e.target === document.body || e.target === document.documentElement) {
+                e.preventDefault();
+            }
+        });
     )");
     
     // Wait for cache to be ready

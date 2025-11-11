@@ -11,6 +11,11 @@
 #include <chrono>
 #include <sys/resource.h>  // For setpriority on macOS/Linux
 
+#ifdef __APPLE__
+#include <objc/runtime.h>
+#include <objc/message.h>
+#endif
+
 #include <nlohmann/json.hpp>
 #include "webview/webview.h"
 #include "webview-universal-performance.h"
@@ -212,8 +217,15 @@ int main(int argc, char* argv[]) {
         mode: 'shared-assets'
     };
     
-    // ⚡ MINIMAL RUNTIME: No interference with game engines
-    // Let WebGL/GDevelop/Three.js handle everything themselves
+    // ⚡ FIX: Disable beep sound ONLY on document level (not on game canvas)
+    // This prevents system beep but doesn't interfere with game input
+    document.addEventListener('keydown', (e) => {
+        // Only prevent default if the event is on document itself
+        // Game canvas events will not be affected
+        if (e.target === document.body || e.target === document.documentElement) {
+            e.preventDefault();
+        }
+    });
     )JS");
     
     // Wait for cache to be ready before navigation
