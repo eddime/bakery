@@ -46,6 +46,9 @@ void worker(int server_fd, bakery::http::HTTPServer* server) {
     }
 }
 
+// ⚡ OPTIMIZATION: Atomic flag for server ready state
+std::atomic<bool> g_serverReady{false};
+
 // Multi-threaded HTTP server
 void runServer(bakery::http::HTTPServer* server) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -86,8 +89,13 @@ void runServer(bakery::http::HTTPServer* server) {
     int threads = std::thread::hardware_concurrency();
     if (threads == 0) threads = 4;
     
+    #ifndef NDEBUG
     std::cout << "⚡ Multi-threaded server (" << threads << " workers) on port " 
               << server->getPort() << std::endl;
+    #endif
+    
+    // ⚡ OPTIMIZATION: Signal that server is ready BEFORE launching workers
+    g_serverReady = true;
     
     std::vector<std::thread> workers;
     for (int i = 0; i < threads; i++) {
@@ -101,15 +109,22 @@ void runServer(bakery::http::HTTPServer* server) {
 int main(int argc, char* argv[]) {
     auto appStart = std::chrono::high_resolution_clock::now();
     
+    // ⚡ OPTIMIZATION: Disable console output in production for faster startup
+    #ifdef NDEBUG
+    std::ios::sync_with_stdio(false);
+    #else
     std::cout << "🥐 Bakery Launcher (macOS Shared Assets)" << std::endl;
     std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
     std::cout << std::endl;
+    #endif
     
     // OPTIMIZATION 1: Process Priority (macOS)
     #ifdef __APPLE__
     // Set high priority for main process
     setpriority(PRIO_PROCESS, 0, -10);
+    #ifndef NDEBUG
     std::cout << "⚡ Process priority: HIGH" << std::endl;
+    #endif
     #endif
     
     // OPTIMIZATION 2: Load assets + config in parallel
@@ -151,9 +166,11 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
+    #ifndef NDEBUG
     std::cout << "🎮 " << config.window.title << std::endl;
     std::cout << "📄 Entrypoint: " << config.entrypoint << std::endl;
     std::cout << std::endl;
+    #endif
     
     // OPTIMIZATION 3: Setup server + Build cache in PARALLEL with WebView creation
     bakery::http::HTTPServer server(8765);
@@ -164,11 +181,18 @@ int main(int argc, char* argv[]) {
     
     std::atomic<bool> cacheReady{false};
     std::thread cacheThread([&server, &assetLoader, &cacheReady]() {
+        #ifndef NDEBUG
         auto start = std::chrono::high_resolution_clock::now();
+        #endif
+        
         server.buildCache(assetLoader.getAllPaths());
+        
+        #ifndef NDEBUG
         auto end = std::chrono::high_resolution_clock::now();
         auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
         std::cout << "⚡ Pre-cached " << server.getCacheSize() << " responses in " << ms << "μs" << std::endl;
+        #endif
+        
         cacheReady = true;
     });
     
@@ -195,15 +219,19 @@ int main(int argc, char* argv[]) {
     std::thread serverThread(runServer, &server);
     serverThread.detach();
     
-    // Small delay to ensure server is listening (avoids connection refused)
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    // ⚡ OPTIMIZATION: Wait for server ready flag instead of sleep (faster!)
+    while (!g_serverReady) {
+        std::this_thread::yield();  // Cooperative wait, ~1-5ms instead of 50ms
+    }
     
     auto appReady = std::chrono::high_resolution_clock::now();
     auto startupMs = std::chrono::duration_cast<std::chrono::milliseconds>(appReady - appStart).count();
     
+    #ifndef NDEBUG
     std::cout << "⚡ STARTUP TIME: " << startupMs << "ms (all optimizations active)" << std::endl;
     std::cout << "🚀 Launching WebView..." << std::endl;
     std::cout << std::endl;
+    #endif
     
     w.navigate("http://127.0.0.1:8765");
     w.run();

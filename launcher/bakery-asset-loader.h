@@ -192,7 +192,9 @@ public:
             return false;
         }
         
+        #ifndef NDEBUG
         std::cout << "🔐 Encrypted assets detected" << std::endl;
+        #endif
         
         // 🔑 Read encryption key (32 bytes)
         uint8_t encryptionKey[32];
@@ -202,7 +204,9 @@ public:
         uint32_t fileCount;
         file.read((char*)&fileCount, 4);
         
+        #ifndef NDEBUG
         std::cout << "📦 Loading " << fileCount << " assets from bakery-assets..." << std::endl;
+        #endif
         
         uint32_t loaded = 0;
         uint32_t skipped = 0;
@@ -305,11 +309,13 @@ public:
             }
         }
         
+        #ifndef NDEBUG
         if (skipped > 0) {
             std::cout << "⚠️  Skipped " << skipped << " assets" << std::endl;
         }
-        
         std::cout << "✅ Loaded " << assets_.size() << " shared assets" << std::endl;
+        #endif
+        
         return true;
     }
     
