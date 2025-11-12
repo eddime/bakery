@@ -136,7 +136,7 @@ if(WIN32)
     target_include_directories(bakery-launcher-win PRIVATE
         ${CMAKE_SOURCE_DIR}/deps/webview/core/include/webview/detail/platform/windows/webview2-headers
         ${CMAKE_SOURCE_DIR}/deps/webview/core/include)
-    target_link_libraries(bakery-launcher-win ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json ws2_32 shlwapi ole32 shell32 user32)
+    target_link_libraries(bakery-launcher-win ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json ws2_32 shlwapi ole32 shell32 user32 version)
     
     # ⚡ OPTIMIZATION: Precompiled headers for faster builds
     target_precompile_headers(bakery-launcher-win PRIVATE
@@ -155,9 +155,20 @@ if(WIN32)
         target_compile_options(bakery-launcher-win PRIVATE /O2 /GL /Gy /DNDEBUG)
         target_link_options(bakery-launcher-win PRIVATE /LTCG /OPT:REF /OPT:ICF)
     else()
-        # MinGW/GCC
-        target_compile_options(bakery-launcher-win PRIVATE -O3 -flto -ffast-math -DNDEBUG)
-        target_link_options(bakery-launcher-win PRIVATE -flto -Wl,--gc-sections -static-libstdc++ -static-libgcc)
+        # MinGW/GCC - SIZE OPTIMIZATION
+        target_compile_options(bakery-launcher-win PRIVATE 
+            -Os -DNDEBUG
+            -ffunction-sections -fdata-sections
+        )
+        target_link_options(bakery-launcher-win PRIVATE 
+            -Wl,--gc-sections
+            -static-libstdc++ -static-libgcc
+        )
+        
+        add_custom_command(TARGET bakery-launcher-win POST_BUILD
+            COMMAND x86_64-w64-mingw32-strip $<TARGET_FILE:bakery-launcher-win>
+            COMMENT "⚡ Stripping Windows launcher..."
+        )
     endif()
     
     # bakery-universal-launcher-windows-embedded: Single EXE with embedded binaries

@@ -6,7 +6,10 @@
     "bake": "./bake"
   },
   "scripts": {
-    "install": "bun link"
+    "install": "bun link",
+    "build:launchers": "bun scripts/build-launchers.ts",
+    "download:binaries": "bun scripts/download-binaries.ts",
+    "postinstall": "bun scripts/download-binaries.ts || true"
   }
 }
 

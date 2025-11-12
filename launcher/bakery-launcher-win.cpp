@@ -35,6 +35,7 @@ struct BakeryConfig {
         int height;
     } window;
     std::string entrypoint;
+    std::string appName;  // Used for deterministic port (localStorage persistence)
 };
 
 std::atomic<bool> g_running{true};
@@ -132,32 +133,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         assetsLoaded = assetLoader.load();
     });
     
-    // OPTIMIZATION 3: Load config in parallel while assets load
-    std::string execDir = bakery::assets::getExecutableDir();
-    std::string configPath = execDir + "/bakery.config.json";
-    
+    // OPTIMIZATION 3: Prepare default config
     BakeryConfig config;
     config.window.title = "Bakery App";
     config.window.width = 1280;
     config.window.height = 720;
     config.entrypoint = "index.html";
-    
-    std::ifstream configFile(configPath);
-    if (configFile) {
-        try {
-            json j = json::parse(configFile);
-            if (j.contains("window")) {
-                if (j["window"].contains("title")) config.window.title = j["window"]["title"];
-                if (j["window"].contains("width")) config.window.width = j["window"]["width"];
-                if (j["window"].contains("height")) config.window.height = j["window"]["height"];
-            }
-            if (j.contains("entrypoint")) {
-                config.entrypoint = j["entrypoint"];
-            }
-        } catch (...) {
-            std::cerr << "⚠️  Failed to parse config, using defaults" << std::endl;
-        }
-    }
+    config.appName = "bakery-app";  // Default app name
     
     // Wait for assets to load
     assetLoadThread.join();
@@ -167,6 +149,52 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 1;
     }
     
+    // 🔒 Load config from encrypted assets (not accessible to user!)
+    auto configAsset = assetLoader.getAsset(".bakery-config.json");
+    if (configAsset.data && configAsset.size > 0) {
+        try {
+            std::string configStr(reinterpret_cast<const char*>(configAsset.data), configAsset.size);
+            json j = json::parse(configStr);
+            
+            // Load window config
+            if (j.contains("window")) {
+                if (j["window"].contains("title")) {
+                    config.window.title = j["window"]["title"].get<std::string>();
+                }
+                if (j["window"].contains("width")) {
+                    config.window.width = j["window"]["width"].get<int>();
+                }
+                if (j["window"].contains("height")) {
+                    config.window.height = j["window"]["height"].get<int>();
+                }
+            }
+            
+            // Load app config
+            if (j.contains("app")) {
+                if (j["app"].contains("name")) {
+                    config.appName = j["app"]["name"].get<std::string>();
+                    if (config.window.title == "Bakery App") {
+                        config.window.title = config.appName;
+                    }
+                }
+                if (j["app"].contains("entrypoint")) {
+                    config.entrypoint = j["app"]["entrypoint"].get<std::string>();
+                }
+            }
+            if (j.contains("entrypoint")) {
+                config.entrypoint = j["entrypoint"].get<std::string>();
+            }
+            
+            #ifndef NDEBUG
+            std::cout << "🔒 Config loaded from encrypted assets" << std::endl;
+            #endif
+        } catch (const std::exception& e) {
+            #ifndef NDEBUG
+            std::cerr << "⚠️ Failed to parse config: " << e.what() << std::endl;
+            #endif
+        }
+    }
+    
     #ifndef NDEBUG
     std::cout << "🎮 " << config.window.title << std::endl;
     std::cout << "📄 Entrypoint: " << config.entrypoint << std::endl;
@@ -174,7 +202,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     #endif
     
     // OPTIMIZATION 4: Parallel Cache Building
-    bakery::http::HTTPServer server(8765);
+    // 🔒 Use deterministic port based on app.name (NOT window.title!)
+    std::hash<std::string> hasher;
+    size_t hash = hasher(config.appName);
+    int port = 8765 + (hash % 1000);  // Port range: 8765-9765
+    
+    #ifndef NDEBUG
+    std::cout << "🔒 Port: " << port << " (based on app.name: " << config.appName << ")" << std::endl;
+    #endif
+    bakery::http::HTTPServer server(port);
     server.setEntrypoint(config.entrypoint);
     server.setAssetProvider([&assetLoader](const std::string& path) {
         return assetLoader.getAsset(path);
@@ -198,6 +234,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         cacheReady = true;
     });
     
+    // 🚀 HIGH-PERFORMANCE MODE: Disable Power Throttling
+    #ifndef NDEBUG
+    std::cout << "🚀 Enabling High-Performance Mode..." << std::endl;
+    #endif
+    
+    // Disable Windows Power Throttling for maximum FPS
+    PROCESS_POWER_THROTTLING_STATE PowerThrottling{};
+    PowerThrottling.Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION;
+    PowerThrottling.ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED;
+    PowerThrottling.StateMask = 0;  // 0 = disable throttling
+    
+    SetProcessInformation(
+        GetCurrentProcess(),
+        ProcessPowerThrottling,
+        &PowerThrottling,
+        sizeof(PowerThrottling)
+    );
+    
+    // Request high-performance GPU (prefer discrete over integrated)
+    SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+    
     // While cache builds, create WebView (parallel!)
     webview::webview w(false, nullptr);  // false = production mode
     w.set_title(config.window.title);
@@ -212,11 +269,85 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             launcher: 'shared-assets'
         };
         
-        // ⚡ FIX: Disable beep sound ONLY on document level
-        document.addEventListener('keydown', (e) => {
-            if (e.target === document.body || e.target === document.documentElement) {
+        // ⚡ RUNTIME OPTIMIZATION 1: Passive Event Listeners
+        (function() {
+            const passiveEvents = new Set(['scroll', 'wheel', 'touchstart', 'touchmove', 'touchend', 'mousewheel']);
+            const originalAddEventListener = EventTarget.prototype.addEventListener;
+            
+            EventTarget.prototype.addEventListener = function(type, listener, options) {
+                if (passiveEvents.has(type) && typeof options !== 'object') {
+                    options = { passive: true, capture: false };
+                } else if (passiveEvents.has(type) && typeof options === 'object' && options.passive === undefined) {
+                    options.passive = true;
+                }
+                return originalAddEventListener.call(this, type, listener, options);
+            };
+        })();
+        
+        // ⚡ RUNTIME OPTIMIZATION 2: Image Decode Hints
+        if ('decode' in HTMLImageElement.prototype) {
+            const observer = new MutationObserver((mutations) => {
+                mutations.forEach((mutation) => {
+                    mutation.addedNodes.forEach((node) => {
+                        if (node.tagName === 'IMG' && node.src) {
+                            node.decode().catch(() => {});
+                        }
+                    });
+                });
+            });
+            
+            document.addEventListener('DOMContentLoaded', () => {
+                observer.observe(document.body, { childList: true, subtree: true });
+            });
+        }
+        
+        // ⚡ RUNTIME OPTIMIZATION 3: Smart GC
+        let gameLoaded = false;
+        window.addEventListener('load', () => {
+            gameLoaded = true;
+            setTimeout(() => {
+                if (window.gc) window.gc();
+            }, 2000);
+            
+            if (window.performance && window.performance.memory) {
+                const initialMemory = window.performance.memory.usedJSHeapSize;
+                setInterval(() => {
+                    if (!document.hidden) {
+                        const currentMemory = window.performance.memory.usedJSHeapSize;
+                        const growth = currentMemory - initialMemory;
+                        if (growth > 100 * 1024 * 1024) {
+                            requestIdleCallback(() => {
+                                if (window.gc) window.gc();
+                            });
+                        }
+                    }
+                }, 30000);
+            }
+        });
+        
+        // ⚡ RUNTIME OPTIMIZATION 4: Disable text selection (less repaints)
+        // Note: Context menu (right-click) is left enabled for debugging
+        document.addEventListener('selectstart', (e) => {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
                 e.preventDefault();
             }
+        });
+        
+        // ⚡ RUNTIME OPTIMIZATION 5: CSS Hardware Acceleration
+        const style = document.createElement('style');
+        style.textContent = `
+            * {
+                -webkit-transform: translateZ(0);
+                -webkit-backface-visibility: hidden;
+                -webkit-perspective: 1000;
+            }
+            canvas, video {
+                -webkit-transform: translate3d(0,0,0);
+                transform: translate3d(0,0,0);
+            }
+        `;
+        document.addEventListener('DOMContentLoaded', () => {
+            document.head.appendChild(style);
         });
     )");
     

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔥 Gemshell Stress Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            overflow: hidden;
+        }
+        
+        #menu {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            gap: 20px;
+        }
+        
+        h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+        
+        .framework-btn {
+            padding: 20px 40px;
+            font-size: 24px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            border-radius: 10px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s;
+            min-width: 300px;
+        }
+        
+        .framework-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: scale(1.05);
+        }
+        
+        #game-container {
+            display: none;
+            width: 100%;
+            height: 100vh;
+            position: relative;
+        }
+        
+        #stats {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            line-height: 1.6;
+            z-index: 9999;
+            min-width: 300px;
+            pointer-events: none;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .stat-good { color: #4ade80; }
+        .stat-warn { color: #fbbf24; }
+        .stat-bad { color: #f87171; }
+        .stat-webgpu { color: #8b5cf6; font-weight: bold; }
+        .stat-webgl { color: #3b82f6; }
+        
+        #console-log {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            background: rgba(0,0,0,0.9);
+            padding: 15px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-width: 400px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 9999;
+            pointer-events: none;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+        
+        .log-entry {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #667eea;
+        }
+        
+        #back-btn {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            border: 2px solid white;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            z-index: 10000;
+            pointer-events: auto;
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="menu">
+        <h1>🔥 GemShell Stress Test</h1>
+        <p style="font-size: 18px; opacity: 0.9;">Choose a framework to benchmark:</p>
+        
+        <button class="framework-btn" onclick="startTest('vanilla')">
+            🟡 Vanilla Canvas (No Framework)
+        </button>
+        
+        <button class="framework-btn" onclick="startTest('pixi')">
+            🎨 PixiJS (WebGL Renderer)
+        </button>
+        
+        <button class="framework-btn" onclick="startTest('three')">
+            🎲 Three.js (3D WebGL)
+        </button>
+        
+        <button class="framework-btn" onclick="startTest('phaser')">
+            🎮 Phaser 3 (Game Engine)
+        </button>
+        
+        <button class="framework-btn" onclick="startTest('kaplay')">
+            🕹️ Kaplay (Modern Game Library)
+        </button>
+    </div>
+    
+    <div id="game-container">
+        <button id="back-btn" onclick="backToMenu()">← Back to Menu</button>
+    </div>
+    
+    <!-- Stats and Console OUTSIDE game-container for better visibility -->
+    <div id="stats" style="display: none;"></div>
+    <div id="console-log" style="display: none;"></div>
+    
+    <script src="stress-test.js"></script>
+</body>
+</html>
+

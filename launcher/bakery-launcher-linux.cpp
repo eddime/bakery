@@ -26,6 +26,7 @@ struct BakeryConfig {
         int height;
     } window;
     std::string entrypoint;
+    std::string appName;  // Used for deterministic port (localStorage persistence)
 };
 
 std::atomic<bool> g_running{true};
@@ -119,32 +120,13 @@ int main(int argc, char* argv[]) {
         assetsLoaded = assetLoader.load();
     });
     
-    // OPTIMIZATION 3: Load config in parallel while assets load
-    std::string execDir = bakery::assets::getExecutableDir();
-    std::string configPath = execDir + "/bakery.config.json";
-    
+    // OPTIMIZATION 3: Prepare default config
     BakeryConfig config;
     config.window.title = "Bakery App";
     config.window.width = 1280;
     config.window.height = 720;
     config.entrypoint = "index.html";
-    
-    std::ifstream configFile(configPath);
-    if (configFile) {
-        try {
-            json j = json::parse(configFile);
-            if (j.contains("window")) {
-                if (j["window"].contains("title")) config.window.title = j["window"]["title"];
-                if (j["window"].contains("width")) config.window.width = j["window"]["width"];
-                if (j["window"].contains("height")) config.window.height = j["window"]["height"];
-            }
-            if (j.contains("entrypoint")) {
-                config.entrypoint = j["entrypoint"];
-            }
-        } catch (...) {
-            std::cerr << "⚠️  Failed to parse config, using defaults" << std::endl;
-        }
-    }
+    config.appName = "bakery-app";  // Default app name
     
     // Wait for assets to load
     assetLoadThread.join();
@@ -154,6 +136,52 @@ int main(int argc, char* argv[]) {
         return 1;
     }
     
+    // 🔒 Load config from encrypted assets (not accessible to user!)
+    auto configAsset = assetLoader.getAsset(".bakery-config.json");
+    if (configAsset.data && configAsset.size > 0) {
+        try {
+            std::string configStr(reinterpret_cast<const char*>(configAsset.data), configAsset.size);
+            json j = json::parse(configStr);
+            
+            // Load window config
+            if (j.contains("window")) {
+                if (j["window"].contains("title")) {
+                    config.window.title = j["window"]["title"].get<std::string>();
+                }
+                if (j["window"].contains("width")) {
+                    config.window.width = j["window"]["width"].get<int>();
+                }
+                if (j["window"].contains("height")) {
+                    config.window.height = j["window"]["height"].get<int>();
+                }
+            }
+            
+            // Load app config
+            if (j.contains("app")) {
+                if (j["app"].contains("name")) {
+                    config.appName = j["app"]["name"].get<std::string>();
+                    if (config.window.title == "Bakery App") {
+                        config.window.title = config.appName;
+                    }
+                }
+                if (j["app"].contains("entrypoint")) {
+                    config.entrypoint = j["app"]["entrypoint"].get<std::string>();
+                }
+            }
+            if (j.contains("entrypoint")) {
+                config.entrypoint = j["entrypoint"].get<std::string>();
+            }
+            
+            #ifndef NDEBUG
+            std::cout << "🔒 Config loaded from encrypted assets" << std::endl;
+            #endif
+        } catch (const std::exception& e) {
+            #ifndef NDEBUG
+            std::cerr << "⚠️ Failed to parse config: " << e.what() << std::endl;
+            #endif
+        }
+    }
+    
     #ifndef NDEBUG
     std::cout << "🎮 " << config.window.title << std::endl;
     std::cout << "📄 Entrypoint: " << config.entrypoint << std::endl;
@@ -161,7 +189,15 @@ int main(int argc, char* argv[]) {
     #endif
     
     // OPTIMIZATION 4: Parallel Cache Building
-    bakery::http::HTTPServer server(8765);
+    // 🔒 Use deterministic port based on app.name (NOT window.title!)
+    std::hash<std::string> hasher;
+    size_t hash = hasher(config.appName);
+    int port = 8765 + (hash % 1000);  // Port range: 8765-9765
+    
+    #ifndef NDEBUG
+    std::cout << "🔒 Port: " << port << " (based on app.name: " << config.appName << ")" << std::endl;
+    #endif
+    bakery::http::HTTPServer server(port);
     server.setEntrypoint(config.entrypoint);
     server.setAssetProvider([&assetLoader](const std::string& path) {
         return assetLoader.getAsset(path);
@@ -186,6 +222,16 @@ int main(int argc, char* argv[]) {
     });
     
     cacheThread.join();
+    
+    // 🚀 HIGH-PERFORMANCE MODE: Set high process priority
+    #ifndef NDEBUG
+    std::cout << "🚀 Enabling High-Performance Mode..." << std::endl;
+    #endif
+    
+    // Set high priority for better scheduling
+    #ifdef __linux__
+    setpriority(PRIO_PROCESS, 0, -10);  // Higher priority (requires root or CAP_SYS_NICE)
+    #endif
     
     // Start HTTP server
     std::thread serverThread(runServer, &server);

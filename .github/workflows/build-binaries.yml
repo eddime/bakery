@@ -1,0 +1,136 @@
+name: Build Launcher Binaries
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+      
+      - name: Install CMake
+        run: brew install cmake
+      
+      - name: Build macOS ARM64
+        run: |
+          cd launcher
+          mkdir -p build-arm64
+          cd build-arm64
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=arm64
+          cmake --build . --target bakery-launcher-mac --config Release
+          strip bakery-launcher-mac
+      
+      - name: Build macOS x64
+        run: |
+          cd launcher
+          mkdir -p build-x64
+          cd build-x64
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_ARCHITECTURES=x86_64
+          cmake --build . --target bakery-launcher-mac --config Release
+          strip bakery-launcher-mac
+      
+      - name: Upload macOS Binaries
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-binaries
+          path: |
+            launcher/build-arm64/bakery-launcher-mac
+            launcher/build-x64/bakery-launcher-mac
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+      
+      - name: Setup MSVC
+        uses: microsoft/setup-msbuild@v1.1
+      
+      - name: Install CMake
+        run: choco install cmake
+      
+      - name: Build Windows x64
+        run: |
+          cd launcher
+          mkdir build-win
+          cd build-win
+          cmake .. -DCMAKE_BUILD_TYPE=Release -G "Visual Studio 17 2022" -A x64
+          cmake --build . --target bakery-launcher-win --config Release
+      
+      - name: Upload Windows Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-binary
+          path: launcher/build-win/Release/bakery-launcher-win.exe
+
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+      
+      - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake build-essential libgtk-3-dev libwebkit2gtk-4.1-dev
+      
+      - name: Build Linux x64
+        run: |
+          cd launcher
+          mkdir -p build-linux-x64
+          cd build-linux-x64
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          cmake --build . --target bakery-launcher-linux --config Release
+          strip bakery-launcher-linux
+      
+      - name: Upload Linux Binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-binary
+          path: launcher/build-linux-x64/bakery-launcher-linux
+
+  create-release:
+    needs: [build-macos, build-windows, build-linux]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+      
+      - name: Rename binaries
+        run: |
+          mv macos-binaries/build-arm64/bakery-launcher-mac bakery-launcher-mac-arm64
+          mv macos-binaries/build-x64/bakery-launcher-mac bakery-launcher-mac-x64
+          mv windows-binary/bakery-launcher-win.exe bakery-launcher-win-x64.exe
+          mv linux-binary/bakery-launcher-linux bakery-launcher-linux-x64
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            bakery-launcher-mac-arm64
+            bakery-launcher-mac-x64
+            bakery-launcher-win-x64.exe
+            bakery-launcher-linux-x64
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

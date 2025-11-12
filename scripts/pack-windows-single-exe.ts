@@ -2,7 +2,7 @@
 // Pack Windows Universal Binary into SINGLE EXE
 
 import { readFileSync, writeFileSync, statSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
 
 interface PackedData {
   x64Offset: bigint;
@@ -29,6 +29,11 @@ function packSingleEXE(
   const x64Binary = readFileSync(x64BinaryPath);
   console.log(`✅ x64 Binary: ${(x64Binary.length / 1024 / 1024).toFixed(1)}MB`);
 
+  // Read bakery-assets
+  const assetsPath = join(dirname(x64BinaryPath), '..', 'bakery-assets');
+  const assets = readFileSync(assetsPath);
+  console.log(`✅ Assets: ${(assets.length / 1024 / 1024).toFixed(1)}MB`);
+
   // Calculate offsets
   let currentOffset = BigInt(launcher.length);
   
@@ -41,14 +46,23 @@ function packSingleEXE(
     currentOffset += 8n - (currentOffset % 8n);
   }
 
+  const assetsOffset = currentOffset;
+  const assetsSize = BigInt(assets.length);
+  currentOffset += assetsSize;
+
+  // Align to 8 bytes
+  if (currentOffset % 8n !== 0n) {
+    currentOffset += 8n - (currentOffset % 8n);
+  }
+
   // Create header
   const magic = Buffer.from('BAKERY_EMBEDDED\0', 'utf8');
   const header = Buffer.alloc(48);
   
   header.writeBigUInt64LE(x64Offset, 0);
   header.writeBigUInt64LE(x64Size, 8);
-  header.writeBigUInt64LE(0n, 16); // assetsOffset (not used - embedded in x64 binary)
-  header.writeBigUInt64LE(0n, 24); // assetsSize
+  header.writeBigUInt64LE(assetsOffset, 16);
+  header.writeBigUInt64LE(assetsSize, 24);
   header.writeBigUInt64LE(0n, 32); // configOffset
   header.writeBigUInt64LE(0n, 40); // configSize
 
@@ -56,13 +70,20 @@ function packSingleEXE(
   console.log('📋 Structure:');
   console.log(`   Launcher:  0 - ${launcher.length} (${(launcher.length / 1024).toFixed(1)}KB)`);
   console.log(`   x64 Binary: ${x64Offset} - ${x64Offset + x64Size} (${(Number(x64Size) / 1024 / 1024).toFixed(1)}MB)`);
-  console.log(`   Header:    ${currentOffset} (48 bytes)`);
+  console.log(`   Assets:     ${assetsOffset} - ${assetsOffset + assetsSize} (${(Number(assetsSize) / 1024 / 1024).toFixed(1)}MB)`);
+  console.log(`   Header:     ${currentOffset} (48 bytes)`);
+
+  // Calculate padding
+  const padding1 = Number(assetsOffset - x64Offset - x64Size);
+  const padding2 = Number(currentOffset - assetsOffset - assetsSize);
 
   // Write output
   const output = Buffer.concat([
     launcher,
     x64Binary,
-    Buffer.alloc(Number(currentOffset) - launcher.length - x64Binary.length), // Padding
+    Buffer.alloc(padding1), // Padding after x64
+    assets,
+    Buffer.alloc(padding2), // Padding after assets
     magic,
     header
   ]);

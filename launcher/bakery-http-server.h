@@ -160,6 +160,10 @@ public:
      * ⚡ OPTIMIZATION: Critical assets (entrypoint, main.js, etc.) are cached FIRST
      */
     void buildCache(const std::vector<std::string>& assetPaths) {
+        // 🔥 CLEAR OLD CACHE (prevent stale content!)
+        cache_.clear();
+        modifiedHTMLs_.clear();
+        
         // ⚡ OPTIMIZATION: Pre-allocate cache to avoid rehashing
         cache_.reserve(assetPaths.size() + 10);
         
@@ -178,14 +182,59 @@ public:
                 if (!asset.data || asset.size == 0) continue;
                 
                 Response resp;
-                resp.body = asset.data;
-                resp.bodySize = asset.size;
+                
+                // 🚀 INJECT WebGPU helper into HTML files (PHASE 1 TOO!)
+                bool isHTML = asset.mimeType.find("html") != std::string::npos;
+                
+                if (isHTML) {
+                    // Get WebGPU helper script content (inline for immediate execution!)
+                    auto webgpuAsset = getAsset_("bakery-webgpu-helper.js");
+                    std::string webgpuScript;
+                    if (webgpuAsset.data && webgpuAsset.size > 0) {
+                        webgpuScript = std::string(reinterpret_cast<const char*>(webgpuAsset.data), webgpuAsset.size);
+                    }
+                    
+                    // Inject INLINE script before </head> or at start of <body>
+                    std::string htmlContent(reinterpret_cast<const char*>(asset.data), asset.size);
+                    std::string injection = "<script>" + webgpuScript + "</script>";
+                    
+                    size_t headPos = htmlContent.find("</head>");
+                    if (headPos != std::string::npos) {
+                        htmlContent.insert(headPos, injection);
+                    } else {
+                        size_t bodyPos = htmlContent.find("<body");
+                        if (bodyPos != std::string::npos) {
+                            size_t bodyEnd = htmlContent.find(">", bodyPos);
+                            if (bodyEnd != std::string::npos) {
+                                htmlContent.insert(bodyEnd + 1, injection);
+                            }
+                        }
+                    }
+                    
+                    // Store modified HTML so pointer remains valid
+                    modifiedHTMLs_.push_back(std::move(htmlContent));
+                    resp.body = reinterpret_cast<const unsigned char*>(modifiedHTMLs_.back().c_str());
+                    resp.bodySize = modifiedHTMLs_.back().size();
+                } else {
+                    resp.body = asset.data;
+                    resp.bodySize = asset.size;
+                }
+                
+                // 🔥 CRITICAL: NO-CACHE for HTML/JS/CSS to prevent stale content!
+                bool isCode = (isHTML ||
+                              asset.mimeType.find("javascript") != std::string::npos ||
+                              asset.mimeType.find("css") != std::string::npos ||
+                              asset.mimeType.find("json") != std::string::npos);
+                
+                std::string cacheControl = isCode 
+                    ? "no-cache, no-store, must-revalidate" 
+                    : "public, max-age=31536000, immutable";
                 
                 resp.headers = 
                     "HTTP/1.1 200 OK\r\n"
                     "Content-Type: " + asset.mimeType + "\r\n"
-                    "Content-Length: " + std::to_string(asset.size) + "\r\n"
-                    "Cache-Control: public, max-age=31536000, immutable\r\n"
+                    "Content-Length: " + std::to_string(resp.bodySize) + "\r\n"
+                    "Cache-Control: " + cacheControl + "\r\n"
                     "Accept-Ranges: bytes\r\n"
                     "Connection: keep-alive\r\n"
                     "\r\n";
@@ -213,15 +262,83 @@ public:
             if (!asset.data || asset.size == 0) continue;
             
             Response resp;
-            resp.body = asset.data;
-            resp.bodySize = asset.size;
             
-            // Build HTTP headers with aggressive caching
+            // 🚀 INJECT WebGPU helper into HTML files (universal, framework-agnostic)
+            bool isHTML = asset.mimeType.find("html") != std::string::npos;
+            
+            if (isHTML) {
+                // Get WebGPU helper script content (inline for immediate execution!)
+                auto webgpuAsset = getAsset_("bakery-webgpu-helper.js");
+                std::string webgpuScript;
+                if (webgpuAsset.data && webgpuAsset.size > 0) {
+                    webgpuScript = std::string(reinterpret_cast<const char*>(webgpuAsset.data), webgpuAsset.size);
+                    #ifndef NDEBUG
+                    std::cout << "✅ WebGPU script loaded: " << webgpuScript.size() << " bytes" << std::endl;
+                    #endif
+                } else {
+                    #ifndef NDEBUG
+                    std::cerr << "❌ WARNING: bakery-webgpu-helper.js NOT FOUND!" << std::endl;
+                    #endif
+                }
+                
+                // Inject INLINE script before </head> or at start of <body>
+                std::string htmlContent(reinterpret_cast<const char*>(asset.data), asset.size);
+                std::string injection = "<script>" + webgpuScript + "</script>";
+                
+                size_t headPos = htmlContent.find("</head>");
+                if (headPos != std::string::npos) {
+                    htmlContent.insert(headPos, injection);
+                    #ifndef NDEBUG
+                    std::cout << "✅ Injected WebGPU script before </head>" << std::endl;
+                    #endif
+                } else {
+                    size_t bodyPos = htmlContent.find("<body");
+                    if (bodyPos != std::string::npos) {
+                        size_t bodyEnd = htmlContent.find(">", bodyPos);
+                        if (bodyEnd != std::string::npos) {
+                            htmlContent.insert(bodyEnd + 1, injection);
+                            #ifndef NDEBUG
+                            std::cout << "✅ Injected WebGPU script after <body>" << std::endl;
+                            #endif
+                        }
+                    }
+                }
+                
+                // Store modified HTML so pointer remains valid
+                modifiedHTMLs_.push_back(std::move(htmlContent));
+                resp.body = reinterpret_cast<const unsigned char*>(modifiedHTMLs_.back().c_str());
+                resp.bodySize = modifiedHTMLs_.back().size();
+            } else {
+                resp.body = asset.data;
+                resp.bodySize = asset.size;
+            }
+            
+            // 🔥 CRITICAL: NO-CACHE for HTML/JS/CSS to prevent stale content!
+            // Images/fonts can be cached aggressively
+            bool isCode = (isHTML ||
+                          asset.mimeType.find("javascript") != std::string::npos ||
+                          asset.mimeType.find("css") != std::string::npos ||
+                          asset.mimeType.find("json") != std::string::npos);
+            
+            std::string cacheControl = isCode 
+                ? "no-cache, no-store, must-revalidate, max-age=0" 
+                : "public, max-age=31536000, immutable";
+            
+            // Build HTTP headers with aggressive cache prevention
             resp.headers = 
                 "HTTP/1.1 200 OK\r\n"
                 "Content-Type: " + asset.mimeType + "\r\n"
-                "Content-Length: " + std::to_string(asset.size) + "\r\n"
-                "Cache-Control: public, max-age=31536000, immutable\r\n"
+                "Content-Length: " + std::to_string(resp.bodySize) + "\r\n"
+                "Cache-Control: " + cacheControl + "\r\n";
+            
+            if (isCode) {
+                // Extra headers to prevent ALL caching
+                resp.headers += 
+                    "Pragma: no-cache\r\n"
+                    "Expires: 0\r\n";
+            }
+            
+            resp.headers += 
                 "Accept-Ranges: bytes\r\n"
                 "Connection: keep-alive\r\n"
                 "\r\n";
@@ -360,6 +477,9 @@ private:
         send(fd, resp, strlen(resp), MSG_NOSIGNAL);
 #endif
     }
+    
+    // Store modified HTML content so pointers remain valid
+    std::vector<std::string> modifiedHTMLs_;
 };
 
 } // namespace http

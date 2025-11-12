@@ -3,7 +3,7 @@
 // Creates a single "bakery-assets" file that can be shared across architectures
 // 🔒 With XOR Encryption for asset protection
 
-import { readdirSync, statSync, readFileSync, writeFileSync } from 'fs';
+import { readdirSync, statSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { createHash, randomBytes } from 'crypto';
 
@@ -71,7 +71,29 @@ function collectFiles(dir: string, baseDir: string = dir): Array<{ path: string;
 
 const files = collectFiles(srcDir);
 
-console.log(`✅ Collected ${files.length} files`);
+// 🚀 Add WebGPU helper script (universal, framework-agnostic)
+const webgpuHelperPath = join(import.meta.dir, '..', 'launcher', 'bakery-webgpu-helper.js');
+const webgpuHelper = readFileSync(webgpuHelperPath);
+files.push({ path: 'bakery-webgpu-helper.js', data: webgpuHelper });
+
+// 🔒 Embed bakery.config.json (encrypted, not accessible to user)
+const configJsonPath = join(projectDir, 'bakery.config.json');
+const configJsPath = join(projectDir, 'bakery.config.js');
+
+if (existsSync(configJsonPath)) {
+  const configData = readFileSync(configJsonPath);
+  files.push({ path: '.bakery-config.json', data: configData });
+  console.log('🔒 Config embedded (JSON)');
+} else if (existsSync(configJsPath)) {
+  // Convert JS config to JSON
+  const configModule = await import(`file://${configJsPath}`);
+  const config = configModule.default;
+  const configJson = JSON.stringify(config, null, 2);
+  files.push({ path: '.bakery-config.json', data: Buffer.from(configJson) });
+  console.log('🔒 Config embedded (from JS)');
+}
+
+console.log(`✅ Collected ${files.length} files (+ WebGPU helper + config)`);
 console.log('');
 
 // Build binary format:

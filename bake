@@ -275,24 +275,14 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   chmodSync(join(macOSDir, `${appName}-x86_64`), 0o755);
   
   cpSync(assetsFile, join(macOSDir, 'bakery-assets'));
-
-  const configJsonPath = join(projectDir, 'bakery.config.json');
-  if (existsSync(configJsonPath)) {
-    cpSync(configJsonPath, join(macOSDir, 'bakery.config.json'));
-  } else {
-    const configJsPath = join(projectDir, 'bakery.config.js');
-    if (existsSync(configJsPath)) {
-      const configModule = await import(`file://${configJsPath}`);
-      const config = configModule.default;
-      writeFileSync(join(macOSDir, 'bakery.config.json'), JSON.stringify(config, null, 2));
-    }
-  }
+  
+  // 🔒 Config is now embedded in bakery-assets (encrypted, not accessible to user)
 
   console.log('✅ Universal launcher (detects architecture)');
   console.log('✅ ARM64 launcher (228 KB)');
   console.log('✅ x64 launcher (240 KB)');
   console.log('✅ Shared assets (8.8 MB, used by both) ✅');
-  console.log('✅ Config copied');
+  console.log('🔒 Config embedded in encrypted assets');
   
   const iconPath = join(projectDir, 'assets', 'icon.icns');
   if (existsSync(iconPath)) {
@@ -328,6 +318,13 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
 </plist>`;
 
   writeFileSync(join(contentsDir, 'Info.plist'), infoPlist);
+
+  // Remove quarantine attributes so app can be opened with double-click
+  const xattrProc = Bun.spawn(['xattr', '-cr', appBundle], {
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
+  await xattrProc.exited;
 
   console.log('✅ Build complete!\n');
   console.log('📦 Output:', appBundle);
