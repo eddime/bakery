@@ -334,12 +334,17 @@ int main(int argc, char* argv[]) {
             id nswindow = (id)window_ptr;
             
             // Enable fullscreen button (green button) - required for Game Mode
-            // NSWindowCollectionBehaviorFullScreenPrimary = 1 << 7 = 128
+            // NSWindowCollectionBehaviorFullScreenPrimary = 1 << 7 = 128 (main display)
+            // NSWindowCollectionBehaviorFullScreenAuxiliary = 1 << 8 = 256 (external displays)
+            // Combine both for multi-display support (like Godot!)
             SEL setCollectionBehavior = sel_registerName("setCollectionBehavior:");
-            ((void (*)(id, SEL, NSUInteger))objc_msgSend)(nswindow, setCollectionBehavior, 128);
+            NSUInteger behavior = 128 | 256;  // Primary + Auxiliary (works on all displays!)
+            ((void (*)(id, SEL, NSUInteger))objc_msgSend)(nswindow, setCollectionBehavior, behavior);
             
             #ifndef NDEBUG
             std::cout << "🎮 Native fullscreen button enabled (Game Mode ready)" << std::endl;
+            std::cout << "   ✅ Supports primary display (FullScreenPrimary)" << std::endl;
+            std::cout << "   ✅ Supports external displays (FullScreenAuxiliary)" << std::endl;
             #endif
         }
     }
