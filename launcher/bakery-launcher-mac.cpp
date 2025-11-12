@@ -15,6 +15,12 @@
 
 #include <nlohmann/json.hpp>
 #include "webview/webview.h"
+
+#ifdef __APPLE__
+#include <objc/objc.h>
+#include <objc/runtime.h>
+#include <objc/message.h>
+#endif
 #include "webview-universal-performance.h"
 
 // NEW: Shared HTTP server and asset loader!
@@ -317,6 +323,24 @@ int main(int argc, char* argv[]) {
     
     // Apply window config
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
+    
+    // 🎮 Enable native macOS Game Mode support
+    // This adds the fullscreen button and enables Game Mode in fullscreen
+    #ifdef __APPLE__
+    void* window_ptr = w.window();
+    if (window_ptr) {
+        id nswindow = (id)window_ptr;
+        
+        // Enable fullscreen button (green button) - required for Game Mode
+        // NSWindowCollectionBehaviorFullScreenPrimary = 1 << 7 = 128
+        SEL setCollectionBehavior = sel_registerName("setCollectionBehavior:");
+        ((void (*)(id, SEL, NSUInteger))objc_msgSend)(nswindow, setCollectionBehavior, 128);
+        
+        #ifndef NDEBUG
+        std::cout << "🎮 Native fullscreen button enabled (Game Mode ready)" << std::endl;
+        #endif
+    }
+    #endif
     
     // 🖥️ Fullscreen mode for maximum performance (bypasses compositor)
     if (config.window.fullscreen) {

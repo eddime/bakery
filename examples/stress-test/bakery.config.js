@@ -4,7 +4,7 @@ export default {
     // Keep this constant across versions to preserve save data.
     // Changing this will reset all localStorage data.
     name: "stress-test",
-    version: "1.0.0",
+    version: "1.0.1",  // Changed to test Game Mode
     entrypoint: "index.html"
   },
   window: {
