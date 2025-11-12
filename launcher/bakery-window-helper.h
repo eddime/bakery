@@ -16,6 +16,7 @@ namespace window {
 #include <objc/objc.h>
 #include <objc/runtime.h>
 #include <objc/message.h>
+#include <CoreFoundation/CoreFoundation.h>
 
 /**
  * Enable native macOS fullscreen button (required for Game Mode)
@@ -88,8 +89,12 @@ inline void enablePersistentGameMode() {
             processInfo, beginActivitySel, options, reasonStr
         );
         
-        // Token is already retained by beginActivityWithOptions
-        // Keep it alive for app lifetime (will be released when app exits)
+        // CRITICAL: Explicitly retain token to prevent deallocation
+        // beginActivityWithOptions returns an autoreleased object
+        // We must retain it manually to keep it alive for app lifetime
+        if (activityToken) {
+            CFRetain((CFTypeRef)activityToken);
+        }
     }
 }
 
