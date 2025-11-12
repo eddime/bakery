@@ -50,17 +50,21 @@ inline void setHighProcessPriority() {
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// 2️⃣  PREVENT APP NAP (Universal: Keep app responsive)
+// 2️⃣  PREVENT APP NAP + GAME MODE (Universal: Keep app responsive + Game Mode)
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// Static storage to keep activity alive (prevents Game Mode from being disabled)
+static id g_gameActivity = nullptr;
+
 inline void preventAppNap() {
     id processInfo = ((id(*)(id, SEL))objc_msgSend)(
         (id)objc_getClass("NSProcessInfo"),
         sel_registerName("processInfo")
     );
     
-    // Activity options: User-initiated, sudden termination disabled, automatic termination disabled
+    // Activity options: User-initiated, Latency Critical (Game Mode!), sudden termination disabled, automatic termination disabled
     unsigned long long options = 
         (1ULL << 20) |  // NSActivityUserInitiated
+        (1ULL << 21) |  // NSActivityLatencyCritical (REQUIRED for Game Mode!)
         (1ULL << 14) |  // NSActivitySuddenTerminationDisabled
         (1ULL << 15);   // NSActivityAutomaticTerminationDisabled
     
@@ -70,6 +74,19 @@ inline void preventAppNap() {
         "Bakery Game Running"
     );
     
+    // Always create new activity (static variable resets on new process)
+    // End previous activity if exists (prevents multiple activities in same process)
+    if (g_gameActivity) {
+        ((void(*)(id, SEL, id))objc_msgSend)(
+            processInfo,
+            sel_registerName("endActivity:"),
+            g_gameActivity
+        );
+        g_gameActivity = nullptr;
+    }
+    
+    // Begin new activity with Game Mode support (NSActivityLatencyCritical)
+    // This tells macOS this is a latency-critical app (game!)
     id activity = ((id(*)(id, SEL, unsigned long long, id))objc_msgSend)(
         processInfo,
         sel_registerName("beginActivityWithOptions:reason:"),
@@ -77,8 +94,9 @@ inline void preventAppNap() {
         reason
     );
     
-    // Keep activity alive (don't release)
-    ((void(*)(id, SEL))objc_msgSend)(activity, sel_registerName("retain"));
+    // Keep activity alive for the lifetime of the app
+    // This ensures Game Mode stays active even if user toggles it off
+    g_gameActivity = ((id(*)(id, SEL))objc_msgSend)(activity, sel_registerName("retain"));
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

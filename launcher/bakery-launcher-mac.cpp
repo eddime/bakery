@@ -285,6 +285,10 @@ int main(int argc, char* argv[]) {
     // 2. Disable App Nap via system command
     system("defaults write NSGlobalDomain NSAppSleepDisabled -bool YES 2>/dev/null");
     
+    // 2b. Enable Game Mode via NSProcessInfo (REQUIRED for persistent Game Mode!)
+    // This uses NSActivityLatencyCritical which tells macOS this is a game
+    bakery::universal::preventAppNap();
+    
     // 3. 🎮 Request Game Mode optimizations (macOS Sonoma 14+)
     // Game Mode gives highest priority to CPU/GPU when in fullscreen
     // Reference: https://support.apple.com/en-us/105118
@@ -315,7 +319,7 @@ int main(int argc, char* argv[]) {
     #ifndef NDEBUG
     std::cout << "   ✅ Process priority: REALTIME (-20)" << std::endl;
     std::cout << "   ✅ App Nap: Disabled (multiple methods)" << std::endl;
-    std::cout << "   ✅ Game Mode: Requested (macOS Sonoma 14+)" << std::endl;
+    std::cout << "   ✅ Game Mode: NSActivityLatencyCritical (persistent!)" << std::endl;
     std::cout << "   ✅ Metal rendering: Forced (hardware)" << std::endl;
     std::cout << "   ✅ Discrete GPU: Requested" << std::endl;
     std::cout << "   ✅ WebKit optimizations: Image decoder + Workers" << std::endl;
