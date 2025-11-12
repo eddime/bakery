@@ -60,9 +60,22 @@ void worker(SOCKET server_fd, bakery::http::HTTPServer* server) {
 void runServer(bakery::http::HTTPServer* server) {
     // Initialize Winsock
     WSADATA wsaData;
-    WSAStartup(MAKEWORD(2, 2), &wsaData);
+    int wsaResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
+    if (wsaResult != 0) {
+        #ifndef NDEBUG
+        std::cerr << "❌ WSAStartup failed: " << wsaResult << std::endl;
+        #endif
+        return;
+    }
     
     SOCKET fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (fd == INVALID_SOCKET) {
+        #ifndef NDEBUG
+        std::cerr << "❌ Socket creation failed: " << WSAGetLastError() << std::endl;
+        #endif
+        WSACleanup();
+        return;
+    }
     
     // MAXIMUM PERFORMANCE socket options
     int opt = 1;
@@ -82,8 +95,27 @@ void runServer(bakery::http::HTTPServer* server) {
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     addr.sin_port = htons(server->getPort());
     
-    bind(fd, (struct sockaddr*)&addr, sizeof(addr));
-    listen(fd, 512);
+    if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
+        #ifndef NDEBUG
+        int err = WSAGetLastError();
+        std::cerr << "❌ Failed to bind to port " << server->getPort() 
+                  << " (error: " << err << ")" << std::endl;
+        #endif
+        closesocket(fd);
+        WSACleanup();
+        return;
+    }
+    
+    if (listen(fd, 512) == SOCKET_ERROR) {
+        #ifndef NDEBUG
+        int err = WSAGetLastError();
+        std::cerr << "❌ Failed to listen on port " << server->getPort() 
+                  << " (error: " << err << ")" << std::endl;
+        #endif
+        closesocket(fd);
+        WSACleanup();
+        return;
+    }
     
     // Launch worker threads
     int threads = std::thread::hardware_concurrency();
@@ -373,7 +405,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     #endif
     
     // Navigate to entrypoint
-    w.navigate("http://127.0.0.1:8765");
+    std::string url = "http://127.0.0.1:" + std::to_string(port);
+    w.navigate(url.c_str());
     
     // Run event loop
     w.run();
