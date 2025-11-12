@@ -17,6 +17,7 @@ namespace window {
 #include <objc/runtime.h>
 #include <objc/message.h>
 #include <CoreFoundation/CoreFoundation.h>
+#include <cstdlib>
 
 /**
  * Enable native macOS fullscreen button (required for Game Mode)
@@ -50,6 +51,35 @@ inline void toggleFullscreen(void* window_ptr) {
     ((void (*)(id, SEL, id))objc_msgSend)(nswindow, toggleFullScreen, nullptr);
 }
 
+// Shared activity token (must be shared between enable/disable functions)
+namespace {
+    static id g_activityToken = nullptr;
+}
+
+/**
+ * Disable Game Mode Activity (cleanup on app exit)
+ * CRITICAL: Must be called when app exits to prevent macOS from remembering deactivation
+ */
+inline void disablePersistentGameMode() {
+    if (g_activityToken) {
+        Class nsProcessInfoClass = objc_getClass("NSProcessInfo");
+        if (nsProcessInfoClass) {
+            SEL processInfoSel = sel_registerName("processInfo");
+            id processInfo = ((id (*)(Class, SEL))objc_msgSend)(nsProcessInfoClass, processInfoSel);
+            
+            if (processInfo) {
+                // End activity before app exits
+                SEL endActivitySel = sel_registerName("endActivity:");
+                ((void (*)(id, SEL, id))objc_msgSend)(processInfo, endActivitySel, g_activityToken);
+            }
+        }
+        
+        // Release retained token
+        CFRelease((CFTypeRef)g_activityToken);
+        g_activityToken = nullptr;
+    }
+}
+
 /**
  * Enable persistent Game Mode via NSProcessInfo Activity
  * This ensures Game Mode activates EVERY time (like Godot!)
@@ -78,31 +108,34 @@ inline void enablePersistentGameMode() {
         nsStringClass, stringWithUTF8Sel, "Bakery Game - Latency Critical"
     );
     
-    // Begin activity (keeps Game Mode active for app lifetime)
-    // Store token as static to prevent deallocation
-    // IMPORTANT: Token must be kept alive for entire app lifetime!
-    static id activityToken = nullptr;
-    
     // CRITICAL: Always recreate activity (don't check if exists)
     // macOS might have deactivated Game Mode, so we need to reactivate it
     // End previous activity if exists
-    if (activityToken) {
+    if (g_activityToken) {
         SEL endActivitySel = sel_registerName("endActivity:");
-        ((void (*)(id, SEL, id))objc_msgSend)(processInfo, endActivitySel, activityToken);
-        CFRelease((CFTypeRef)activityToken);  // Release previous retain
-        activityToken = nullptr;
+        ((void (*)(id, SEL, id))objc_msgSend)(processInfo, endActivitySel, g_activityToken);
+        CFRelease((CFTypeRef)g_activityToken);  // Release previous retain
+        g_activityToken = nullptr;
     }
     
     // Create new activity EVERY time (ensures Game Mode activates)
-    activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
+    g_activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
         processInfo, beginActivitySel, options, reasonStr
     );
     
     // CRITICAL: Explicitly retain token to prevent deallocation
     // beginActivityWithOptions returns an autoreleased object
     // We must retain it manually to keep it alive for app lifetime
-    if (activityToken) {
-        CFRetain((CFTypeRef)activityToken);
+    if (g_activityToken) {
+        CFRetain((CFTypeRef)g_activityToken);
+        
+        // CRITICAL: Register cleanup function to end activity on app exit
+        // This prevents macOS from remembering deactivation
+        static bool cleanupRegistered = false;
+        if (!cleanupRegistered) {
+            std::atexit(disablePersistentGameMode);
+            cleanupRegistered = true;
+        }
     }
 }
 
