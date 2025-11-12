@@ -140,14 +140,8 @@ int main(int argc, char* argv[]) {
     #ifdef __APPLE__
     // Set high priority for main process
     setpriority(PRIO_PROCESS, 0, -10);
-    
-    // 🎮 Enable PERSISTENT Game Mode IMMEDIATELY (like Godot!)
-    // Must be called VERY early to ensure Game Mode activates EVERY time
-    bakery::window::enablePersistentGameMode();
-    
     #ifndef NDEBUG
     std::cout << "⚡ Process priority: HIGH" << std::endl;
-    std::cout << "🎮 Game Mode: PERSISTENT (NSProcessInfo Activity)" << std::endl;
     #endif
     #endif
     
@@ -344,10 +338,15 @@ int main(int argc, char* argv[]) {
         if (window_ptr) {
             bakery::window::enableFullscreenButton(window_ptr);
             
+            // 🎮 Enable PERSISTENT Game Mode AFTER window is created
+            // This ensures macOS associates the activity with the window
+            bakery::window::enablePersistentGameMode();
+            
             #ifndef NDEBUG
             std::cout << "🎮 Native fullscreen button enabled (Game Mode ready)" << std::endl;
             std::cout << "   ✅ Supports primary display (FullScreenPrimary)" << std::endl;
             std::cout << "   ✅ Supports external displays (FullScreenAuxiliary)" << std::endl;
+            std::cout << "🎮 Game Mode: PERSISTENT (NSProcessInfo Activity)" << std::endl;
             #endif
         }
     }

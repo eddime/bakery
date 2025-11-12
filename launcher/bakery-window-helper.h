@@ -83,18 +83,26 @@ inline void enablePersistentGameMode() {
     // IMPORTANT: Token must be kept alive for entire app lifetime!
     static id activityToken = nullptr;
     
-    // Only create if not already created (prevent multiple calls)
-    if (!activityToken) {
-        activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
-            processInfo, beginActivitySel, options, reasonStr
-        );
-        
-        // CRITICAL: Explicitly retain token to prevent deallocation
-        // beginActivityWithOptions returns an autoreleased object
-        // We must retain it manually to keep it alive for app lifetime
-        if (activityToken) {
-            CFRetain((CFTypeRef)activityToken);
-        }
+    // CRITICAL: Always recreate activity (don't check if exists)
+    // macOS might have deactivated Game Mode, so we need to reactivate it
+    // End previous activity if exists
+    if (activityToken) {
+        SEL endActivitySel = sel_registerName("endActivity:");
+        ((void (*)(id, SEL, id))objc_msgSend)(processInfo, endActivitySel, activityToken);
+        CFRelease((CFTypeRef)activityToken);  // Release previous retain
+        activityToken = nullptr;
+    }
+    
+    // Create new activity EVERY time (ensures Game Mode activates)
+    activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
+        processInfo, beginActivitySel, options, reasonStr
+    );
+    
+    // CRITICAL: Explicitly retain token to prevent deallocation
+    // beginActivityWithOptions returns an autoreleased object
+    // We must retain it manually to keep it alive for app lifetime
+    if (activityToken) {
+        CFRetain((CFTypeRef)activityToken);
     }
 }
 
