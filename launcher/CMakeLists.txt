@@ -178,7 +178,19 @@ if(WIN32)
     if(MSVC)
         target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE /O2)
     else()
-        target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE -O2)
+        # 📦 SIZE OPTIMIZATION: Same as main launcher
+        target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE 
+            -Os -DNDEBUG
+            -ffunction-sections -fdata-sections
+        )
+        target_link_options(bakery-universal-launcher-windows-embedded PRIVATE 
+            -Wl,--gc-sections
+        )
+        
+        add_custom_command(TARGET bakery-universal-launcher-windows-embedded POST_BUILD
+            COMMAND x86_64-w64-mingw32-strip $<TARGET_FILE:bakery-universal-launcher-windows-embedded>
+            COMMENT "⚡ Stripping Windows embedded launcher..."
+        )
     endif()
 endif()
 
