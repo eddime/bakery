@@ -20,6 +20,7 @@ Game → WebView → WindowServer (Compositor) → GPU → Display
 - ❌ **Ressourcen-Sharing**: GPU wird zwischen allen Fenstern geteilt
 - ❌ **VSync Probleme**: Adaptive Sync funktioniert nicht richtig
 - ❌ **Kein Direct Access**: Keine direkte GPU-Kommunikation
+- ❌ **Kein Game Mode**: Voller Game Mode nur in nativem Fullscreen
 
 ### **Fullscreen-Modus:**
 ```
@@ -33,6 +34,10 @@ Game → WebView → GPU → Display
 - ✅ **Keine Compositor-Latenz**: Direkt zum Display
 - ✅ **VSync funktioniert**: Korrekte Frame-Synchronisation
 - ✅ **Lower Latency**: Weniger Overhead
+- ✅ **Game Mode aktiv**: Höchste CPU/GPU Priorität (macOS Sonoma 14+)
+  - Doppelte Bluetooth-Abtastrate für Controller/AirPods
+  - Hintergrund-Tasks werden gedrosselt
+  - [Mehr Info](https://support.apple.com/en-us/105118)
 
 ## 📊 **Typische Performance-Unterschiede:**
 
@@ -46,7 +51,10 @@ Game → WebView → GPU → Display
 ### **System-Level:**
 1. ✅ REALTIME Process Priority (`-20`)
 2. ✅ App Nap deaktiviert
-3. ✅ Game Mode aktiviert (macOS Sonoma+)
+3. ✅ Game Mode Optimierungen (macOS Sonoma 14+)
+   - Core Animation optimiert für Games
+   - Metal Shader Validation deaktiviert
+   - **Hinweis:** Voller Game Mode nur in nativem Fullscreen
 4. ✅ Metal Rendering erzwungen
 5. ✅ Discrete GPU angefordert
 

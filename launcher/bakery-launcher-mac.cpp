@@ -283,22 +283,29 @@ int main(int argc, char* argv[]) {
     // 2. Disable App Nap via system command
     system("defaults write NSGlobalDomain NSAppSleepDisabled -bool YES 2>/dev/null");
     
-    // 3. Enable Game Mode (macOS Sonoma+) - prioritizes GPU/CPU for games
-    // This reduces WindowServer overhead in window mode
+    // 3. 🎮 Request Game Mode optimizations (macOS Sonoma 14+)
+    // Game Mode gives highest priority to CPU/GPU when in fullscreen
+    // Reference: https://support.apple.com/en-us/105118
+    // Note: Full Game Mode only activates in native fullscreen, but we can
+    //       request latency-critical treatment for better performance
+    setenv("CA_LAYER_OPTIMIZE_FOR_GAME", "1", 1);  // Optimize Core Animation
+    setenv("MTL_SHADER_VALIDATION", "0", 1);  // Disable shader validation overhead
+    
+    // 4. Metal optimizations
     setenv("MTL_HUD_ENABLED", "0", 1);  // Disable Metal HUD
     setenv("MTL_DEBUG_LAYER", "0", 1);  // Disable debug layer
     
-    // 4. Force Metal rendering for better performance
+    // 5. Force Metal rendering for better performance
     setenv("WEBKIT_USE_METAL", "1", 1);
     setenv("WEBKIT_DISABLE_COMPOSITING_MODE", "0", 1);
     
-    // 5. Request high-performance GPU (discrete over integrated)
+    // 6. Request high-performance GPU (discrete over integrated)
     setenv("WEBKIT_FORCE_DISCRETE_GPU", "1", 1);
     
     #ifndef NDEBUG
     std::cout << "   ✅ Process priority: REALTIME (-20)" << std::endl;
     std::cout << "   ✅ App Nap: Disabled" << std::endl;
-    std::cout << "   ✅ Game Mode: Enabled" << std::endl;
+    std::cout << "   ✅ Game Mode: Requested (macOS Sonoma 14+)" << std::endl;
     std::cout << "   ✅ Metal rendering: Forced" << std::endl;
     std::cout << "   ✅ Discrete GPU: Requested" << std::endl;
     std::cout << "   ⚠️  Note: Fullscreen will ALWAYS be faster (bypasses WindowServer)" << std::endl;
