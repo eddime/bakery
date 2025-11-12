@@ -63,14 +63,6 @@ if [ ! -f "bakery-launcher-linux" ]; then
     exit 1
 fi
 
-# ⚡ STRIP DEBUG SYMBOLS (reduces 10 MB → 150 KB!)
-echo "⚡ Stripping x86_64 launcher..."
-if command -v x86_64-linux-musl-strip &> /dev/null; then
-    x86_64-linux-musl-strip bakery-launcher-linux
-elif command -v strip &> /dev/null; then
-    strip bakery-launcher-linux 2>/dev/null || true
-fi
-
 # Pack launcher + bakery-assets into single executable
 echo "📦 Packing x86_64 with encrypted assets..."
 cp bakery-launcher-linux "$OUTPUT_DIR/${APP_NAME}-x86_64.tmp"
@@ -112,14 +104,6 @@ make bakery-launcher-linux -j4
 if [ ! -f "bakery-launcher-linux" ]; then
     echo "❌ aarch64 build failed!"
     exit 1
-fi
-
-# ⚡ STRIP DEBUG SYMBOLS (reduces 10 MB → 150 KB!)
-echo "⚡ Stripping aarch64 launcher..."
-if command -v aarch64-linux-musl-strip &> /dev/null; then
-    aarch64-linux-musl-strip bakery-launcher-linux
-elif command -v strip &> /dev/null; then
-    strip bakery-launcher-linux 2>/dev/null || true
 fi
 
 # Pack launcher + bakery-assets into single executable

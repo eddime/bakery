@@ -160,8 +160,6 @@ if(WIN32)
             -Os -DNDEBUG
             -ffunction-sections -fdata-sections
         )
-        # 📦 SIZE OPTIMIZATION: Static linking for Windows (no DLL dependencies!)
-        # Windows needs static linking because MinGW DLLs are not on user systems
         target_link_options(bakery-launcher-win PRIVATE 
             -Wl,--gc-sections
             -static-libstdc++ -static-libgcc
@@ -179,20 +177,7 @@ if(WIN32)
     if(MSVC)
         target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE /O2)
     else()
-        # 📦 SIZE OPTIMIZATION: Same as main launcher
-        target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE 
-            -Os -DNDEBUG
-            -ffunction-sections -fdata-sections
-        )
-        target_link_options(bakery-universal-launcher-windows-embedded PRIVATE 
-            -Wl,--gc-sections
-            -static-libstdc++ -static-libgcc
-        )
-        
-        add_custom_command(TARGET bakery-universal-launcher-windows-embedded POST_BUILD
-            COMMAND x86_64-w64-mingw32-strip $<TARGET_FILE:bakery-universal-launcher-windows-embedded>
-            COMMENT "⚡ Stripping Windows embedded launcher..."
-        )
+        target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE -O2)
     endif()
 endif()
 
@@ -237,9 +222,7 @@ if(UNIX AND NOT APPLE)
         target_compile_options(bakery-launcher-linux PRIVATE -march=native -mtune=native)
     endif()
     
-    # 📦 SIZE OPTIMIZATION: Dynamic linking (like Neutralino!)
-    # Static linking adds ~9 MB, dynamic linking uses system libraries
-    target_link_options(bakery-launcher-linux PRIVATE -flto -Wl,--gc-sections)
+    target_link_options(bakery-launcher-linux PRIVATE -flto -Wl,--gc-sections -static-libstdc++ -static-libgcc)
     
     add_custom_command(TARGET bakery-launcher-linux POST_BUILD
         COMMAND strip $<TARGET_FILE:bakery-launcher-linux>
