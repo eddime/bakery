@@ -162,7 +162,8 @@ if(WIN32)
         )
         target_link_options(bakery-launcher-win PRIVATE 
             -Wl,--gc-sections
-            -static-libstdc++ -static-libgcc
+            -static-libstdc++ -static-libgcc  # Required for Windows (no DLL dependencies)
+            -Wl,-s  # Strip symbols during linking
         )
         
         add_custom_command(TARGET bakery-launcher-win POST_BUILD
@@ -177,7 +178,22 @@ if(WIN32)
     if(MSVC)
         target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE /O2)
     else()
-        target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE -O2)
+        # MinGW: Optimize for size
+        target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE 
+            -Os -DNDEBUG
+            -ffunction-sections -fdata-sections
+        )
+        target_link_options(bakery-universal-launcher-windows-embedded PRIVATE 
+            -Wl,--gc-sections
+            -static-libstdc++ -static-libgcc  # Required for Windows (no DLL dependencies)
+            -Wl,-s  # Strip symbols during linking
+        )
+        
+        # Strip debug symbols
+        add_custom_command(TARGET bakery-universal-launcher-windows-embedded POST_BUILD
+            COMMAND x86_64-w64-mingw32-strip $<TARGET_FILE:bakery-universal-launcher-windows-embedded>
+            COMMENT "⚡ Stripping embedded launcher..."
+        )
     endif()
 endif()
 
@@ -222,12 +238,27 @@ if(UNIX AND NOT APPLE)
         target_compile_options(bakery-launcher-linux PRIVATE -march=native -mtune=native)
     endif()
     
-    target_link_options(bakery-launcher-linux PRIVATE -flto -Wl,--gc-sections -static-libstdc++ -static-libgcc)
-    
-    add_custom_command(TARGET bakery-launcher-linux POST_BUILD
-        COMMAND strip $<TARGET_FILE:bakery-launcher-linux>
-        COMMENT "⚡ Stripping Linux launcher..."
+    target_link_options(bakery-launcher-linux PRIVATE 
+        -flto 
+        -Wl,--gc-sections
+        -static-libstdc++ -static-libgcc  # Required for single executable (no .so dependencies)
+        -Wl,-s  # Strip symbols during linking
     )
+    
+    # Strip debug symbols (use llvm-strip for cross-compilation)
+    find_program(LLVM_STRIP llvm-strip)
+    if(LLVM_STRIP)
+        add_custom_command(TARGET bakery-launcher-linux POST_BUILD
+            COMMAND ${LLVM_STRIP} --strip-all $<TARGET_FILE:bakery-launcher-linux>
+            COMMENT "⚡ Stripping Linux launcher with llvm-strip..."
+        )
+    else()
+        # Fallback to regular strip (might not work for cross-compilation)
+        add_custom_command(TARGET bakery-launcher-linux POST_BUILD
+            COMMAND strip $<TARGET_FILE:bakery-launcher-linux> 2>/dev/null || true
+            COMMENT "⚡ Stripping Linux launcher..."
+        )
+    endif()
     
     # bakery-universal-launcher-linux: Wrapper that detects architecture
     add_executable(bakery-universal-launcher-linux bakery-universal-launcher-linux.cpp)
