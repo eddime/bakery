@@ -15,9 +15,11 @@
 #include <winsock2.h>
 #include <ws2tcpip.h>
 #include <shlwapi.h>
+#include <timeapi.h>  // For timeBeginPeriod
 
 #pragma comment(lib, "ws2_32.lib")
 #pragma comment(lib, "shlwapi.lib")
+#pragma comment(lib, "winmm.lib")  // For timeBeginPeriod
 
 #include <nlohmann/json.hpp>
 #include "webview/webview.h"
@@ -291,11 +293,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Set process priority boost (Windows Game Mode equivalent)
     SetProcessPriorityBoost(GetCurrentProcess(), FALSE);  // Disable priority boost throttling
     
+    // Set thread priority for main thread (additional boost)
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+    
+    // Set time-critical scheduling for lower latency
+    timeBeginPeriod(1);  // Request 1ms timer resolution (reduces input latency)
+    
     #ifndef NDEBUG
     std::cout << "🎮 Windows Game Mode optimizations enabled:" << std::endl;
     std::cout << "   ✅ HIGH_PRIORITY_CLASS" << std::endl;
     std::cout << "   ✅ Power Throttling disabled" << std::endl;
     std::cout << "   ✅ Priority Boost enabled" << std::endl;
+    std::cout << "   ✅ Thread Priority: HIGHEST" << std::endl;
+    std::cout << "   ✅ Timer Resolution: 1ms (lower latency)" << std::endl;
     #endif
     
     // While cache builds, create WebView (parallel!)

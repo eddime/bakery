@@ -297,9 +297,10 @@ int main(int argc, char* argv[]) {
     setenv("CA_LAYER_OPTIMIZE_FOR_GAME", "1", 1);  // Optimize Core Animation
     setenv("MTL_SHADER_VALIDATION", "0", 1);  // Disable shader validation overhead
     
-    // 4. Metal optimizations
+    // 4. Metal optimizations (disable all debug/validation overhead)
     setenv("MTL_HUD_ENABLED", "0", 1);  // Disable Metal HUD
     setenv("MTL_DEBUG_LAYER", "0", 1);  // Disable debug layer
+    setenv("MTL_FORCE_SOFTWARE_RENDERING", "0", 1);  // Force hardware rendering
     
     // 5. Force Metal rendering for better performance
     setenv("WEBKIT_USE_METAL", "1", 1);
@@ -308,12 +309,20 @@ int main(int argc, char* argv[]) {
     // 6. Request high-performance GPU (discrete over integrated)
     setenv("WEBKIT_FORCE_DISCRETE_GPU", "1", 1);
     
+    // 7. Additional WebKit optimizations (like Godot)
+    setenv("WEBKIT_DISABLE_IMAGE_DECODER_PROCESS", "0", 1);  // Use separate process for image decoding
+    setenv("WEBKIT_ENABLE_DEDICATED_WORKERS", "1", 1);  // Enable dedicated workers for better threading
+    
+    // 8. Disable unnecessary macOS features for games
+    setenv("NSAppSleepDisabled", "1", 1);  // Additional App Nap prevention
+    
     #ifndef NDEBUG
     std::cout << "   ✅ Process priority: REALTIME (-20)" << std::endl;
-    std::cout << "   ✅ App Nap: Disabled" << std::endl;
+    std::cout << "   ✅ App Nap: Disabled (multiple methods)" << std::endl;
     std::cout << "   ✅ Game Mode: Requested (macOS Sonoma 14+)" << std::endl;
-    std::cout << "   ✅ Metal rendering: Forced" << std::endl;
+    std::cout << "   ✅ Metal rendering: Forced (hardware)" << std::endl;
     std::cout << "   ✅ Discrete GPU: Requested" << std::endl;
+    std::cout << "   ✅ WebKit optimizations: Image decoder + Workers" << std::endl;
     std::cout << "   ⚠️  Note: Fullscreen will ALWAYS be faster (bypasses WindowServer)" << std::endl;
     #endif
     #endif
