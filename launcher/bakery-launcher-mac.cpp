@@ -334,7 +334,11 @@ int main(int argc, char* argv[]) {
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     
     // 🎮 Enable native macOS Game Mode support
-    // This adds the fullscreen button and enables Game Mode in fullscreen
+    // This adds the fullscreen button and enables Game Mode in fullscreen AND window mode
+    // Game Mode activates automatically because:
+    // 1. LSApplicationCategoryType = public.app-category.games (in Info.plist)
+    // 2. NSWindowCollectionBehaviorFullScreenPrimary + Auxiliary
+    // 3. macOS recognizes the app as a game and enables Game Mode automatically
     #ifdef __APPLE__
     auto window_result = w.window();
     if (window_result.has_value()) {
@@ -350,10 +354,20 @@ int main(int argc, char* argv[]) {
             NSUInteger behavior = 128 | 256;  // Primary + Auxiliary (works on all displays!)
             ((void (*)(id, SEL, NSUInteger))objc_msgSend)(nswindow, setCollectionBehavior, behavior);
             
+            // Ensure window can become key (required for Game Mode recognition)
+            SEL setCanBecomeKeyWindow = sel_registerName("setCanBecomeKeyWindow:");
+            ((void (*)(id, SEL, BOOL))objc_msgSend)(nswindow, setCanBecomeKeyWindow, YES);
+            
+            // Make window key and front (ensures Game Mode activates)
+            SEL makeKeyAndOrderFront = sel_registerName("makeKeyAndOrderFront:");
+            ((void (*)(id, SEL))objc_msgSend)(nswindow, makeKeyAndOrderFront);
+            
             #ifndef NDEBUG
             std::cout << "🎮 Native fullscreen button enabled (Game Mode ready)" << std::endl;
             std::cout << "   ✅ Supports primary display (FullScreenPrimary)" << std::endl;
             std::cout << "   ✅ Supports external displays (FullScreenAuxiliary)" << std::endl;
+            std::cout << "   ✅ Window marked as key (Game Mode should activate)" << std::endl;
+            std::cout << "   ℹ️  Note: Game Mode icon appears automatically (macOS Sonoma 14+)" << std::endl;
             #endif
         }
     }
