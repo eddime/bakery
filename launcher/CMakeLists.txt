@@ -163,7 +163,6 @@ if(WIN32)
         target_link_options(bakery-launcher-win PRIVATE 
             -Wl,--gc-sections
             -static-libstdc++ -static-libgcc  # Required for Windows (no DLL dependencies)
-            -Wl,-s  # Strip symbols during linking
         )
         
         add_custom_command(TARGET bakery-launcher-win POST_BUILD
@@ -186,7 +185,6 @@ if(WIN32)
         target_link_options(bakery-universal-launcher-windows-embedded PRIVATE 
             -Wl,--gc-sections
             -static-libstdc++ -static-libgcc  # Required for Windows (no DLL dependencies)
-            -Wl,-s  # Strip symbols during linking
         )
         
         # Strip debug symbols
@@ -242,7 +240,6 @@ if(UNIX AND NOT APPLE)
         -flto 
         -Wl,--gc-sections
         -static-libstdc++ -static-libgcc  # Required for single executable (no .so dependencies)
-        -Wl,-s  # Strip symbols during linking
     )
     
     # Strip debug symbols (use llvm-strip for cross-compilation)
