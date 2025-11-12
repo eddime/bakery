@@ -16,6 +16,7 @@
 // NEW: Shared HTTP server and asset loader!
 #include "bakery-http-server.h"
 #include "bakery-asset-loader.h"
+#include "bakery-window-helper.h"  // Cross-platform window management
 
 using json = nlohmann::json;
 

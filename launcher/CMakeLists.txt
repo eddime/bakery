@@ -136,7 +136,7 @@ if(WIN32)
     target_include_directories(bakery-launcher-win PRIVATE
         ${CMAKE_SOURCE_DIR}/deps/webview/core/include/webview/detail/platform/windows/webview2-headers
         ${CMAKE_SOURCE_DIR}/deps/webview/core/include)
-    target_link_libraries(bakery-launcher-win ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json ws2_32 shlwapi ole32 shell32 user32 version)
+    target_link_libraries(bakery-launcher-win ${WEBVIEW_LIBS} nlohmann_json::nlohmann_json ws2_32 shlwapi ole32 shell32 user32 version winmm)
     
     # ⚡ OPTIMIZATION: Precompiled headers for faster builds
     target_precompile_headers(bakery-launcher-win PRIVATE

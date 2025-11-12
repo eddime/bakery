@@ -1,0 +1,117 @@
+/**
+ * 🪟 Bakery Window Helper
+ * Cross-platform window management wrapper
+ * Abstracts native OS window APIs (macOS NSWindow, Windows HWND)
+ */
+
+#ifndef BAKERY_WINDOW_HELPER_H
+#define BAKERY_WINDOW_HELPER_H
+
+#include <string>
+
+namespace bakery {
+namespace window {
+
+#ifdef __APPLE__
+#include <objc/objc.h>
+#include <objc/runtime.h>
+#include <objc/message.h>
+
+/**
+ * Enable native macOS fullscreen button (required for Game Mode)
+ * Sets NSWindowCollectionBehaviorFullScreenPrimary + FullScreenAuxiliary
+ */
+inline void enableFullscreenButton(void* window_ptr) {
+    if (!window_ptr) return;
+    
+    id nswindow = (id)window_ptr;
+    
+    // Enable fullscreen button (green button) - required for Game Mode
+    // NSWindowCollectionBehaviorFullScreenPrimary = 1 << 7 = 128 (main display)
+    // NSWindowCollectionBehaviorFullScreenAuxiliary = 1 << 8 = 256 (external displays)
+    // Combine both for multi-display support (like Godot!)
+    SEL setCollectionBehavior = sel_registerName("setCollectionBehavior:");
+    NSUInteger behavior = 128 | 256;  // Primary + Auxiliary (works on all displays!)
+    ((void (*)(id, SEL, NSUInteger))objc_msgSend)(nswindow, setCollectionBehavior, behavior);
+}
+
+/**
+ * Toggle native macOS fullscreen
+ * Uses NSWindow toggleFullScreen: API
+ */
+inline void toggleFullscreen(void* window_ptr) {
+    if (!window_ptr) return;
+    
+    id nswindow = (id)window_ptr;
+    
+    // Toggle fullscreen using native macOS API
+    SEL toggleFullScreen = sel_registerName("toggleFullScreen:");
+    ((void (*)(id, SEL, id))objc_msgSend)(nswindow, toggleFullScreen, nullptr);
+}
+
+#elif defined(_WIN32)
+#include <windows.h>
+
+/**
+ * Enable native Windows fullscreen
+ * Uses SetWindowPos with monitor info
+ */
+inline void enableFullscreen(void* window_ptr) {
+    if (!window_ptr) return;
+    
+    HWND hwnd = (HWND)window_ptr;
+    
+    // Get monitor info
+    HMONITOR hMonitor = MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+    MONITORINFO mi;
+    mi.cbSize = sizeof(mi);
+    GetMonitorInfo(hMonitor, &mi);
+    
+    // Set window style for fullscreen
+    LONG_PTR style = GetWindowLongPtr(hwnd, GWL_STYLE);
+    SetWindowLongPtr(hwnd, GWL_STYLE, style & ~(WS_CAPTION | WS_THICKFRAME | WS_SYSMENU));
+    
+    // Set window position and size to fullscreen
+    SetWindowPos(hwnd, HWND_TOP,
+        mi.rcMonitor.left, mi.rcMonitor.top,
+        mi.rcMonitor.right - mi.rcMonitor.left,
+        mi.rcMonitor.bottom - mi.rcMonitor.top,
+        SWP_FRAMECHANGED | SWP_NOZORDER);
+}
+
+/**
+ * Windows doesn't have a separate "enable fullscreen button" function
+ * Fullscreen is handled directly via enableFullscreen()
+ */
+inline void enableFullscreenButton(void* window_ptr) {
+    // No-op on Windows (fullscreen handled directly)
+    (void)window_ptr;
+}
+
+/**
+ * Toggle fullscreen (same as enableFullscreen on Windows)
+ */
+inline void toggleFullscreen(void* window_ptr) {
+    enableFullscreen(window_ptr);
+}
+
+#else
+// Linux: No native fullscreen API needed (handled by WebView)
+inline void enableFullscreenButton(void* window_ptr) {
+    (void)window_ptr;
+}
+
+inline void toggleFullscreen(void* window_ptr) {
+    (void)window_ptr;
+}
+
+inline void enableFullscreen(void* window_ptr) {
+    (void)window_ptr;
+}
+#endif
+
+} // namespace window
+} // namespace bakery
+
+#endif // BAKERY_WINDOW_HELPER_H
+

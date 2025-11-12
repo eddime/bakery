@@ -27,6 +27,7 @@
 // NEW: Shared HTTP server and asset loader!
 #include "bakery-http-server.h"
 #include "bakery-asset-loader.h"
+#include "bakery-window-helper.h"  // Cross-platform window management
 
 using json = nlohmann::json;
 
@@ -35,6 +36,7 @@ struct BakeryConfig {
         std::string title;
         int width;
         int height;
+        bool fullscreen = false;
     } window;
     std::string entrypoint;
     std::string appName;  // Used for deterministic port (localStorage persistence)
@@ -201,6 +203,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 if (j["window"].contains("height")) {
                     config.window.height = j["window"]["height"].get<int>();
                 }
+                if (j["window"].contains("fullscreen")) {
+                    config.window.fullscreen = j["window"]["fullscreen"].get<bool>();
+                }
+                if (j["window"].contains("startFullscreen")) {
+                    config.window.fullscreen = j["window"]["startFullscreen"].get<bool>();
+                }
             }
             
             // Load app config
@@ -312,6 +320,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     webview::webview w(false, nullptr);  // false = production mode
     w.set_title(config.window.title);
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
+    
+    // 🖥️ Native Windows Fullscreen mode for maximum performance
+    if (config.window.fullscreen) {
+        #ifndef NDEBUG
+        std::cout << "🖥️  Fullscreen mode: ENABLED (better performance)" << std::endl;
+        #endif
+        
+        // Get window handle and set fullscreen
+        auto window_result = w.window();
+        if (window_result.has_value()) {
+            void* window_ptr = window_result.value();
+            if (window_ptr) {
+                bakery::window::enableFullscreen(window_ptr);
+                
+                #ifndef NDEBUG
+                std::cout << "   ✅ Native fullscreen activated!" << std::endl;
+                #endif
+            }
+        }
+    }
     
     // Inject Bakery API + Runtime Optimizations
     w.init(R"(

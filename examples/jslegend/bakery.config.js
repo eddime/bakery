@@ -12,7 +12,7 @@ export default {
     width: 1280,
     height: 720,
     resizable: true,
-    startFullscreen: false,
+    startFullscreen: true,  // Always start in fullscreen for best performance
     alwaysOnTop: false,
     frameless: false
   }

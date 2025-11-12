@@ -16,16 +16,12 @@
 #include <nlohmann/json.hpp>
 #include "webview/webview.h"
 
-#ifdef __APPLE__
-#include <objc/objc.h>
-#include <objc/runtime.h>
-#include <objc/message.h>
-#endif
 #include "webview-universal-performance.h"
 
 // NEW: Shared HTTP server and asset loader!
 #include "bakery-http-server.h"
 #include "bakery-asset-loader.h"
+#include "bakery-window-helper.h"  // Cross-platform window management
 
 using json = nlohmann::json;
 
@@ -335,20 +331,11 @@ int main(int argc, char* argv[]) {
     
     // 🎮 Enable native macOS Game Mode support
     // This adds the fullscreen button and enables Game Mode in fullscreen
-    #ifdef __APPLE__
     auto window_result = w.window();
     if (window_result.has_value()) {
         void* window_ptr = window_result.value();
         if (window_ptr) {
-            id nswindow = (id)window_ptr;
-            
-            // Enable fullscreen button (green button) - required for Game Mode
-            // NSWindowCollectionBehaviorFullScreenPrimary = 1 << 7 = 128 (main display)
-            // NSWindowCollectionBehaviorFullScreenAuxiliary = 1 << 8 = 256 (external displays)
-            // Combine both for multi-display support (like Godot!)
-            SEL setCollectionBehavior = sel_registerName("setCollectionBehavior:");
-            NSUInteger behavior = 128 | 256;  // Primary + Auxiliary (works on all displays!)
-            ((void (*)(id, SEL, NSUInteger))objc_msgSend)(nswindow, setCollectionBehavior, behavior);
+            bakery::window::enableFullscreenButton(window_ptr);
             
             #ifndef NDEBUG
             std::cout << "🎮 Native fullscreen button enabled (Game Mode ready)" << std::endl;
@@ -357,20 +344,25 @@ int main(int argc, char* argv[]) {
             #endif
         }
     }
-    #endif
     
-    // 🖥️ Fullscreen mode for maximum performance (bypasses compositor)
+    // 🖥️ Native macOS Fullscreen mode for maximum performance (bypasses compositor)
     if (config.window.fullscreen) {
         #ifndef NDEBUG
         std::cout << "🖥️  Fullscreen mode: ENABLED (better performance)" << std::endl;
         #endif
         
-        // Set fullscreen via JavaScript after WebView is ready
-        // (WebView C++ API doesn't have direct fullscreen support)
-        
-        // Note: Game Mode activates automatically when user enters fullscreen
-        // We've set NSWindowCollectionBehaviorFullScreenPrimary + Auxiliary
-        // This ensures Game Mode CAN activate (like Godot!)
+        // Use native macOS fullscreen (required for Game Mode!)
+        auto window_result = w.window();
+        if (window_result.has_value()) {
+            void* window_ptr = window_result.value();
+            if (window_ptr) {
+                bakery::window::toggleFullscreen(window_ptr);
+                
+                #ifndef NDEBUG
+                std::cout << "   ✅ Native fullscreen activated (Game Mode ready!)" << std::endl;
+                #endif
+            }
+        }
     }
     
     // DISABLED: Performance optimizations causing issues with some games
@@ -511,30 +503,6 @@ int main(int argc, char* argv[]) {
             }
             console.log('🖥️  Fullscreen: ENABLED (better FPS)');
         }
-    });
-    
-    // 🎮 Game Mode: Ensure it activates when entering fullscreen (even after restart)
-    // Note: Game Mode only works in Fullscreen mode (macOS limitation)
-    // But we ensure it activates every time user enters fullscreen (like Godot!)
-    let gameModeReady = false;
-    const ensureGameMode = () => {
-        if (document.fullscreenElement || document.webkitFullscreenElement) {
-            if (!gameModeReady) {
-                console.log('🎮 Game Mode: Should activate now (fullscreen entered)');
-                console.log('💡 Tip: Check menu bar for Game Mode icon - it activates automatically!');
-                gameModeReady = true;
-            }
-        } else {
-            gameModeReady = false;
-        }
-    };
-    
-    document.addEventListener('fullscreenchange', ensureGameMode);
-    document.addEventListener('webkitfullscreenchange', ensureGameMode);
-    
-    // Also check on load in case already in fullscreen
-    window.addEventListener('load', () => {
-        setTimeout(ensureGameMode, 100);
     });
     
     // ⚡ RUNTIME OPTIMIZATION 3: Smart GC (only when needed)
