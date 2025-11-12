@@ -82,8 +82,28 @@ void runServer(bakery::http::HTTPServer* server) {
     addr.sin_addr.s_addr = inet_addr("127.0.0.1");
     addr.sin_port = htons(server->getPort());
     
-    bind(fd, (struct sockaddr*)&addr, sizeof(addr));
-    listen(fd, 512);
+    if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
+        #ifndef NDEBUG
+        std::cerr << "❌ Failed to bind to port " << server->getPort() << std::endl;
+        std::cerr << "   Error code: " << WSAGetLastError() << std::endl;
+        #endif
+        MessageBoxA(NULL, 
+            ("Failed to start server on port " + std::to_string(server->getPort()) + 
+             "\n\nThe port might be in use by another application.").c_str(),
+            "Bakery Error", MB_OK | MB_ICONERROR);
+        closesocket(fd);
+        WSACleanup();
+        return;
+    }
+    
+    if (listen(fd, 512) == SOCKET_ERROR) {
+        #ifndef NDEBUG
+        std::cerr << "❌ Failed to listen on port " << server->getPort() << std::endl;
+        #endif
+        closesocket(fd);
+        WSACleanup();
+        return;
+    }
     
     // Launch worker threads
     int threads = std::thread::hardware_concurrency();
