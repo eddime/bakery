@@ -284,8 +284,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         sizeof(PowerThrottling)
     );
     
+    // 🎮 Windows Game Mode Optimizations
     // Request high-performance GPU (prefer discrete over integrated)
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
+    
+    // Set process priority boost (Windows Game Mode equivalent)
+    SetProcessPriorityBoost(GetCurrentProcess(), FALSE);  // Disable priority boost throttling
+    
+    #ifndef NDEBUG
+    std::cout << "🎮 Windows Game Mode optimizations enabled:" << std::endl;
+    std::cout << "   ✅ HIGH_PRIORITY_CLASS" << std::endl;
+    std::cout << "   ✅ Power Throttling disabled" << std::endl;
+    std::cout << "   ✅ Priority Boost enabled" << std::endl;
+    #endif
     
     // While cache builds, create WebView (parallel!)
     webview::webview w(false, nullptr);  // false = production mode

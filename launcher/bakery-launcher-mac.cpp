@@ -327,18 +327,21 @@ int main(int argc, char* argv[]) {
     // 🎮 Enable native macOS Game Mode support
     // This adds the fullscreen button and enables Game Mode in fullscreen
     #ifdef __APPLE__
-    void* window_ptr = w.window();
-    if (window_ptr) {
-        id nswindow = (id)window_ptr;
-        
-        // Enable fullscreen button (green button) - required for Game Mode
-        // NSWindowCollectionBehaviorFullScreenPrimary = 1 << 7 = 128
-        SEL setCollectionBehavior = sel_registerName("setCollectionBehavior:");
-        ((void (*)(id, SEL, NSUInteger))objc_msgSend)(nswindow, setCollectionBehavior, 128);
-        
-        #ifndef NDEBUG
-        std::cout << "🎮 Native fullscreen button enabled (Game Mode ready)" << std::endl;
-        #endif
+    auto window_result = w.window();
+    if (window_result.has_value()) {
+        void* window_ptr = window_result.value();
+        if (window_ptr) {
+            id nswindow = (id)window_ptr;
+            
+            // Enable fullscreen button (green button) - required for Game Mode
+            // NSWindowCollectionBehaviorFullScreenPrimary = 1 << 7 = 128
+            SEL setCollectionBehavior = sel_registerName("setCollectionBehavior:");
+            ((void (*)(id, SEL, NSUInteger))objc_msgSend)(nswindow, setCollectionBehavior, 128);
+            
+            #ifndef NDEBUG
+            std::cout << "🎮 Native fullscreen button enabled (Game Mode ready)" << std::endl;
+            #endif
+        }
     }
     #endif
     
