@@ -49,6 +49,52 @@ inline void toggleFullscreen(void* window_ptr) {
     ((void (*)(id, SEL, id))objc_msgSend)(nswindow, toggleFullScreen, nullptr);
 }
 
+/**
+ * Enable persistent Game Mode via NSProcessInfo Activity
+ * This ensures Game Mode activates EVERY time (like Godot!)
+ * Must be called early in app lifecycle
+ */
+inline void enablePersistentGameMode() {
+    Class nsProcessInfoClass = objc_getClass("NSProcessInfo");
+    if (!nsProcessInfoClass) return;
+    
+    SEL processInfoSel = sel_registerName("processInfo");
+    id processInfo = ((id (*)(Class, SEL))objc_msgSend)(nsProcessInfoClass, processInfoSel);
+    
+    if (!processInfo) return;
+    
+    // Start activity assertion to keep Game Mode active
+    // NSActivityLatencyCritical = 0xFF00000000ULL (latency-critical)
+    // NSActivityUserInitiated = 0x00FFFFFFULL (user-initiated)
+    // Combine both for persistent Game Mode
+    SEL beginActivitySel = sel_registerName("beginActivityWithOptions:reason:");
+    unsigned long long options = 0xFF00FFFFFFULL;  // LatencyCritical | UserInitiated
+    
+    // Create reason string
+    Class nsStringClass = objc_getClass("NSString");
+    SEL stringWithUTF8Sel = sel_registerName("stringWithUTF8String:");
+    id reasonStr = ((id (*)(Class, SEL, const char*))objc_msgSend)(
+        nsStringClass, stringWithUTF8Sel, "Bakery Game - Latency Critical"
+    );
+    
+    // Begin activity (keeps Game Mode active for app lifetime)
+    // Store token as static to prevent deallocation
+    static id activityToken = nullptr;
+    if (activityToken) {
+        // End previous activity if exists
+        SEL endActivitySel = sel_registerName("endActivity:");
+        ((void (*)(id, SEL, id))objc_msgSend)(processInfo, endActivitySel, activityToken);
+    }
+    
+    // Begin new activity (returns retained token)
+    activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
+        processInfo, beginActivitySel, options, reasonStr
+    );
+    
+    // Token is already retained by beginActivityWithOptions
+    // It will be released when app exits automatically
+}
+
 #elif defined(_WIN32)
 #include <windows.h>
 
@@ -95,6 +141,13 @@ inline void toggleFullscreen(void* window_ptr) {
     enableFullscreen(window_ptr);
 }
 
+/**
+ * Windows doesn't need persistent Game Mode (handled by system)
+ */
+inline void enablePersistentGameMode() {
+    // No-op on Windows
+}
+
 #else
 // Linux: No native fullscreen API needed (handled by WebView)
 inline void enableFullscreenButton(void* window_ptr) {
@@ -107,6 +160,13 @@ inline void toggleFullscreen(void* window_ptr) {
 
 inline void enableFullscreen(void* window_ptr) {
     (void)window_ptr;
+}
+
+/**
+ * Linux doesn't need persistent Game Mode
+ */
+inline void enablePersistentGameMode() {
+    // No-op on Linux
 }
 #endif
 
