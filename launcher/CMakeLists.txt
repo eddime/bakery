@@ -160,9 +160,10 @@ if(WIN32)
             -Os -DNDEBUG
             -ffunction-sections -fdata-sections
         )
+        # 📦 SIZE OPTIMIZATION: Dynamic linking for smaller binary
+        # Note: Requires MSVCRT on target system (always available on Windows 10+)
         target_link_options(bakery-launcher-win PRIVATE 
             -Wl,--gc-sections
-            -static-libstdc++ -static-libgcc
         )
         
         add_custom_command(TARGET bakery-launcher-win POST_BUILD
@@ -222,7 +223,9 @@ if(UNIX AND NOT APPLE)
         target_compile_options(bakery-launcher-linux PRIVATE -march=native -mtune=native)
     endif()
     
-    target_link_options(bakery-launcher-linux PRIVATE -flto -Wl,--gc-sections -static-libstdc++ -static-libgcc)
+    # 📦 SIZE OPTIMIZATION: Dynamic linking (like Neutralino!)
+    # Static linking adds ~9 MB, dynamic linking uses system libraries
+    target_link_options(bakery-launcher-linux PRIVATE -flto -Wl,--gc-sections)
     
     add_custom_command(TARGET bakery-launcher-linux POST_BUILD
         COMMAND strip $<TARGET_FILE:bakery-launcher-linux>
