@@ -160,10 +160,11 @@ if(WIN32)
             -Os -DNDEBUG
             -ffunction-sections -fdata-sections
         )
-        # 📦 SIZE OPTIMIZATION: Dynamic linking for smaller binary
-        # Note: Requires MSVCRT on target system (always available on Windows 10+)
+        # 📦 SIZE OPTIMIZATION: Static linking for Windows (no DLL dependencies!)
+        # Windows needs static linking because MinGW DLLs are not on user systems
         target_link_options(bakery-launcher-win PRIVATE 
             -Wl,--gc-sections
+            -static-libstdc++ -static-libgcc
         )
         
         add_custom_command(TARGET bakery-launcher-win POST_BUILD
@@ -185,6 +186,7 @@ if(WIN32)
         )
         target_link_options(bakery-universal-launcher-windows-embedded PRIVATE 
             -Wl,--gc-sections
+            -static-libstdc++ -static-libgcc
         )
         
         add_custom_command(TARGET bakery-universal-launcher-windows-embedded POST_BUILD
