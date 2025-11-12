@@ -140,8 +140,14 @@ int main(int argc, char* argv[]) {
     #ifdef __APPLE__
     // Set high priority for main process
     setpriority(PRIO_PROCESS, 0, -10);
+    
+    // 🎮 Enable PERSISTENT Game Mode IMMEDIATELY (like Godot!)
+    // Must be called VERY early to ensure Game Mode activates EVERY time
+    bakery::window::enablePersistentGameMode();
+    
     #ifndef NDEBUG
     std::cout << "⚡ Process priority: HIGH" << std::endl;
+    std::cout << "🎮 Game Mode: PERSISTENT (NSProcessInfo Activity)" << std::endl;
     #endif
     #endif
     
@@ -284,10 +290,6 @@ int main(int argc, char* argv[]) {
     
     // 2. Disable App Nap via system command
     system("defaults write NSGlobalDomain NSAppSleepDisabled -bool YES 2>/dev/null");
-    
-    // 2b. 🎮 Enable PERSISTENT Game Mode (like Godot!)
-    // This ensures Game Mode activates EVERY time, not just first launch
-    bakery::window::enablePersistentGameMode();
     
     // 3. 🎮 Request Game Mode optimizations (macOS Sonoma 14+)
     // Game Mode gives highest priority to CPU/GPU when in fullscreen

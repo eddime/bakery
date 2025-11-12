@@ -79,20 +79,18 @@ inline void enablePersistentGameMode() {
     
     // Begin activity (keeps Game Mode active for app lifetime)
     // Store token as static to prevent deallocation
+    // IMPORTANT: Token must be kept alive for entire app lifetime!
     static id activityToken = nullptr;
-    if (activityToken) {
-        // End previous activity if exists
-        SEL endActivitySel = sel_registerName("endActivity:");
-        ((void (*)(id, SEL, id))objc_msgSend)(processInfo, endActivitySel, activityToken);
+    
+    // Only create if not already created (prevent multiple calls)
+    if (!activityToken) {
+        activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
+            processInfo, beginActivitySel, options, reasonStr
+        );
+        
+        // Token is already retained by beginActivityWithOptions
+        // Keep it alive for app lifetime (will be released when app exits)
     }
-    
-    // Begin new activity (returns retained token)
-    activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
-        processInfo, beginActivitySel, options, reasonStr
-    );
-    
-    // Token is already retained by beginActivityWithOptions
-    // It will be released when app exits automatically
 }
 
 #elif defined(_WIN32)
