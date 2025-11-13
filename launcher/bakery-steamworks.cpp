@@ -411,49 +411,15 @@ std::string SteamworksManager::GetFriendPersonaName(int32_t friendIndex) {
         return "";
     }
     
-    // Check if we need to request user information
+    // Get friend name (may be empty if not yet loaded by Steam)
     const char* name = steamFriends->GetFriendPersonaName(friendID);
-    logFile << "[STEAM]   Initial name = " << (name ? name : "NULL") << std::endl;
+    logFile << "[STEAM]   Name = " << (name ? name : "NULL") << std::endl;
     
-    // If name is empty, request it and wait for Steam to load it
+    // If name is empty, request it (but don't wait - let the background thread handle it)
     if (!name || strlen(name) == 0) {
-        std::cout << "[STEAM]   Name not available, requesting from Steam..." << std::endl;
-        logFile << "[STEAM]   Name not available, requesting from Steam..." << std::endl;
-        
-        // Request user information (returns true if data needs to be fetched)
-        bool needsUpdate = steamFriends->RequestUserInformation(friendID, false);
-        
-        std::cout << "[STEAM]   RequestUserInformation returned: " << (needsUpdate ? "true (needs fetch)" : "false (already cached)") << std::endl;
-        logFile << "[STEAM]   RequestUserInformation returned: " << (needsUpdate ? "true" : "false") << std::endl;
-        
-        if (needsUpdate) {
-            std::cout << "[STEAM]   Waiting for Steam to fetch user data..." << std::endl;
-            logFile << "[STEAM]   Waiting for Steam to fetch user data..." << std::endl;
-            
-            // Wait up to 100ms for Steam to fetch the data
-            // Process Steam callbacks while waiting
-            for (int i = 0; i < 10; i++) {
-                SteamAPI_RunCallbacks();
-                
-                // Check if name is now available
-                name = steamFriends->GetFriendPersonaName(friendID);
-                if (name && strlen(name) > 0) {
-                    std::cout << "[STEAM]   ✅ Got name after " << (i+1) * 10 << "ms: " << name << std::endl;
-                    logFile << "[STEAM]   ✅ Got name after " << (i+1) * 10 << "ms: " << name << std::endl;
-                    break;
-                }
-                
-                // Sleep for 10ms
-                #ifdef _WIN32
-                Sleep(10);
-                #else
-                usleep(10000);
-                #endif
-            }
-        }
-        
-        // Get name again after waiting
-        name = steamFriends->GetFriendPersonaName(friendID);
+        // Request user information (background thread will process the callback)
+        steamFriends->RequestUserInformation(friendID, false);
+        logFile << "[STEAM]   Requested user information (will be available on next call)" << std::endl;
     }
     
     std::cout << "[STEAM]   Final name = " << (name ? name : "NULL") << std::endl;
@@ -522,4 +488,6 @@ bool SteamworksManager::IsSteamDeck() {
 
 } // namespace steamworks
 } // namespace bakery
+
+
 
