@@ -159,23 +159,43 @@ int main(int argc, char* argv[]) {
     
     // Extract Steam DLL if embedded (MUST be in same directory as EXE!)
     if (data.steamDllSize > 0) {
+        std::cout << "🎮 Extracting Steam DLL..." << std::endl;
+        std::cout << "   Source offset: " << data.steamDllOffset << std::endl;
+        std::cout << "   Size: " << data.steamDllSize << " bytes" << std::endl;
+        std::cout << "   Target: " << steamDllPath << std::endl;
+        
         if (!extractFile(exePath, data.steamDllOffset, data.steamDllSize, steamDllPath)) {
-            std::cerr << "⚠️  Failed to extract Steam DLL (Steamworks may not work)" << std::endl;
+            std::cerr << "❌ Failed to extract Steam DLL!" << std::endl;
             // Don't fail - app can run without Steam
         } else {
+            std::cout << "✅ Steam DLL extracted successfully!" << std::endl;
+            
+            // Verify the file exists
+            std::ifstream checkFile(steamDllPath, std::ios::binary);
+            if (checkFile.good()) {
+                checkFile.seekg(0, std::ios::end);
+                size_t fileSize = checkFile.tellg();
+                checkFile.close();
+                std::cout << "✅ Verified: " << steamDllPath << " (" << fileSize << " bytes)" << std::endl;
+            } else {
+                std::cerr << "❌ Steam DLL file not found after extraction!" << std::endl;
+            }
+            
             // CRITICAL: Add TEMP directory to PATH environment variable
-            // This allows the child process to find steam_api64.dll
             char pathBuffer[32768];
             DWORD pathLen = GetEnvironmentVariableA("PATH", pathBuffer, sizeof(pathBuffer));
             
             if (pathLen > 0 && pathLen < sizeof(pathBuffer) - 1) {
                 std::string newPath = tempDir + ";" + std::string(pathBuffer);
                 SetEnvironmentVariableA("PATH", newPath.c_str());
+                std::cout << "✅ Added to PATH: " << tempDir << std::endl;
             } else {
-                // PATH doesn't exist or is too long, just set to tempDir
                 SetEnvironmentVariableA("PATH", tempDir.c_str());
+                std::cout << "✅ Set PATH to: " << tempDir << std::endl;
             }
         }
+    } else {
+        std::cout << "⚠️  No Steam DLL embedded (size = 0)" << std::endl;
     }
     
     // Launch architecture-specific binary
