@@ -373,37 +373,37 @@ int32_t SteamworksManager::GetFriendCount() {
 }
 
 std::string SteamworksManager::GetFriendPersonaName(int32_t friendIndex) {
-    // TEMPORARY TEST: Just return a hardcoded string to see if the binding works
-    return "TestFriend" + std::to_string(friendIndex);
+    // Step-by-step test to find which Steam API call crashes
     
-    /* ORIGINAL CODE - DISABLED FOR TESTING
     if (!s_initialized) {
-        return "";
+        return "NotInit";
     }
     
     ISteamFriends* steamFriends = SteamFriends();
     if (!steamFriends) {
-        return "";
+        return "NoSteamFriends";
     }
     
-    // Use k_EFriendFlagAll to match GetFriendCount()
-    CSteamID friendID = steamFriends->GetFriendByIndex(friendIndex, k_EFriendFlagAll);
-    
-    if (!friendID.IsValid()) {
-        return "";
+    // TEST: Try to get friend ID
+    try {
+        CSteamID friendID = steamFriends->GetFriendByIndex(friendIndex, k_EFriendFlagAll);
+        
+        if (!friendID.IsValid()) {
+            return "InvalidID";
+        }
+        
+        // TEST: Try to get friend name
+        const char* name = steamFriends->GetFriendPersonaName(friendID);
+        
+        if (!name || strlen(name) == 0) {
+            // Don't request - just return empty
+            return "";
+        }
+        
+        return name;
+    } catch (...) {
+        return "EXCEPTION";
     }
-    
-    // Get friend name (may be empty if not yet loaded by Steam)
-    const char* name = steamFriends->GetFriendPersonaName(friendID);
-    
-    // If name is empty, request it (but don't wait - let the background thread handle it)
-    if (!name || strlen(name) == 0) {
-        // Request user information (background thread will process the callback)
-        steamFriends->RequestUserInformation(friendID, false);
-    }
-    
-    return name ? name : "";
-    */
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
