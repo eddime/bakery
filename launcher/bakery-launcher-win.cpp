@@ -442,25 +442,27 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             getAvailableGameLanguages: wrapAPI('getAvailableGameLanguages', async () => available ? parse(await window.steamGetAvailableGameLanguages()) || '' : ''),
             isSteamInBigPictureMode: wrapAPI('isSteamInBigPictureMode', async () => available ? parse(await window.steamIsSteamInBigPictureMode()) === true : false),
             isSteamDeck: wrapAPI('isSteamDeck', async () => available ? parse(await window.steamIsSteamDeck()) === true : false),
-            getFriends: wrapAPI('getFriends', async (max = 100) => {
+            getFriends: wrapAPI('getFriends', async (max = 10) => {
                 if (!available) return [];
                 const count = parseInt(parse(await window.steamGetFriendCount()));
-                
-                // Request all friend names first (triggers Steam to load data)
-                for (let i = 0; i < Math.min(count, max); i++) {
-                    parse(await window.steamGetFriendPersonaName(i));
-                }
-                
-                // Wait for Steam to load the data (longer delay for Windows)
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Now collect all names
                 const friends = [];
-                for (let i = 0; i < Math.min(count, max); i++) {
-                    const name = parse(await window.steamGetFriendPersonaName(i)) || '';
-                    if (name) friends.push(name);
+                const limit = Math.min(count, max);
+                
+                console.log(`[Steam] Getting ${limit} friends out of ${count}...`);
+                
+                for (let i = 0; i < limit; i++) {
+                    try {
+                        const name = parse(await window.steamGetFriendPersonaName(i)) || '';
+                        if (name) {
+                            friends.push(name);
+                            console.log(`[Steam] Friend ${i}: ${name}`);
+                        }
+                    } catch (error) {
+                        console.error(`[Steam] Error getting friend ${i}:`, error);
+                    }
                 }
                 
+                console.log(`[Steam] Got ${friends.length} friends`);
                 return friends;
             })
         };
