@@ -374,23 +374,19 @@ int32_t SteamworksManager::GetFriendCount() {
 
 std::string SteamworksManager::GetFriendPersonaName(int32_t friendIndex) {
     if (!s_initialized) {
-        return "NotInit";
+        return "";
     }
     
     ISteamFriends* steamFriends = SteamFriends();
     if (!steamFriends) {
-        return "NoSteamFriends";
+        return "";
     }
     
-    // CRITICAL TEST: Is it GetFriendByIndex that crashes?
-    // Let's NOT call it at all!
-    return "BeforeGetFriendByIndex_" + std::to_string(friendIndex);
-    
-    /* DISABLED - THIS CRASHES!
+    // TEST: With background thread DISABLED, does GetFriendByIndex work?
     CSteamID friendID = steamFriends->GetFriendByIndex(friendIndex, k_EFriendFlagAll);
     
     if (!friendID.IsValid()) {
-        return "InvalidID";
+        return "";
     }
     
     const char* name = steamFriends->GetFriendPersonaName(friendID);
@@ -400,7 +396,6 @@ std::string SteamworksManager::GetFriendPersonaName(int32_t friendIndex) {
     }
     
     return name;
-    */
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
