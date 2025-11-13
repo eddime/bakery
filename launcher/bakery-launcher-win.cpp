@@ -584,16 +584,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     std::string url = "http://127.0.0.1:" + std::to_string(port);
     w.navigate(url.c_str());
     
-    // 🎮 TEMPORARILY DISABLED: Background thread might cause race condition!
-    // std::thread steamThread;
-    // if (steamEnabled) {
-    //     steamThread = std::thread([]() {
-    //         while (g_running) {
-    //             bakery::steamworks::SteamworksManager::RunCallbacks();
-    //             std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
-    //         }
-    //     });
-    // }
+    // 🎮 Run Steamworks callbacks in background thread (if enabled)
+    std::thread steamThread;
+    if (steamEnabled) {
+        steamThread = std::thread([]() {
+            while (g_running) {
+                bakery::steamworks::SteamworksManager::RunCallbacks();
+                std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
+            }
+        });
+    }
     
     // Run event loop
     w.run();
@@ -603,7 +603,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     // 🎮 Cleanup Steamworks
     if (steamEnabled) {
-        // No thread to join (disabled for testing)
+        if (steamThread.joinable()) {
+            steamThread.join();
+        }
         bakery::steamworks::shutdownSteamworks();
     }
     

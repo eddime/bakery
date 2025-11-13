@@ -7,6 +7,7 @@
 
 // Include Steam API headers
 #include "../deps/steamworks/sdk/public/steam/steam_api.h"
+#include "../deps/steamworks/sdk/public/steam/steam_api_flat.h"  // C API for ABI compatibility!
 
 #include <iostream>
 
@@ -377,19 +378,22 @@ std::string SteamworksManager::GetFriendPersonaName(int32_t friendIndex) {
         return "";
     }
     
-    ISteamFriends* steamFriends = SteamFriends();
+    // USE C API FOR ABI COMPATIBILITY (MinGW vs MSVC)!
+    // Get ISteamFriends interface handle (v018 is current version)
+    ISteamFriends* steamFriends = SteamAPI_SteamFriends_v018();
     if (!steamFriends) {
         return "";
     }
     
-    // TEST: With background thread DISABLED, does GetFriendByIndex work?
-    CSteamID friendID = steamFriends->GetFriendByIndex(friendIndex, k_EFriendFlagAll);
+    // Use C API to get friend by index (avoids CSteamID ABI issues!)
+    uint64 friendID = SteamAPI_ISteamFriends_GetFriendByIndex(steamFriends, friendIndex, k_EFriendFlagAll);
     
-    if (!friendID.IsValid()) {
+    if (friendID == 0) {
         return "";
     }
     
-    const char* name = steamFriends->GetFriendPersonaName(friendID);
+    // Use C API to get friend name
+    const char* name = SteamAPI_ISteamFriends_GetFriendPersonaName(steamFriends, friendID);
     
     if (!name || strlen(name) == 0) {
         return "";
