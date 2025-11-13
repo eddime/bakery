@@ -450,9 +450,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                     const count = parseInt(parse(await window.steamGetFriendCount()));
                     console.log(`[Steam] Step 2: Got count = ${count}`);
                     
-                    // STOP HERE - don't call GetFriendPersonaName yet!
-                    // Just return count as a test
-                    return [`Total friends: ${count}`];
+                    if (count === 0) return [];
+                    
+                    // Test with ONLY the first friend
+                    console.log('[Steam] Step 3: Getting first friend name...');
+                    const name = parse(await window.steamGetFriendPersonaName(0));
+                    console.log(`[Steam] Step 4: Got name = "${name}" (type: ${typeof name})`);
+                    
+                    if (name) {
+                        return [name];
+                    } else {
+                        return ['(Friend 0 has no name)'];
+                    }
                 } catch (error) {
                     console.error('[Steam] CRASH in getFriends:', error);
                     return ['ERROR: ' + error.message];
