@@ -373,8 +373,6 @@ int32_t SteamworksManager::GetFriendCount() {
 }
 
 std::string SteamworksManager::GetFriendPersonaName(int32_t friendIndex) {
-    // Step-by-step test to find which Steam API call crashes
-    
     if (!s_initialized) {
         return "NotInit";
     }
@@ -384,26 +382,25 @@ std::string SteamworksManager::GetFriendPersonaName(int32_t friendIndex) {
         return "NoSteamFriends";
     }
     
-    // TEST: Try to get friend ID
-    try {
-        CSteamID friendID = steamFriends->GetFriendByIndex(friendIndex, k_EFriendFlagAll);
-        
-        if (!friendID.IsValid()) {
-            return "InvalidID";
-        }
-        
-        // TEST: Try to get friend name
-        const char* name = steamFriends->GetFriendPersonaName(friendID);
-        
-        if (!name || strlen(name) == 0) {
-            // Don't request - just return empty
-            return "";
-        }
-        
-        return name;
-    } catch (...) {
-        return "EXCEPTION";
+    // CRITICAL TEST: Is it GetFriendByIndex that crashes?
+    // Let's NOT call it at all!
+    return "BeforeGetFriendByIndex_" + std::to_string(friendIndex);
+    
+    /* DISABLED - THIS CRASHES!
+    CSteamID friendID = steamFriends->GetFriendByIndex(friendIndex, k_EFriendFlagAll);
+    
+    if (!friendID.IsValid()) {
+        return "InvalidID";
     }
+    
+    const char* name = steamFriends->GetFriendPersonaName(friendID);
+    
+    if (!name || strlen(name) == 0) {
+        return "";
+    }
+    
+    return name;
+    */
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -461,6 +458,7 @@ bool SteamworksManager::IsSteamDeck() {
 
 } // namespace steamworks
 } // namespace bakery
+
 
 
 
