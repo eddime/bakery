@@ -442,30 +442,26 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             getAvailableGameLanguages: wrapAPI('getAvailableGameLanguages', async () => available ? parse(await window.steamGetAvailableGameLanguages()) || '' : ''),
             isSteamInBigPictureMode: wrapAPI('isSteamInBigPictureMode', async () => available ? parse(await window.steamIsSteamInBigPictureMode()) === true : false),
             isSteamDeck: wrapAPI('isSteamDeck', async () => available ? parse(await window.steamIsSteamDeck()) === true : false),
-            getFriends: wrapAPI('getFriends', async (max = 10) => {
+            getFriends: wrapAPI('getFriends', async (max = 100) => {
                 if (!available) return [];
+                const count = parseInt(parse(await window.steamGetFriendCount()));
                 
-                try {
-                    console.log('[Steam] Step 1: Getting friend count...');
-                    const count = parseInt(parse(await window.steamGetFriendCount()));
-                    console.log(`[Steam] Step 2: Got count = ${count}`);
-                    
-                    if (count === 0) return [];
-                    
-                    // Test with ONLY the first friend
-                    console.log('[Steam] Step 3: Getting first friend name...');
-                    const name = parse(await window.steamGetFriendPersonaName(0));
-                    console.log(`[Steam] Step 4: Got name = "${name}" (type: ${typeof name})`);
-                    
-                    if (name) {
-                        return [name];
-                    } else {
-                        return ['(Friend 0 has no name)'];
-                    }
-                } catch (error) {
-                    console.error('[Steam] CRASH in getFriends:', error);
-                    return ['ERROR: ' + error.message];
+                // Request all friend names first (triggers Steam to load data)
+                for (let i = 0; i < Math.min(count, max); i++) {
+                    parse(await window.steamGetFriendPersonaName(i));
                 }
+                
+                // Wait for Steam to load the data
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Now collect all names
+                const friends = [];
+                for (let i = 0; i < Math.min(count, max); i++) {
+                    const name = parse(await window.steamGetFriendPersonaName(i)) || '';
+                    if (name) friends.push(name);
+                }
+                
+                return friends;
             })
         };
         window.Steamworks = window.Steam;
