@@ -401,11 +401,11 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 try {
                     const result = await fn(...args);
                     if (logSuccess && result !== false && result !== 0 && result !== '' && result !== null) {
-                        console.log(`[Bakery Steam] ${name}:`, result);
+                        console.log(`[Gemshell Steam] ${name}:`, result);
                     }
                     return result;
                 } catch (error) {
-                    console.error(`[Bakery Steam] ${name} failed:`, error);
+                    console.error(`[Gemshell Steam] ${name} failed:`, error);
                     throw error;
                 }
             };
@@ -414,7 +414,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         const available = window.Bakery && window.Bakery.steam === true;
         
         if (!available) {
-            console.warn('[Bakery Steam] Steamworks is not available. Make sure Steam is running and steamworks is enabled in bakery.config.js');
+            console.warn('[Gemshell Steam] Steamworks is not available. Make sure Steam is running and steamworks is enabled in bakery.config.js');
         }
         
         window.Steam = {
@@ -442,32 +442,25 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             getAvailableGameLanguages: wrapAPI('getAvailableGameLanguages', async () => available ? parse(await window.steamGetAvailableGameLanguages()) || '' : ''),
             isSteamInBigPictureMode: wrapAPI('isSteamInBigPictureMode', async () => available ? parse(await window.steamIsSteamInBigPictureMode()) === true : false),
             isSteamDeck: wrapAPI('isSteamDeck', async () => available ? parse(await window.steamIsSteamDeck()) === true : false),
-            getFriends: wrapAPI('getFriends', async (max = 5) => {
+            getFriends: wrapAPI('getFriends', async (max = 100) => {
                 if (!available) return [];
                 const count = parseInt(parse(await window.steamGetFriendCount()));
-                const limit = Math.min(count, max);
-                
-                console.log(`[Steam] Loading ${limit} friends...`);
-                
-                // Collect names one by one with error handling
                 const friends = [];
-                for (let i = 0; i < limit; i++) {
-                    try {
-                        console.log(`[Steam] Getting friend ${i}...`);
-                        const name = parse(await window.steamGetFriendPersonaName(i)) || '';
-                        if (name) {
-                            friends.push(name);
-                            console.log(`[Steam]   ✓ ${name}`);
-                        } else {
-                            console.log(`[Steam]   ✗ Empty name`);
-                        }
-                    } catch (error) {
-                        console.error(`[Steam]   ✗ Error at friend ${i}:`, error);
-                        break; // Stop on first error
-                    }
+                
+                // Request all friend names first (triggers Steam to load data)
+                for (let i = 0; i < Math.min(count, max); i++) {
+                    parse(await window.steamGetFriendPersonaName(i));
                 }
                 
-                console.log(`[Steam] Loaded ${friends.length} friends`);
+                // Wait for Steam to load the data
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Now collect all names
+                for (let i = 0; i < Math.min(count, max); i++) {
+                    const name = parse(await window.steamGetFriendPersonaName(i)) || '';
+                    if (name) friends.push(name);
+                }
+                
                 return friends;
             })
         };

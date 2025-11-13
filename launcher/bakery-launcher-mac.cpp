@@ -426,11 +426,11 @@ int main(int argc, char* argv[]) {
                 try {
                     const result = await fn(...args);
                     if (logSuccess && result !== false && result !== 0 && result !== '' && result !== null) {
-                        console.log(`[Bakery Steam] ${name}:`, result);
+                        console.log(`[Gemshell Steam] ${name}:`, result);
                     }
                     return result;
                 } catch (error) {
-                    console.error(`[Bakery Steam] ${name} failed:`, error);
+                    console.error(`[Gemshell Steam] ${name} failed:`, error);
                     throw error;
                 }
             };
@@ -439,7 +439,7 @@ int main(int argc, char* argv[]) {
         const available = window.Bakery && window.Bakery.steam === true;
         
         if (!available) {
-            console.warn('[Bakery Steam] Steamworks is not available. Make sure Steam is running and steamworks is enabled in bakery.config.js');
+            console.warn('[Gemshell Steam] Steamworks is not available. Make sure Steam is running and steamworks is enabled in bakery.config.js');
         }
         
         window.Steam = {
