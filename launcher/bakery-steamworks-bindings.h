@@ -81,6 +81,8 @@ inline void createSteamAppIdFile(uint32_t appId) {
 /**
  * Initialize Steamworks based on config
  * Returns true if Steamworks is enabled and initialized successfully
+ * 
+ * Note: On Windows, SteamworksManager::Init() automatically loads steam_api64.dll from TEMP
  */
 template<typename ConfigType>
 inline bool initSteamworks(const ConfigType& config) {
@@ -97,7 +99,7 @@ inline bool initSteamworks(const ConfigType& config) {
         createSteamAppIdFile(config.steamworks.appId);
     }
     
-    // Initialize Steamworks
+    // Initialize Steamworks (on Windows, this loads DLL from TEMP automatically)
     bool success = SteamworksManager::Init();
     
     #ifndef NDEBUG
