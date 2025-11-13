@@ -359,51 +359,25 @@ inline void bindSteamworksToWebview(WebviewType& w, bool steamEnabled) {
     });
     
     w.bind("steamGetFriendPersonaName", [](const std::string& req) -> std::string {
-        // DEBUG: Log to file
-        std::ofstream logFile("/tmp/steam_binding_debug.log", std::ios::app);
-        logFile << "[BINDING] steamGetFriendPersonaName called with req: " << req << std::endl;
-        
         try {
-            if (req.empty()) {
-                logFile << "[BINDING]   ERROR: req is empty!" << std::endl;
-                logFile.close();
-                return json("").dump();
-            }
-            if (req == "[]") {
-                logFile << "[BINDING]   ERROR: req is []!" << std::endl;
-                logFile.close();
+            if (req.empty() || req == "[]") {
                 return json("").dump();
             }
             
             json j = json::parse(req);
-            logFile << "[BINDING]   Parsed JSON, size: " << j.size() << std::endl;
             
-            if (!j.is_array()) {
-                logFile << "[BINDING]   ERROR: Not an array!" << std::endl;
-                logFile.close();
-                return json("").dump();
-            }
-            if (j.size() < 1) {
-                logFile << "[BINDING]   ERROR: Array size < 1!" << std::endl;
-                logFile.close();
+            if (!j.is_array() || j.size() < 1) {
                 return json("").dump();
             }
             
-            // webview sends ONLY the parameters, not the function name!
-            // So j[0] is the first parameter (friendIndex), not j[0]!
             int32_t friendIndex = j[0].get<int32_t>();
-            logFile << "[BINDING]   Calling GetFriendPersonaName(" << friendIndex << ")" << std::endl;
-            logFile.close();
+            if (friendIndex < 0) {
+                return json("").dump();
+            }
             
             std::string name = SteamworksManager::GetFriendPersonaName(friendIndex);
             return json(name).dump();
-        } catch (const std::exception& e) {
-            logFile << "[BINDING]   EXCEPTION: " << e.what() << std::endl;
-            logFile.close();
-            return json("").dump();
         } catch (...) {
-            logFile << "[BINDING]   UNKNOWN EXCEPTION!" << std::endl;
-            logFile.close();
             return json("").dump();
         }
     });
@@ -487,5 +461,6 @@ inline void shutdownSteamworks() {
 } // namespace bakery
 
 #endif // BAKERY_STEAMWORKS_BINDINGS_H
+
 
 
