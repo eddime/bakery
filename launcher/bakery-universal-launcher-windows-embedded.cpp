@@ -162,6 +162,19 @@ int main(int argc, char* argv[]) {
         if (!extractFile(exePath, data.steamDllOffset, data.steamDllSize, steamDllPath)) {
             std::cerr << "⚠️  Failed to extract Steam DLL (Steamworks may not work)" << std::endl;
             // Don't fail - app can run without Steam
+        } else {
+            // CRITICAL: Add TEMP directory to PATH environment variable
+            // This allows the child process to find steam_api64.dll
+            char pathBuffer[32768];
+            DWORD pathLen = GetEnvironmentVariableA("PATH", pathBuffer, sizeof(pathBuffer));
+            
+            if (pathLen > 0 && pathLen < sizeof(pathBuffer) - 1) {
+                std::string newPath = tempDir + ";" + std::string(pathBuffer);
+                SetEnvironmentVariableA("PATH", newPath.c_str());
+            } else {
+                // PATH doesn't exist or is too long, just set to tempDir
+                SetEnvironmentVariableA("PATH", tempDir.c_str());
+            }
         }
     }
     
