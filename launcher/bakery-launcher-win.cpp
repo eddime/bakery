@@ -444,26 +444,19 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             isSteamDeck: wrapAPI('isSteamDeck', async () => available ? parse(await window.steamIsSteamDeck()) === true : false),
             getFriends: wrapAPI('getFriends', async (max = 10) => {
                 if (!available) return [];
-                const count = parseInt(parse(await window.steamGetFriendCount()));
-                const friends = [];
-                const limit = Math.min(count, max);
                 
-                console.log(`[Steam] Getting ${limit} friends out of ${count}...`);
-                
-                for (let i = 0; i < limit; i++) {
-                    try {
-                        const name = parse(await window.steamGetFriendPersonaName(i)) || '';
-                        if (name) {
-                            friends.push(name);
-                            console.log(`[Steam] Friend ${i}: ${name}`);
-                        }
-                    } catch (error) {
-                        console.error(`[Steam] Error getting friend ${i}:`, error);
-                    }
+                try {
+                    console.log('[Steam] Step 1: Getting friend count...');
+                    const count = parseInt(parse(await window.steamGetFriendCount()));
+                    console.log(`[Steam] Step 2: Got count = ${count}`);
+                    
+                    // STOP HERE - don't call GetFriendPersonaName yet!
+                    // Just return count as a test
+                    return [`Total friends: ${count}`];
+                } catch (error) {
+                    console.error('[Steam] CRASH in getFriends:', error);
+                    return ['ERROR: ' + error.message];
                 }
-                
-                console.log(`[Steam] Got ${friends.length} friends`);
-                return friends;
             })
         };
         window.Steamworks = window.Steam;
