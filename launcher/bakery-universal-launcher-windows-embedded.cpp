@@ -181,6 +181,11 @@ int main(int argc, char* argv[]) {
     wchar_t* widePath = new wchar_t[size];
     MultiByteToWideChar(CP_UTF8, 0, binaryPath.c_str(), -1, widePath, size);
     
+    // Convert tempDir to wide string for working directory
+    size = MultiByteToWideChar(CP_UTF8, 0, tempDir.c_str(), -1, NULL, 0);
+    wchar_t* wideTempDir = new wchar_t[size];
+    MultiByteToWideChar(CP_UTF8, 0, tempDir.c_str(), -1, wideTempDir, size);
+    
     // Build command line with arguments
     std::wstring cmdLine = widePath;
     for (int i = 1; i < argc; i++) {
@@ -192,14 +197,15 @@ int main(int argc, char* argv[]) {
         delete[] wideArg;
     }
     
-    // Launch process
+    // Launch process with working directory set to tempDir
+    // This ensures the child process can find steam_api64.dll
     STARTUPINFOW si = { sizeof(si) };
     PROCESS_INFORMATION pi;
     
     if (!CreateProcessW(
         widePath,
         (LPWSTR)cmdLine.c_str(),
-        NULL, NULL, FALSE, 0, NULL, NULL,
+        NULL, NULL, FALSE, 0, NULL, wideTempDir,  // Set working directory!
         &si, &pi
     )) {
         std::cerr << "❌ Failed to launch " << arch << " binary" << std::endl;
@@ -217,6 +223,7 @@ int main(int argc, char* argv[]) {
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
     delete[] widePath;
+    delete[] wideTempDir;
     
     // Cleanup temp files (optional, Windows will cleanup temp dir eventually)
     DeleteFileA(x64Path.c_str());
