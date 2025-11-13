@@ -442,25 +442,32 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             getAvailableGameLanguages: wrapAPI('getAvailableGameLanguages', async () => available ? parse(await window.steamGetAvailableGameLanguages()) || '' : ''),
             isSteamInBigPictureMode: wrapAPI('isSteamInBigPictureMode', async () => available ? parse(await window.steamIsSteamInBigPictureMode()) === true : false),
             isSteamDeck: wrapAPI('isSteamDeck', async () => available ? parse(await window.steamIsSteamDeck()) === true : false),
-            getFriends: wrapAPI('getFriends', async (max = 100) => {
+            getFriends: wrapAPI('getFriends', async (max = 5) => {
                 if (!available) return [];
                 const count = parseInt(parse(await window.steamGetFriendCount()));
+                const limit = Math.min(count, max);
                 
-                // Request all friend names first (triggers Steam to load data)
-                for (let i = 0; i < Math.min(count, max); i++) {
-                    parse(await window.steamGetFriendPersonaName(i));
-                }
+                console.log(`[Steam] Loading ${limit} friends...`);
                 
-                // Wait for Steam to load the data
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Now collect all names
+                // Collect names one by one with error handling
                 const friends = [];
-                for (let i = 0; i < Math.min(count, max); i++) {
-                    const name = parse(await window.steamGetFriendPersonaName(i)) || '';
-                    if (name) friends.push(name);
+                for (let i = 0; i < limit; i++) {
+                    try {
+                        console.log(`[Steam] Getting friend ${i}...`);
+                        const name = parse(await window.steamGetFriendPersonaName(i)) || '';
+                        if (name) {
+                            friends.push(name);
+                            console.log(`[Steam]   ✓ ${name}`);
+                        } else {
+                            console.log(`[Steam]   ✗ Empty name`);
+                        }
+                    } catch (error) {
+                        console.error(`[Steam]   ✗ Error at friend ${i}:`, error);
+                        break; // Stop on first error
+                    }
                 }
                 
+                console.log(`[Steam] Loaded ${friends.length} friends`);
                 return friends;
             })
         };
