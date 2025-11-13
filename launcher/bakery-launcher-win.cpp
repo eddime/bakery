@@ -445,25 +445,20 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             getFriends: wrapAPI('getFriends', async (max = 100) => {
                 if (!available) return [];
                 const count = parseInt(parse(await window.steamGetFriendCount()));
-                const friends = [];
                 
-                // First pass: get all available names
+                // Request all friend names first (triggers Steam to load data)
+                for (let i = 0; i < Math.min(count, max); i++) {
+                    parse(await window.steamGetFriendPersonaName(i));
+                }
+                
+                // Wait for Steam to load the data (longer delay for Windows)
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Now collect all names
+                const friends = [];
                 for (let i = 0; i < Math.min(count, max); i++) {
                     const name = parse(await window.steamGetFriendPersonaName(i)) || '';
                     if (name) friends.push(name);
-                }
-                
-                // If some names are missing, wait and retry (Steam loads data asynchronously)
-                if (friends.length < Math.min(count, max)) {
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                    
-                    // Second pass: retry all friends
-                    const retryFriends = [];
-                    for (let i = 0; i < Math.min(count, max); i++) {
-                        const name = parse(await window.steamGetFriendPersonaName(i)) || '';
-                        if (name) retryFriends.push(name);
-                    }
-                    return retryFriends;
                 }
                 
                 return friends;
