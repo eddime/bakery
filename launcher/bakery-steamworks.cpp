@@ -373,6 +373,10 @@ int32_t SteamworksManager::GetFriendCount() {
 }
 
 std::string SteamworksManager::GetFriendPersonaName(int32_t friendIndex) {
+    // TEMPORARY TEST: Just return a hardcoded string to see if the binding works
+    return "TestFriend" + std::to_string(friendIndex);
+    
+    /* ORIGINAL CODE - DISABLED FOR TESTING
     if (!s_initialized) {
         return "";
     }
@@ -399,6 +403,7 @@ std::string SteamworksManager::GetFriendPersonaName(int32_t friendIndex) {
     }
     
     return name ? name : "";
+    */
 }
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
