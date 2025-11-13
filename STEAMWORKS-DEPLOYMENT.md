@@ -109,10 +109,10 @@ dist/linux/
 - 💡 **Note**: Currently only x86_64 is built. ARM64 support coming soon.
 
 **Steamworks on Linux:**
-- ✅ **Cross-compilation works!** Uses weak symbols to avoid glibc/musl conflicts
-- ✅ **Graceful degradation**: App runs without Steam, but Steamworks features return errors
-- ✅ **Runtime detection**: If Steam is available, the real API is used automatically
-- 🎯 **Solution**: Weak symbol stubs allow linking without `libsteam_api.so`
+- ✅ **Works like Windows!** Steam library is embedded in the binary
+- ✅ **Runtime extraction**: Library is extracted to `/tmp/bakery_<pid>/` at startup
+- ✅ **Automatic loading**: `LD_LIBRARY_PATH` is set automatically
+- 🎯 **Solution**: Same as Windows - embed, extract, load at runtime
 
 ---
 
@@ -208,7 +208,9 @@ All Steam API calls will return default values:
 |----------|--------------|-------------------|----------------|----------------|
 | **macOS** | ✅ Yes (`.app` bundle) | Inside `.app/Contents/MacOS/` | ✅ Yes | ✅ Yes |
 | **Windows** | ✅ Yes (Single EXE) | Embedded, extracted to TEMP | ✅ Yes | ✅ Yes |
-| **Linux** | ✅ Yes (Single Binary, x86_64) | Weak symbols (runtime) | ✅ Yes | ✅ Yes |
+| **Linux** | ✅ Yes (Single Binary, x86_64) | Embedded, extracted to /tmp | ✅ Yes | ✅ Yes* |
+
+*Note: Cross-compilation uses weak symbols as fallback. For full Steamworks support, build on native Linux or use Docker with glibc.
 
 **Key Points:**
 - ✅ Steam DLLs are **automatically embedded** during build if `steamworks.enabled = true`

@@ -171,13 +171,17 @@ int main(int argc, char* argv[]) {
             std::cerr << "⚠️  Failed to extract Steam library (Steamworks may not work)" << std::endl;
             // Don't fail - app can run without Steam
         } else {
+            std::cout << "✅ Extracted Steam library to: " << steamSoPath << std::endl;
+            
             // Set LD_LIBRARY_PATH so the launcher can find libsteam_api.so
-            std::string ldPath = "LD_LIBRARY_PATH=" + tempDir;
+            std::string ldPath = tempDir;
             const char* existingLdPath = getenv("LD_LIBRARY_PATH");
-            if (existingLdPath) {
+            if (existingLdPath && strlen(existingLdPath) > 0) {
                 ldPath += ":" + std::string(existingLdPath);
             }
-            putenv(const_cast<char*>(ldPath.c_str()));
+            setenv("LD_LIBRARY_PATH", ldPath.c_str(), 1);
+            
+            std::cout << "✅ Set LD_LIBRARY_PATH=" << ldPath << std::endl;
         }
     }
     
