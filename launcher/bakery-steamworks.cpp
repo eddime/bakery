@@ -17,8 +17,6 @@
 #include <unistd.h>  // for usleep
 #endif
 
-#include <fstream>  // for file logging
-
 namespace bakery {
 namespace steamworks {
 
@@ -375,61 +373,31 @@ int32_t SteamworksManager::GetFriendCount() {
 }
 
 std::string SteamworksManager::GetFriendPersonaName(int32_t friendIndex) {
-    // Log to file for debugging
-    std::ofstream logFile("/tmp/steam_friends_debug.log", std::ios::app);
-    logFile << "[STEAM] GetFriendPersonaName(" << friendIndex << ") called" << std::endl;
-    
     if (!s_initialized) {
-        std::cerr << "[STEAM] GetFriendPersonaName: Not initialized" << std::endl;
-        logFile << "[STEAM]   ERROR: Not initialized!" << std::endl;
-        logFile.close();
         return "";
     }
     
     ISteamFriends* steamFriends = SteamFriends();
     if (!steamFriends) {
-        std::cerr << "[STEAM] GetFriendPersonaName: SteamFriends is null" << std::endl;
-        logFile << "[STEAM]   ERROR: SteamFriends is null!" << std::endl;
-        logFile.close();
         return "";
     }
     
     // Use k_EFriendFlagAll to match GetFriendCount()
     CSteamID friendID = steamFriends->GetFriendByIndex(friendIndex, k_EFriendFlagAll);
     
-    std::cout << "[STEAM] GetFriendPersonaName(" << friendIndex << "): friendID valid = " << friendID.IsValid() << std::endl;
-    logFile << "[STEAM]   friendID valid = " << friendID.IsValid() << std::endl;
-    if (friendID.IsValid()) {
-        std::cout << "[STEAM]   friendID = " << friendID.ConvertToUint64() << std::endl;
-        logFile << "[STEAM]   friendID = " << friendID.ConvertToUint64() << std::endl;
-    }
-    
     if (!friendID.IsValid()) {
-        std::cerr << "[STEAM]   ERROR: Invalid friend ID!" << std::endl;
-        logFile << "[STEAM]   ERROR: Invalid friend ID!" << std::endl;
-        logFile.close();
         return "";
     }
     
     // Get friend name (may be empty if not yet loaded by Steam)
     const char* name = steamFriends->GetFriendPersonaName(friendID);
-    logFile << "[STEAM]   Name = " << (name ? name : "NULL") << std::endl;
     
     // If name is empty, request it (but don't wait - let the background thread handle it)
     if (!name || strlen(name) == 0) {
         // Request user information (background thread will process the callback)
         steamFriends->RequestUserInformation(friendID, false);
-        logFile << "[STEAM]   Requested user information (will be available on next call)" << std::endl;
     }
     
-    std::cout << "[STEAM]   Final name = " << (name ? name : "NULL") << std::endl;
-    logFile << "[STEAM]   Final name = " << (name ? name : "NULL") << std::endl;
-    if (!name || strlen(name) == 0) {
-        std::cerr << "[STEAM]   ⚠️  WARNING: Name is still empty or NULL!" << std::endl;
-        logFile << "[STEAM]   ⚠️  WARNING: Name is still empty or NULL!" << std::endl;
-    }
-    
-    logFile.close();
     return name ? name : "";
 }
 
