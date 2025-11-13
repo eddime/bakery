@@ -121,18 +121,21 @@ inline bool initSteamworks(const ConfigType& config) {
     // Create steam_appid.txt if App ID is provided
     if (config.steamworks.appId > 0) {
         createSteamAppIdFile(config.steamworks.appId);
+    } else {
+        std::cerr << "⚠️  No Steam App ID configured!" << std::endl;
     }
     
     // Initialize Steamworks
+    std::cout << "🎮 Initializing Steamworks..." << std::endl;
     bool success = SteamworksManager::Init();
     
-    #ifndef NDEBUG
     if (success) {
-        std::cout << "🎮 Steamworks: INITIALIZED ✅" << std::endl;
+        std::cout << "✅ Steamworks: INITIALIZED" << std::endl;
     } else {
-        std::cout << "⚠️  Steamworks: FAILED (Steam not running or App ID invalid)" << std::endl;
+        std::cerr << "❌ Steamworks: FAILED" << std::endl;
+        std::cerr << "   → Is Steam client running?" << std::endl;
+        std::cerr << "   → Is App ID valid? (" << config.steamworks.appId << ")" << std::endl;
     }
-    #endif
     
     return success;
 }
