@@ -99,14 +99,17 @@ dist/windows/
 **Output Structure:**
 ```
 dist/linux/
-  └── steamdemo            # ✅ Single executable (x86_64, launcher + assets embedded)
+  ├── steamdemo-x86_64     # ✅ Single executable (Intel/AMD 64-bit + Steam SDK)
+  └── steamdemo-arm64      # ✅ Single executable (ARM 64-bit)
 ```
 
 **Distribution:**
-- ✅ **Single file!** `steamdemo` (x86_64 only)
-- ✅ All assets embedded
-- ✅ Users just download and run `./steamdemo`
-- 💡 **Note**: Currently only x86_64 is built. ARM64 support coming soon.
+- ✅ **Two architecture-specific binaries**
+- ✅ `steamdemo-x86_64` for Intel/AMD processors (10 MB, with Steam SDK)
+- ✅ `steamdemo-arm64` for ARM processors (9.6 MB, Raspberry Pi, etc.)
+- ✅ All assets embedded in both
+- ✅ Users just download and run `./steamdemo-x86_64` or `./steamdemo-arm64`
+- 💡 **Note**: Steam SDK only available for x86_64 (Valve doesn't provide ARM64 binaries yet)
 
 **Steamworks on Linux:**
 - ✅ **Works EXACTLY like Windows!** Steam library is embedded in the binary
@@ -205,11 +208,11 @@ All Steam API calls will return default values:
 
 ## Summary
 
-| Platform | Single File? | Steam DLL Location | Auto-Embedded? | Cross-Compile? |
-|----------|--------------|-------------------|----------------|----------------|
-| **macOS** | ✅ Yes (`.app` bundle) | Inside `.app/Contents/MacOS/` | ✅ Yes | ✅ Yes |
-| **Windows** | ✅ Yes (Single EXE) | Embedded, extracted to TEMP | ✅ Yes | ✅ Yes |
-| **Linux** | ✅ Yes (Single Binary, x86_64) | Embedded, dlopen() at runtime | ✅ Yes | ✅ Yes |
+| Platform | Single File? | Steam DLL Location | Auto-Embedded? | Cross-Compile? | Architectures |
+|----------|--------------|-------------------|----------------|----------------|---------------|
+| **macOS** | ✅ Yes (`.app` bundle) | Inside `.app/Contents/MacOS/` | ✅ Yes | ✅ Yes | Universal (x86_64 + ARM64) |
+| **Windows** | ✅ Yes (Single EXE) | Embedded, extracted to TEMP | ✅ Yes | ✅ Yes | x86_64 |
+| **Linux** | ✅ Yes (2 binaries) | Embedded, dlopen() at runtime | ✅ Yes | ✅ Yes | x86_64 + ARM64 |
 
 **Key Points:**
 - ✅ Steam DLLs are **automatically embedded** during build if `steamworks.enabled = true`
