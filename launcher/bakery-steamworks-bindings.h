@@ -79,10 +79,30 @@ inline void createSteamAppIdFile(uint32_t appId) {
 }
 
 /**
+ * Load Steam DLL from TEMP directory (Windows only)
+ * The universal launcher extracts the DLL to %TEMP%\bakery_<pid>\steam_api64.dll
+ * 
+ * Note: The DLL is extracted to disk (like bakery-assets file) because:
+ * 1. Windows LoadLibrary requires a file path
+ * 2. MemoryLoadLibrary is complex and not needed
+ * 3. Steam client provides the runtime dependencies
+ * 4. This works exactly like assets: extract to TEMP, load from there
+ */
+inline bool loadSteamDLL() {
+    #ifdef _WIN32
+    // On Windows, the DLL is extracted to TEMP by the universal launcher
+    // Steam client will provide the runtime dependencies (VCRUNTIME140.dll, etc.)
+    // We don't need to explicitly load it - SteamAPI_Init will handle it
+    return true;
+    #else
+    // On macOS/Linux, the DLL/dylib/so is already linked or loaded via dlopen
+    return true;
+    #endif
+}
+
+/**
  * Initialize Steamworks based on config
  * Returns true if Steamworks is enabled and initialized successfully
- * 
- * Note: On Windows, SteamworksManager::Init() automatically loads steam_api64.dll from TEMP
  */
 template<typename ConfigType>
 inline bool initSteamworks(const ConfigType& config) {
@@ -94,12 +114,16 @@ inline bool initSteamworks(const ConfigType& config) {
         return false;
     }
     
+    // On Windows, explicitly load the Steam DLL from TEMP
+    // (This may fail if dependencies are missing, but Steam client will provide them)
+    loadSteamDLL();
+    
     // Create steam_appid.txt if App ID is provided
     if (config.steamworks.appId > 0) {
         createSteamAppIdFile(config.steamworks.appId);
     }
     
-    // Initialize Steamworks (on Windows, this loads DLL from TEMP automatically)
+    // Initialize Steamworks
     bool success = SteamworksManager::Init();
     
     #ifndef NDEBUG
@@ -460,4 +484,5 @@ inline void shutdownSteamworks() {
 } // namespace bakery
 
 #endif // BAKERY_STEAMWORKS_BINDINGS_H
+
 

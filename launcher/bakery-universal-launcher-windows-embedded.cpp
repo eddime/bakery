@@ -134,6 +134,7 @@ int main(int argc, char* argv[]) {
     std::string x64Path = tempDir + "\\bakery-x64.exe";
     std::string assetsPath = tempDir + "\\bakery-assets";
     std::string configPath = tempDir + "\\bakery.config.json";
+    std::string steamDllPath = tempDir + "\\steam_api64.dll";
     
     if (data.x64Size > 0) {
         if (!extractFile(exePath, data.x64Offset, data.x64Size, x64Path)) {
@@ -156,9 +157,8 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    // Extract Steam DLL if embedded
+    // Extract Steam DLL if embedded (MUST be in same directory as EXE!)
     if (data.steamDllSize > 0) {
-        std::string steamDllPath = tempDir + "\\steam_api64.dll";
         if (!extractFile(exePath, data.steamDllOffset, data.steamDllSize, steamDllPath)) {
             std::cerr << "⚠️  Failed to extract Steam DLL (Steamworks may not work)" << std::endl;
             // Don't fail - app can run without Steam

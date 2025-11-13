@@ -26,47 +26,10 @@ namespace steamworks {
 bool SteamworksManager::s_initialized = false;
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-// Windows: Load Steam DLL from TEMP
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-#ifdef _WIN32
-static bool LoadSteamDLLFromTemp() {
-    char tempBuf[MAX_PATH];
-    DWORD len = GetTempPathA(MAX_PATH, tempBuf);
-    if (len == 0) return false;
-    
-    std::string tempPath(tempBuf);
-    std::string tempDir = tempPath + "bakery_" + std::to_string(GetCurrentProcessId());
-    
-    // Add TEMP directory to DLL search path
-    SetDllDirectoryA(tempDir.c_str());
-    
-    std::cout << "🎮 Steam DLL search path: " << tempDir << std::endl;
-    
-    // Load the DLL
-    HMODULE steamDll = LoadLibraryA("steam_api64.dll");
-    if (!steamDll) {
-        std::cout << "⚠️  steam_api64.dll not found in: " << tempDir << std::endl;
-        std::cout << "   Error: " << GetLastError() << std::endl;
-        return false;
-    }
-    
-    std::cout << "🎮 Loaded steam_api64.dll from RAM-backed TEMP ✅" << std::endl;
-    return true;
-}
-#endif
-
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 // Core API
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 bool SteamworksManager::Init() {
-#ifdef _WIN32
-    // On Windows, load DLL from TEMP first
-    if (!LoadSteamDLLFromTemp()) {
-        return false;
-    }
-#endif
     if (s_initialized) {
         return true; // Already initialized
     }

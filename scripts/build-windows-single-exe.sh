@@ -107,3 +107,4 @@ echo "   → Everything embedded (launcher + assets)"
 echo "   → Instant launch with encryption!"
 echo ""
 
+

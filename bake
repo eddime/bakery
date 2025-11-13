@@ -31,6 +31,7 @@ const commands = {
   win: (args: string[]) => buildCommand(['--platform', 'win', ...args]),
   linux: (args: string[]) => buildCommand(['--platform', 'linux', ...args]),
   all: (args: string[]) => buildCommand(['--platform', 'all', ...args]),
+  release: releaseCommand,  // 🚀 Build Mac + Windows with auto-version increment
   help: helpCommand,
 };
 
@@ -383,6 +384,36 @@ async function buildLinux(projectDir: string, projectConfig: any, appName: strin
 }
 
 // ==============================================
+// RELEASE COMMAND (Mac + Windows with version bump)
+// ==============================================
+async function releaseCommand(args: string[]) {
+  const { values } = parseArgs({
+    args,
+    options: {
+      dir: { type: 'string', short: 'd' },
+      project: { type: 'string', short: 'p' },
+    },
+  });
+
+  const projectDir = values.dir ? resolve(values.dir as string) : process.cwd();
+  
+  console.log('🚀 Bakery Release Build (Mac + Windows)\n');
+  console.log(`📂 Project: ${projectDir}`);
+  console.log('');
+
+  // Use the optimized build script
+  const buildScript = join(FRAMEWORK_DIR, 'scripts', 'build-all-platforms.sh');
+  
+  const buildProc = bunSpawn({
+    cmd: [buildScript, projectDir],
+    stdout: 'inherit',
+    stderr: 'inherit',
+  });
+  
+  await buildProc.exited;
+}
+
+// ==============================================
 // HELP COMMAND
 // ==============================================
 function helpCommand() {
@@ -398,6 +429,7 @@ Commands:
   win                Build for Windows
   linux              Build for Linux
   all                Build for all platforms
+  release            🚀 Build Mac + Windows (auto-increment version, parallel)
   help               Show this help message
 
 Options:

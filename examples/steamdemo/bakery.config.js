@@ -1,7 +1,7 @@
 export default {
   app: {
     name: "steamdemo",
-    version: "4.1.0",
+    version: "4.1.1",
     entrypoint: "index.html",
     debug: true  // Enable debug mode for testing
   },
