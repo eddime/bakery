@@ -1,6 +1,6 @@
 #!/bin/bash
-# Build Linux as 2 Single Executables (x86_64 + aarch64)
-# Each executable contains everything embedded
+# Build Linux Single Executable with Embedded Resources
+# Embeds launcher + binary + assets + Steam .so into ONE file
 
 set -e
 
@@ -12,7 +12,7 @@ if [ -z "$PROJECT_DIR" ] || [ -z "$APP_NAME" ]; then
     exit 1
 fi
 
-echo "🐧 Building Linux Single Executables (x86_64 + aarch64)"
+echo "🐧 Building Linux Single Executable (x86_64)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
@@ -24,16 +24,40 @@ OUTPUT_DIR="$(cd "$PROJECT_DIR" && pwd)/dist/linux"
 mkdir -p "$OUTPUT_DIR"
 
 # ============================================
-# 1. Create ENCRYPTED shared assets (ALWAYS rebuild!)
+# 1. Build Universal Launcher (Embedded)
 # ============================================
-echo "📦 Creating ENCRYPTED shared assets..."
-bun scripts/embed-assets-shared.ts "$PROJECT_DIR" launcher/bakery-assets
+echo "🔨 Building universal launcher..."
+BUILD_EMBEDDED="$FRAMEWORK_DIR/launcher/build-linux-universal-embedded"
+mkdir -p "$BUILD_EMBEDDED"
+cd "$BUILD_EMBEDDED"
+
+if [[ $(uname) == "Linux" ]]; then
+    # Native Linux build
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+else
+    # Cross-compile from macOS
+    if ! command -v x86_64-linux-musl-gcc &> /dev/null; then
+        echo "❌ x86_64-linux-musl-gcc not found!"
+        echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
+        exit 1
+    fi
+    cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+fi
+
+make bakery-universal-launcher-linux-embedded -j4
+
+if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
+    echo "❌ Universal launcher build failed!"
+    exit 1
+fi
+
+echo "✅ Universal launcher built"
 echo ""
 
 # ============================================
-# 2. Build x86_64 executable
+# 2. Build x86_64 launcher binary
 # ============================================
-echo "🔨 Building x86_64 executable..."
+echo "🔨 Building x86_64 launcher binary..."
 BUILD_X64="$FRAMEWORK_DIR/launcher/build-linux-x64-embedded"
 mkdir -p "$BUILD_X64"
 cd "$BUILD_X64"
@@ -43,11 +67,6 @@ if [[ $(uname) == "Linux" ]]; then
     cmake .. -DCMAKE_BUILD_TYPE=Release
 else
     # Cross-compile from macOS
-    if ! command -v x86_64-linux-musl-gcc &> /dev/null; then
-        echo "❌ x86_64-linux-musl-gcc not found!"
-        echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
-        exit 1
-    fi
     cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake
 fi
 
@@ -58,82 +77,52 @@ if [ ! -f "bakery-launcher-linux" ]; then
     exit 1
 fi
 
-# Pack launcher + bakery-assets into single executable
-echo "📦 Packing x86_64 with encrypted assets..."
-cp bakery-launcher-linux "$OUTPUT_DIR/${APP_NAME}-x86_64.tmp"
-cat "$FRAMEWORK_DIR/launcher/bakery-assets" >> "$OUTPUT_DIR/${APP_NAME}-x86_64.tmp"
-
-# Append offset marker (last 8 bytes = offset where assets start)
-LAUNCHER_SIZE=$(stat -f%z bakery-launcher-linux 2>/dev/null || stat -c%s bakery-launcher-linux)
-printf "%016x" $LAUNCHER_SIZE | xxd -r -p >> "$OUTPUT_DIR/${APP_NAME}-x86_64.tmp"
-
-mv "$OUTPUT_DIR/${APP_NAME}-x86_64.tmp" "$OUTPUT_DIR/${APP_NAME}-x86_64"
-chmod +x "$OUTPUT_DIR/${APP_NAME}-x86_64"
-
-echo "✅ x86_64: $(du -h "$OUTPUT_DIR/${APP_NAME}-x86_64" | awk '{print $1}')"
-echo ""
-
-# ============================================
-# 3. Build aarch64 executable
-# ============================================
-echo "🔨 Building aarch64 executable..."
-BUILD_ARM64="$FRAMEWORK_DIR/launcher/build-linux-arm64-embedded"
-mkdir -p "$BUILD_ARM64"
-cd "$BUILD_ARM64"
-
-if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
-    # Native ARM64 Linux build
-    cmake .. -DCMAKE_BUILD_TYPE=Release
-else
-    # Cross-compile from macOS or x86_64 Linux
-    if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
-        echo "❌ aarch64-linux-musl-gcc not found!"
-        echo "💡 Install: brew install messense/macos-cross-toolchains/aarch64-unknown-linux-musl"
-        exit 1
-    fi
-    cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake
-fi
-
-make bakery-launcher-linux -j4
-
-if [ ! -f "bakery-launcher-linux" ]; then
-    echo "❌ aarch64 build failed!"
-    exit 1
-fi
-
-# Pack launcher + bakery-assets into single executable
-echo "📦 Packing aarch64 with encrypted assets..."
-cp bakery-launcher-linux "$OUTPUT_DIR/${APP_NAME}-aarch64.tmp"
-cat "$FRAMEWORK_DIR/launcher/bakery-assets" >> "$OUTPUT_DIR/${APP_NAME}-aarch64.tmp"
-
-# Append offset marker (last 8 bytes = offset where assets start)
-LAUNCHER_SIZE=$(stat -f%z bakery-launcher-linux 2>/dev/null || stat -c%s bakery-launcher-linux)
-printf "%016x" $LAUNCHER_SIZE | xxd -r -p >> "$OUTPUT_DIR/${APP_NAME}-aarch64.tmp"
-
-mv "$OUTPUT_DIR/${APP_NAME}-aarch64.tmp" "$OUTPUT_DIR/${APP_NAME}-aarch64"
-chmod +x "$OUTPUT_DIR/${APP_NAME}-aarch64"
-
-echo "✅ aarch64: $(du -h "$OUTPUT_DIR/${APP_NAME}-aarch64" | awk '{print $1}')"
+echo "✅ x86_64 launcher built"
 echo ""
 
 cd "$FRAMEWORK_DIR"
 
+# ============================================
+# 3. Pack everything into single executable
+# ============================================
+echo "📦 Packing single executable..."
+
+# Check if Steamworks is enabled
+STEAM_SO_ARG=""
+CONFIG_FILE="$PROJECT_DIR/bakery.config.js"
+if [ -f "$CONFIG_FILE" ]; then
+    if grep -q "enabled: true" "$CONFIG_FILE" 2>/dev/null; then
+        STEAM_SO="$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux64/libsteam_api.so"
+        if [ -f "$STEAM_SO" ]; then
+            STEAM_SO_ARG="$STEAM_SO"
+            echo "🎮 Embedding Steam SDK into executable..."
+        else
+            echo "⚠️  Steam SDK not found at: $STEAM_SO"
+        fi
+    fi
+fi
+
+bun scripts/pack-linux-single-exe.ts \
+    "$BUILD_EMBEDDED/bakery-universal-launcher-linux-embedded" \
+    "$BUILD_X64/bakery-launcher-linux" \
+    "$OUTPUT_DIR/${APP_NAME}" \
+    $STEAM_SO_ARG
+
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Linux Single Executables complete!"
+echo "✅ Linux Single Executable complete!"
 echo ""
 echo "📦 Output:"
-echo "   x86_64:  $OUTPUT_DIR/${APP_NAME}-x86_64"
-echo "   aarch64: $OUTPUT_DIR/${APP_NAME}-aarch64"
+echo "   $OUTPUT_DIR/${APP_NAME}"
 echo ""
-echo "📊 Sizes:"
-ls -lh "$OUTPUT_DIR/${APP_NAME}"-* | awk '{print "   " $9 ": " $5}'
+echo "📊 Size:"
+du -h "$OUTPUT_DIR/${APP_NAME}" | awk '{print "   " $2 ": " $1}'
 echo ""
-echo "🔐 All assets embedded with XOR encryption"
+echo "🔐 Everything embedded (launcher + binary + assets + Steam)"
 echo ""
 echo "🎯 User experience:"
-echo "   → Download correct architecture"
-echo "   → chmod +x ${APP_NAME}-x86_64"
-echo "   → ./${APP_NAME}-x86_64"
+echo "   → Download: ${APP_NAME}"
+echo "   → chmod +x ${APP_NAME}"
+echo "   → ./${APP_NAME}"
 echo "   → Everything embedded, instant launch!"
 echo ""
 

@@ -276,6 +276,17 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   
   cpSync(assetsFile, join(macOSDir, 'bakery-assets'));
   
+  // 🎮 Copy Steam DLL if Steamworks is enabled
+  if (projectConfig.default?.steamworks?.enabled) {
+    const steamDll = join(frameworkDir, 'deps', 'steamworks', 'sdk', 'redistributable_bin', 'osx', 'libsteam_api.dylib');
+    if (existsSync(steamDll)) {
+      cpSync(steamDll, join(macOSDir, 'libsteam_api.dylib'));
+      console.log('🎮 Copied Steam SDK (libsteam_api.dylib)');
+    } else {
+      console.warn('⚠️  Steam SDK not found at:', steamDll);
+    }
+  }
+  
   // 🔒 Config is now embedded in bakery-assets (encrypted, not accessible to user)
 
   console.log('✅ Universal launcher (detects architecture)');

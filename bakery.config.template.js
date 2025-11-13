@@ -7,7 +7,8 @@ export default {
     
     version: "1.0.0",  // Semantic versioning (e.g., "1.2.3")
     entrypoint: "index.html",
-    icon: ""  // Path to app icon (optional)
+    icon: "",  // Path to app icon (optional)
+    debug: false  // Enable debug mode (right-click menu, DevTools)
   },
   
   window: {
@@ -18,7 +19,7 @@ export default {
     minWidth: 800,  // Minimum window width (optional)
     minHeight: 600,  // Minimum window height (optional)
     resizable: true,
-    startFullscreen: false,  // Start in fullscreen mode (⚡ BETTER FPS on macOS!)
+    startFullscreen: false,  // Start in fullscreen mode 
     alwaysOnTop: false,  // Keep window always on top
     frameless: false  // Remove window frame/titlebar
   }

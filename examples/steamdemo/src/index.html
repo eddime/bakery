@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bakery Steamworks - Full Feature Test</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-user-select: text;
+            user-select: text;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f5f5;
+            color: #333;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+            color: #000;
+        }
+        
+        .subtitle {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 20px;
+        }
+        
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #000;
+            border-bottom: 2px solid #0ea5e9;
+            padding-bottom: 8px;
+        }
+        
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #666;
+        }
+        
+        .info-value {
+            color: #000;
+            font-family: 'Monaco', monospace;
+        }
+        
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+        
+        button {
+            background: #0ea5e9;
+            border: none;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        
+        button:hover {
+            background: #0284c7;
+        }
+        
+        button:active {
+            transform: scale(0.98);
+        }
+        
+        button.secondary {
+            background: #64748b;
+        }
+        
+        button.secondary:hover {
+            background: #475569;
+        }
+        
+        button.danger {
+            background: #ef4444;
+        }
+        
+        button.danger:hover {
+            background: #dc2626;
+        }
+        
+        .log {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            max-height: 400px;
+            overflow-y: auto;
+            font-family: 'Monaco', 'Courier New', monospace;
+            font-size: 12px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            -webkit-user-select: text;
+            user-select: text;
+            cursor: text;
+        }
+        
+        .log-entry {
+            padding: 4px 0;
+            -webkit-user-select: text;
+            user-select: text;
+            cursor: text;
+        }
+        
+        .success { color: #059669; }
+        .error { color: #dc2626; }
+        .info { color: #0ea5e9; }
+        .debug { color: #8b5cf6; }
+        
+        .status {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 20px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .status.enabled {
+            background: #f0f9ff;
+            border: 2px solid #0ea5e9;
+        }
+        
+        .status.disabled {
+            background: #fef2f2;
+            border: 2px solid #ef4444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Bakery Steamworks - Full Feature Test</h1>
+        <p class="subtitle">Complete integration test for all Steamworks features</p>
+        
+        <div id="status" class="status">
+            <h2>⏳ Initializing Steamworks...</h2>
+        </div>
+        
+        <div class="grid">
+            <!-- User Info -->
+            <div class="card">
+                <h2>👤 User Information</h2>
+                <div class="info-row">
+                    <span class="info-label">Steam ID:</span>
+                    <span class="info-value" id="steamId">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Name:</span>
+                    <span class="info-value" id="personaName">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">App ID:</span>
+                    <span class="info-value" id="appId">-</span>
+                </div>
+            </div>
+            
+            <!-- Platform Info -->
+            <div class="card">
+                <h2>💻 Platform Detection</h2>
+                <div class="info-row">
+                    <span class="info-label">Language:</span>
+                    <span class="info-value" id="language">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Steam Deck:</span>
+                    <span class="info-value" id="steamDeck">-</span>
+                </div>
+                <div class="info-row">
+                    <span class="info-label">Big Picture:</span>
+                    <span class="info-value" id="bigPicture">-</span>
+                </div>
+            </div>
+            
+            <!-- Friends -->
+            <div class="card">
+                <h2>👥 Friends</h2>
+                <div class="info-row">
+                    <span class="info-label">Friend Count:</span>
+                    <span class="info-value" id="friendCount">-</span>
+                </div>
+                <button onclick="getFriends()">Get Friend List</button>
+            </div>
+            
+            <!-- DLC -->
+            <div class="card">
+                <h2>📦 DLC Management</h2>
+                <div class="info-row">
+                    <span class="info-label">DLC Count:</span>
+                    <span class="info-value" id="dlcCount">-</span>
+                </div>
+                <input type="number" id="dlcId" placeholder="DLC App ID" value="480">
+                <button onclick="checkDLC()">Check DLC Ownership</button>
+            </div>
+            
+            <!-- Overlay -->
+            <div class="card">
+                <h2>🎨 Steam Overlay</h2>
+                <div class="info-row">
+                    <span class="info-label">Overlay Enabled:</span>
+                    <span class="info-value" id="overlayStatus">-</span>
+                </div>
+                <button onclick="activateOverlay('friends')">Open Friends</button>
+                <button onclick="activateOverlay('achievements')">Open Achievements</button>
+            </div>
+            
+            <!-- Screenshots -->
+            <div class="card">
+                <h2>📸 Screenshots</h2>
+                <button onclick="takeScreenshot()">Take Screenshot</button>
+                <p style="margin-top: 10px; font-size: 12px; color: #666;">
+                    Screenshot will be saved to Steam
+                </p>
+            </div>
+        </div>
+        
+        <div class="grid">
+            <!-- Achievements -->
+            <div class="card">
+                <h2>🏆 Achievements</h2>
+                <input type="text" id="achievementInput" placeholder="Achievement ID" value="ACH_WIN_ONE_GAME">
+                <button onclick="unlockAchievement()">Unlock Achievement</button>
+                <button class="secondary" onclick="checkAchievement()">Check Status</button>
+            </div>
+            
+            <!-- Stats -->
+            <div class="card">
+                <h2>📊 Stats</h2>
+                <input type="text" id="statName" placeholder="Stat Name" value="NumGames">
+                <input type="number" id="statValue" placeholder="Value" value="1">
+                <button onclick="setStat()">Set Stat</button>
+                <button class="secondary" onclick="getStat()">Get Stat</button>
+            </div>
+            
+            <!-- Cloud Storage -->
+            <div class="card">
+                <h2>☁️ Steam Cloud</h2>
+                <input type="text" id="cloudFileName" placeholder="File Name" value="savegame.dat">
+                <input type="text" id="cloudData" placeholder="Data to save" value="Hello from Bakery!">
+                <button onclick="saveToCloud()">Save to Cloud</button>
+                <button class="secondary" onclick="loadFromCloud()">Load from Cloud</button>
+                <button class="secondary" onclick="checkCloudFile()">Check if Exists</button>
+            </div>
+            
+            <!-- Rich Presence -->
+            <div class="card">
+                <h2>🎮 Rich Presence</h2>
+                <input type="text" id="presenceKey" placeholder="Key" value="status">
+                <input type="text" id="presenceValue" placeholder="Value" value="Playing Bakery Demo">
+                <button onclick="setRichPresence()">Update Presence</button>
+            </div>
+        </div>
+        
+        <div class="card" style="margin-top: 20px;">
+            <h2>📝 Console Log</h2>
+            <button class="danger" onclick="clearLog()">Clear Log</button>
+            <div class="log" id="log">
+                <div class="log-entry info">Initializing...</div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        const logDiv = document.getElementById('log');
+        
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const timestamp = new Date().toLocaleTimeString();
+            entry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(entry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+        
+        function clearLog() {
+            logDiv.innerHTML = '<div class="log-entry info">Log cleared.</div>';
+        }
+        
+        // Initialize on load
+        window.addEventListener('load', async () => {
+            try {
+                // Check if Steamworks is available
+                if (!window.Steam || !window.Steam.isAvailable()) {
+                    document.getElementById('status').className = 'status disabled';
+                    document.getElementById('status').innerHTML = '<h2>❌ Steamworks is NOT available</h2><p>Make sure Steam is running</p>';
+                    log('Steamworks is not available', 'error');
+                    return;
+                }
+                
+                document.getElementById('status').className = 'status enabled';
+                document.getElementById('status').innerHTML = '<h2>✅ Steamworks is ACTIVE</h2>';
+                log('Steamworks initialized successfully!', 'success');
+                
+                // Load user info
+                await loadUserInfo();
+                
+                log('Ready! Click buttons to test features.', 'success');
+                
+            } catch (error) {
+                log(`Initialization error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        });
+        
+        async function loadUserInfo() {
+            try {
+                // User Info
+                const steamId = await window.Steam.getSteamID();
+                const name = await window.Steam.getPersonaName();
+                const appId = await window.Steam.getAppID();
+                
+                document.getElementById('steamId').textContent = steamId;
+                document.getElementById('personaName').textContent = name;
+                document.getElementById('appId').textContent = appId;
+                
+                log(`User: ${name} (${steamId})`, 'info');
+                
+                // Platform
+                const language = await window.Steam.getCurrentGameLanguage();
+                const isSteamDeck = await window.Steam.isSteamDeck();
+                const isBigPicture = await window.Steam.isSteamInBigPictureMode();
+                
+                document.getElementById('language').textContent = language;
+                document.getElementById('steamDeck').textContent = isSteamDeck ? '✅ Yes' : '❌ No';
+                document.getElementById('bigPicture').textContent = isBigPicture ? '✅ Yes' : '❌ No';
+                
+                // Friends
+                const friendCount = await window.Steam.getFriendCount();
+                document.getElementById('friendCount').textContent = friendCount;
+                
+                // DLC
+                const dlcCount = await window.Steam.getDLCCount();
+                document.getElementById('dlcCount').textContent = dlcCount;
+                
+                // Overlay
+                const overlayEnabled = await window.Steam.isOverlayEnabled();
+                document.getElementById('overlayStatus').textContent = overlayEnabled ? '✅ Enabled' : '❌ Disabled';
+                
+            } catch (error) {
+                log(`Error loading user info: ${error.message}`, 'error');
+            }
+        }
+        
+        // Achievements
+        async function unlockAchievement() {
+            try {
+                const id = document.getElementById('achievementInput').value;
+                const success = await window.Steam.unlockAchievement(id);
+                if (success) {
+                    log(`✅ Achievement unlocked: ${id}`, 'success');
+                } else {
+                    log(`❌ Failed to unlock: ${id}`, 'error');
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkAchievement() {
+            try {
+                const id = document.getElementById('achievementInput').value;
+                const unlocked = await window.Steam.getAchievement(id);
+                log(`Achievement ${id}: ${unlocked ? '✅ Unlocked' : '🔒 Locked'}`, unlocked ? 'success' : 'info');
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Stats
+        async function setStat() {
+            try {
+                const name = document.getElementById('statName').value;
+                const value = parseInt(document.getElementById('statValue').value);
+                const success = await window.Steam.setStatInt(name, value);
+                if (success) {
+                    log(`✅ Stat set: ${name} = ${value}`, 'success');
+                } else {
+                    log(`❌ Failed to set stat`, 'error');
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function getStat() {
+            try {
+                const name = document.getElementById('statName').value;
+                const value = await window.Steam.getStatInt(name);
+                log(`📊 Stat ${name} = ${value}`, 'info');
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Cloud Storage
+        async function saveToCloud() {
+            try {
+                const fileName = document.getElementById('cloudFileName').value;
+                const data = document.getElementById('cloudData').value;
+                const success = await window.Steam.fileWrite(fileName, data);
+                if (success) {
+                    log(`✅ Saved to cloud: ${fileName}`, 'success');
+                } else {
+                    log(`❌ Save failed`, 'error');
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function loadFromCloud() {
+            try {
+                const fileName = document.getElementById('cloudFileName').value;
+                const data = await window.Steam.fileRead(fileName);
+                if (data) {
+                    log(`✅ Loaded: ${data}`, 'success');
+                    document.getElementById('cloudData').value = data;
+                } else {
+                    log(`❌ File not found`, 'error');
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function checkCloudFile() {
+            try {
+                const fileName = document.getElementById('cloudFileName').value;
+                const exists = await window.Steam.fileExists(fileName);
+                log(`File ${fileName}: ${exists ? '✅ Exists' : '❌ Not found'}`, exists ? 'success' : 'error');
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Rich Presence
+        async function setRichPresence() {
+            try {
+                const key = document.getElementById('presenceKey').value;
+                const value = document.getElementById('presenceValue').value;
+                const success = await window.Steam.setRichPresence(key, value);
+                if (success) {
+                    log(`✅ Rich Presence updated: ${key} = ${value}`, 'success');
+                } else {
+                    log(`❌ Failed to update presence`, 'error');
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Friends
+        async function getFriends() {
+            try {
+                log('Loading friends...', 'info');
+                const friends = await window.Steam.getFriends();
+                log(`✅ Found ${friends.length} friends:`, 'success');
+                friends.forEach((name, i) => {
+                    log(`  ${i + 1}. ${name}`, 'info');
+                });
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Overlay
+        async function activateOverlay(dialog) {
+            try {
+                const success = await window.Steam.activateOverlay(dialog);
+                if (success) {
+                    log(`✅ Overlay opened: ${dialog}`, 'success');
+                } else {
+                    log(`❌ Failed to open overlay`, 'error');
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // DLC
+        async function checkDLC() {
+            try {
+                const dlcId = parseInt(document.getElementById('dlcId').value);
+                const owned = await window.Steam.isDlcInstalled(dlcId);
+                log(`DLC ${dlcId}: ${owned ? '✅ Owned' : '❌ Not owned'}`, owned ? 'success' : 'info');
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+        
+        // Screenshots
+        async function takeScreenshot() {
+            try {
+                const success = await window.Steam.triggerScreenshot();
+                if (success) {
+                    log(`✅ Screenshot taken!`, 'success');
+                } else {
+                    log(`❌ Screenshot failed`, 'error');
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+    </script>
+</body>
+</html>
+
+

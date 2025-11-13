@@ -64,7 +64,7 @@ echo "✅ Embedded launcher: $(du -h bakery-universal-launcher-windows-embedded.
 echo ""
 
 # ============================================
-# 4. Pack into single EXE
+# 4. Pack into single EXE (with Steam DLL if enabled)
 # ============================================
 echo "📦 Packing into single EXE..."
 cd "$FRAMEWORK_DIR"
@@ -72,10 +72,26 @@ cd "$FRAMEWORK_DIR"
 # Create output directory
 mkdir -p "$PROJECT_DIR/dist/windows"
 
+# Check if Steamworks is enabled
+STEAM_DLL_ARG=""
+CONFIG_FILE="$PROJECT_DIR/bakery.config.js"
+if [ -f "$CONFIG_FILE" ]; then
+    if grep -q "enabled: true" "$CONFIG_FILE" 2>/dev/null; then
+        STEAM_DLL="$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/win64/steam_api64.dll"
+        if [ -f "$STEAM_DLL" ]; then
+            STEAM_DLL_ARG="$STEAM_DLL"
+            echo "🎮 Embedding Steam SDK into EXE..."
+        else
+            echo "⚠️  Steam SDK not found at: $STEAM_DLL"
+        fi
+    fi
+fi
+
 bun scripts/pack-windows-single-exe.ts \
     "$BUILD_EMBEDDED/bakery-universal-launcher-windows-embedded.exe" \
     "$BUILD_DIR/bakery-launcher-win.exe" \
-    "$PROJECT_DIR/dist/windows/${APP_NAME}.exe"
+    "$PROJECT_DIR/dist/windows/${APP_NAME}.exe" \
+    $STEAM_DLL_ARG
 
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

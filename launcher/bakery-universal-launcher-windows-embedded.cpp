@@ -17,6 +17,8 @@ struct EmbeddedData {
     uint64_t assetsSize;
     uint64_t configOffset;
     uint64_t configSize;
+    uint64_t steamDllOffset;
+    uint64_t steamDllSize;
 };
 
 std::string getExecutablePath() {
@@ -86,6 +88,8 @@ bool readEmbeddedData(const std::string& exePath, EmbeddedData& data) {
     file.read((char*)&data.assetsSize, 8);
     file.read((char*)&data.configOffset, 8);
     file.read((char*)&data.configSize, 8);
+    file.read((char*)&data.steamDllOffset, 8);
+    file.read((char*)&data.steamDllSize, 8);
     
     return true;
 }
@@ -149,6 +153,15 @@ int main(int argc, char* argv[]) {
         if (!extractFile(exePath, data.configOffset, data.configSize, configPath)) {
             std::cerr << "❌ Failed to extract config!" << std::endl;
             return 1;
+        }
+    }
+    
+    // Extract Steam DLL if embedded
+    if (data.steamDllSize > 0) {
+        std::string steamDllPath = tempDir + "\\steam_api64.dll";
+        if (!extractFile(exePath, data.steamDllOffset, data.steamDllSize, steamDllPath)) {
+            std::cerr << "⚠️  Failed to extract Steam DLL (Steamworks may not work)" << std::endl;
+            // Don't fail - app can run without Steam
         }
     }
     

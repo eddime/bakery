@@ -17,7 +17,6 @@ namespace window {
 #include <objc/runtime.h>
 #include <objc/message.h>
 #include <CoreFoundation/CoreFoundation.h>
-#include <cstdlib>
 
 /**
  * Enable native macOS fullscreen button (required for Game Mode)
@@ -51,33 +50,24 @@ inline void toggleFullscreen(void* window_ptr) {
     ((void (*)(id, SEL, id))objc_msgSend)(nswindow, toggleFullScreen, nullptr);
 }
 
-// Shared activity token (must be shared between enable/disable functions)
-namespace {
-    static id g_activityToken = nullptr;
-}
-
 /**
- * Disable Game Mode Activity (cleanup on app exit)
- * CRITICAL: Must be called when app exits to prevent macOS from remembering deactivation
+ * Enable WebView context menu (right-click) for copy/paste
+ * Must be called on the WKWebView instance
  */
-inline void disablePersistentGameMode() {
-    if (g_activityToken) {
-        Class nsProcessInfoClass = objc_getClass("NSProcessInfo");
-        if (nsProcessInfoClass) {
-            SEL processInfoSel = sel_registerName("processInfo");
-            id processInfo = ((id (*)(Class, SEL))objc_msgSend)(nsProcessInfoClass, processInfoSel);
-            
-            if (processInfo) {
-                // End activity before app exits
-                SEL endActivitySel = sel_registerName("endActivity:");
-                ((void (*)(id, SEL, id))objc_msgSend)(processInfo, endActivitySel, g_activityToken);
-            }
-        }
-        
-        // Release retained token
-        CFRelease((CFTypeRef)g_activityToken);
-        g_activityToken = nullptr;
-    }
+inline void enableWebViewContextMenu(void* webview_ptr) {
+    if (!webview_ptr) return;
+    
+    // Get WKWebView from webview::webview
+    // The webview_ptr is actually a WKWebView*
+    id wkWebView = (id)webview_ptr;
+    
+    // Enable context menu by setting allowsBackForwardNavigationGestures
+    // and ensuring the default context menu is enabled
+    SEL getAllowsBackForwardSel = sel_registerName("allowsBackForwardNavigationGestures");
+    SEL setAllowsBackForwardSel = sel_registerName("setAllowsBackForwardNavigationGestures:");
+    
+    // Enable back/forward gestures (this also enables context menu)
+    ((void (*)(id, SEL, BOOL))objc_msgSend)(wkWebView, setAllowsBackForwardSel, YES);
 }
 
 /**
@@ -108,34 +98,31 @@ inline void enablePersistentGameMode() {
         nsStringClass, stringWithUTF8Sel, "Bakery Game - Latency Critical"
     );
     
+    // Begin activity (keeps Game Mode active for app lifetime)
+    // Store token as static to prevent deallocation
+    // IMPORTANT: Token must be kept alive for entire app lifetime!
+    static id activityToken = nullptr;
+    
     // CRITICAL: Always recreate activity (don't check if exists)
     // macOS might have deactivated Game Mode, so we need to reactivate it
     // End previous activity if exists
-    if (g_activityToken) {
+    if (activityToken) {
         SEL endActivitySel = sel_registerName("endActivity:");
-        ((void (*)(id, SEL, id))objc_msgSend)(processInfo, endActivitySel, g_activityToken);
-        CFRelease((CFTypeRef)g_activityToken);  // Release previous retain
-        g_activityToken = nullptr;
+        ((void (*)(id, SEL, id))objc_msgSend)(processInfo, endActivitySel, activityToken);
+        CFRelease((CFTypeRef)activityToken);  // Release previous retain
+        activityToken = nullptr;
     }
     
     // Create new activity EVERY time (ensures Game Mode activates)
-    g_activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
+    activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
         processInfo, beginActivitySel, options, reasonStr
     );
     
     // CRITICAL: Explicitly retain token to prevent deallocation
     // beginActivityWithOptions returns an autoreleased object
     // We must retain it manually to keep it alive for app lifetime
-    if (g_activityToken) {
-        CFRetain((CFTypeRef)g_activityToken);
-        
-        // CRITICAL: Register cleanup function to end activity on app exit
-        // This prevents macOS from remembering deactivation
-        static bool cleanupRegistered = false;
-        if (!cleanupRegistered) {
-            std::atexit(disablePersistentGameMode);
-            cleanupRegistered = true;
-        }
+    if (activityToken) {
+        CFRetain((CFTypeRef)activityToken);
     }
 }
 

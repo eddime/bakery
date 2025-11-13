@@ -27,7 +27,8 @@
 // NEW: Shared HTTP server and asset loader!
 #include "bakery-http-server.h"
 #include "bakery-asset-loader.h"
-#include "bakery-window-helper.h"  // Cross-platform window management
+#include "bakery-window-helper.h"          // Cross-platform window management
+#include "bakery-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
 
 using json = nlohmann::json;
 
@@ -38,6 +39,15 @@ struct BakeryConfig {
         int height;
         bool fullscreen = false;
     } window;
+    struct {
+        std::string name;
+        std::string version;
+        bool debug = false;
+    } app;
+    struct {
+        bool enabled = false;
+        uint32_t appId = 0;
+    } steamworks;
     std::string entrypoint;
     std::string appName;  // Used for deterministic port (localStorage persistence)
 };
@@ -215,16 +225,33 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             if (j.contains("app")) {
                 if (j["app"].contains("name")) {
                     config.appName = j["app"]["name"].get<std::string>();
+                    config.app.name = config.appName;
                     if (config.window.title == "Bakery App") {
                         config.window.title = config.appName;
                     }
                 }
+                if (j["app"].contains("version")) {
+                    config.app.version = j["app"]["version"].get<std::string>();
+                }
                 if (j["app"].contains("entrypoint")) {
                     config.entrypoint = j["app"]["entrypoint"].get<std::string>();
+                }
+                if (j["app"].contains("debug")) {
+                    config.app.debug = j["app"]["debug"].get<bool>();
                 }
             }
             if (j.contains("entrypoint")) {
                 config.entrypoint = j["entrypoint"].get<std::string>();
+            }
+            
+            // Load Steamworks config
+            if (j.contains("steamworks")) {
+                if (j["steamworks"].contains("enabled")) {
+                    config.steamworks.enabled = j["steamworks"]["enabled"].get<bool>();
+                }
+                if (j["steamworks"].contains("appId")) {
+                    config.steamworks.appId = j["steamworks"]["appId"].get<uint32_t>();
+                }
             }
             
             #ifndef NDEBUG
@@ -316,8 +343,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     std::cout << "   ✅ Timer Resolution: 1ms (lower latency)" << std::endl;
     #endif
     
+    // 🎮 Initialize Steamworks (cross-platform helper)
+    bool steamEnabled = bakery::steamworks::initSteamworks(config);
+    
     // While cache builds, create WebView (parallel!)
-    webview::webview w(false, nullptr);  // false = production mode
+    // Create WebView with debug mode from config (enables right-click menu, DevTools)
+    webview::webview w(config.app.debug, nullptr);
     w.set_title(config.window.title);
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     
@@ -340,6 +371,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         }
     }
+    
+    // 🎮 Bind Steamworks to JavaScript (cross-platform helper)
+    bakery::steamworks::bindSteamworksToWebview(w, steamEnabled);
     
     // Inject Bakery API + Runtime Optimizations
     w.init(R"(
@@ -457,11 +491,30 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     std::string url = "http://127.0.0.1:" + std::to_string(port);
     w.navigate(url.c_str());
     
+    // 🎮 Run Steamworks callbacks in background thread (if enabled)
+    std::thread steamThread;
+    if (steamEnabled) {
+        steamThread = std::thread([]() {
+            while (g_running) {
+                bakery::steamworks::SteamworksManager::RunCallbacks();
+                std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
+            }
+        });
+    }
+    
     // Run event loop
     w.run();
     
     // Cleanup
     g_running = false;
+    
+    // 🎮 Cleanup Steamworks
+    if (steamEnabled) {
+        if (steamThread.joinable()) {
+            steamThread.join();
+        }
+        bakery::steamworks::shutdownSteamworks();
+    }
     
     return 0;
 }
