@@ -335,25 +335,21 @@ int main(int argc, char* argv[]) {
     // 6. Request high-performance GPU (discrete over integrated)
     setenv("WEBKIT_FORCE_DISCRETE_GPU", "1", 1);
     
-    // 7. Additional WebKit optimizations (like Godot)
-    setenv("WEBKIT_DISABLE_IMAGE_DECODER_PROCESS", "0", 1);  // Use separate process for image decoding
-    setenv("WEBKIT_ENABLE_DEDICATED_WORKERS", "1", 1);  // Enable dedicated workers for better threading
-    
-    // 8. Disable unnecessary macOS features for games
+    // 7. Disable unnecessary macOS features for games
     setenv("NSAppSleepDisabled", "1", 1);  // Additional App Nap prevention
     
-    // 9. Additional GPU optimizations (conservative settings)
-    setenv("WEBKIT_ACCELERATED_COMPOSITING_ENABLED", "1", 1);  // Force GPU compositing
-    // NOTE: WEBKIT_DISABLE_BACKING_STORE_DISCARDING removed - causes memory pressure!
-    // NOTE: __GL_SYNC_TO_VBLANK removed - can limit FPS if not hitting 60!
-    // NOTE: MTL_DEVICE_WRAPPER_TYPE removed - undocumented, may cause issues
+    // NOTE: Removed all WebKit-specific optimizations - they caused FPS drops!
+    // - WEBKIT_DISABLE_IMAGE_DECODER_PROCESS (separate process overhead)
+    // - WEBKIT_ENABLE_DEDICATED_WORKERS (threading overhead)
+    // - WEBKIT_ACCELERATED_COMPOSITING_ENABLED (forced compositing overhead)
+    // WebKit handles these automatically and does a better job!
     
     #ifndef NDEBUG
     std::cout << "   ✅ Process priority: REALTIME (-20)" << std::endl;
     std::cout << "   ✅ App Nap: Disabled (multiple methods)" << std::endl;
     std::cout << "   ✅ Metal rendering: Forced (hardware)" << std::endl;
     std::cout << "   ✅ Discrete GPU: Requested" << std::endl;
-    std::cout << "   ✅ WebKit optimizations: Image decoder + Workers" << std::endl;
+    std::cout << "   💡 WebKit optimizations: Let WebKit handle automatically" << std::endl;
     std::cout << "   ⚠️  Note: Fullscreen will ALWAYS be faster (bypasses WindowServer)" << std::endl;
     #endif
     #endif
