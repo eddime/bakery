@@ -180,6 +180,25 @@ async function buildCommand(args: string[]) {
   console.log('📁 Project:', projectDir);
   console.log('🏗️  Platform:', platform);
   console.log('📦 App Name:', appName);
+  
+  // 🎨 Auto-convert icon if PNG is specified
+  const iconPath = projectConfig.default?.app?.icon;
+  if (iconPath && iconPath.toLowerCase().endsWith('.png')) {
+    console.log('🎨 Icon:', iconPath);
+    console.log('');
+    
+    const { autoConvertIcon } = await import(join(FRAMEWORK_DIR, 'scripts', 'convert-icon.ts'));
+    const convertedIcons = await autoConvertIcon(projectDir, iconPath);
+    
+    // Update config with converted icons
+    if (convertedIcons.icns) {
+      projectConfig.default.app.iconIcns = convertedIcons.icns;
+    }
+    if (convertedIcons.ico) {
+      projectConfig.default.app.iconIco = convertedIcons.ico;
+    }
+  }
+  
   console.log('');
   
   const platforms = platform === 'all' ? ['mac', 'win', 'linux'] : [platform];
@@ -296,10 +315,13 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   console.log('✅ Shared assets (8.8 MB, used by both) ✅');
   console.log('🔒 Config embedded in encrypted assets');
   
-  const iconPath = join(projectDir, 'assets', 'icon.icns');
-  if (existsSync(iconPath)) {
-    cpSync(iconPath, join(resourcesDir, 'icon.icns'));
-    console.log('📦 Icon copied');
+  // 🎨 Copy icon (use auto-converted ICNS if available)
+  const iconIcnsPath = projectConfig.default?.app?.iconIcns || join(projectDir, 'assets', 'icon.icns');
+  if (existsSync(iconIcnsPath)) {
+    cpSync(iconIcnsPath, join(resourcesDir, 'icon.icns'));
+    console.log('🎨 Icon copied (ICNS)');
+  } else {
+    console.warn('⚠️  No icon.icns found');
   }
 
   const infoPlist = `<?xml version="1.0" encoding="UTF-8"?>

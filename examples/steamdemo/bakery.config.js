@@ -3,6 +3,7 @@ export default {
     name: "steamdemo",
     version: "4.1.1",
     entrypoint: "index.html",
+    icon: "icon.png",  // 🎨 PNG will be auto-converted to ICNS/ICO
     debug: true  // Enable debug mode for testing
   },
   window: {

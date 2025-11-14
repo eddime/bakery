@@ -10,6 +10,8 @@
     "build:launchers": "bun scripts/build-launchers.ts",
     "download:binaries": "bun scripts/download-binaries.ts",
     "postinstall": "bun scripts/download-binaries.ts || true"
+  },
+  "dependencies": {
+    "sharp": "^0.34.5"
   }
 }
-
