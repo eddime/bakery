@@ -100,11 +100,30 @@ jobs:
           cmake --build . --target bakery-launcher-linux --config Release
           strip bakery-launcher-linux
       
-      - name: Upload Linux Binary
+      - name: Install ARM64 Cross-Compiler
+        run: |
+          sudo apt-get install -y gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+      
+      - name: Build Linux ARM64
+        run: |
+          cd launcher
+          mkdir -p build-linux-arm64
+          cd build-linux-arm64
+          cmake .. -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=Linux \
+            -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+            -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+            -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++
+          cmake --build . --target bakery-launcher-linux --config Release
+          aarch64-linux-gnu-strip bakery-launcher-linux
+      
+      - name: Upload Linux Binaries
         uses: actions/upload-artifact@v4
         with:
-          name: linux-binary
-          path: launcher/build-linux-x64/bakery-launcher-linux
+          name: linux-binaries
+          path: |
+            launcher/build-linux-x64/bakery-launcher-linux
+            launcher/build-linux-arm64/bakery-launcher-linux
 
   create-release:
     needs: [build-macos, build-windows, build-linux]
@@ -119,7 +138,8 @@ jobs:
           mv macos-binaries/build-arm64/bakery-launcher-mac bakery-launcher-mac-arm64
           mv macos-binaries/build-x64/bakery-launcher-mac bakery-launcher-mac-x64
           mv windows-binary/bakery-launcher-win.exe bakery-launcher-win-x64.exe
-          mv linux-binary/bakery-launcher-linux bakery-launcher-linux-x64
+          mv linux-binaries/build-linux-x64/bakery-launcher-linux bakery-launcher-linux-x64
+          mv linux-binaries/build-linux-arm64/bakery-launcher-linux bakery-launcher-linux-arm64
       
       - name: Create Release
         uses: softprops/action-gh-release@v1
@@ -129,6 +149,7 @@ jobs:
             bakery-launcher-mac-x64
             bakery-launcher-win-x64.exe
             bakery-launcher-linux-x64
+            bakery-launcher-linux-arm64
           draft: false
           prerelease: false
         env:

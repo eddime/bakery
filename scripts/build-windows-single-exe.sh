@@ -77,7 +77,7 @@ STEAM_DLL_ARG=""
 CONFIG_FILE="$PROJECT_DIR/bakery.config.js"
 if [ -f "$CONFIG_FILE" ]; then
     if grep -q "enabled: true" "$CONFIG_FILE" 2>/dev/null; then
-        STEAM_DLL="$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/win64/steam_api64.dll"
+        STEAM_DLL="$FRAMEWORK_DIR/bin/steamworks/windows/steam_api64.dll"
         if [ -f "$STEAM_DLL" ]; then
             STEAM_DLL_ARG="$STEAM_DLL"
             echo "🎮 Embedding Steam SDK into EXE..."

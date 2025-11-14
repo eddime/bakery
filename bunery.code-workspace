@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../bunery"
+		},
+		{
+			"path": "../bunery-webview"
+		},
+		{
+			"path": "."
+		}
+	],
+	"settings": {}
+}

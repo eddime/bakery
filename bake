@@ -279,7 +279,7 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   
   // 🎮 Copy Steam DLL if Steamworks is enabled
   if (projectConfig.default?.steamworks?.enabled) {
-    const steamDll = join(frameworkDir, 'deps', 'steamworks', 'sdk', 'redistributable_bin', 'osx', 'libsteam_api.dylib');
+    const steamDll = join(frameworkDir, 'bin', 'steamworks', 'macos', 'libsteam_api.dylib');
     if (existsSync(steamDll)) {
       cpSync(steamDll, join(macOSDir, 'libsteam_api.dylib'));
       console.log('🎮 Copied Steam SDK (libsteam_api.dylib)');
