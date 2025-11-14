@@ -335,10 +335,14 @@ int main(int argc, char* argv[]) {
     // 8. Disable unnecessary macOS features for games
     setenv("NSAppSleepDisabled", "1", 1);  // Additional App Nap prevention
     
+    // 🎮 CRITICAL: Enable Game Mode BEFORE window creation (like Godot!)
+    // This ensures macOS activates Game Mode immediately
+    bakery::window::enablePersistentGameMode();
+    
     #ifndef NDEBUG
     std::cout << "   ✅ Process priority: REALTIME (-20)" << std::endl;
     std::cout << "   ✅ App Nap: Disabled (multiple methods)" << std::endl;
-    std::cout << "   ✅ Game Mode: PERSISTENT (NSProcessInfo Activity)" << std::endl;
+    std::cout << "   ✅ Game Mode: ENABLED (NSActivityLatencyCritical)" << std::endl;
     std::cout << "   ✅ Game Mode: Requested (macOS Sonoma 14+)" << std::endl;
     std::cout << "   ✅ Metal rendering: Forced (hardware)" << std::endl;
     std::cout << "   ✅ Discrete GPU: Requested" << std::endl;
@@ -354,7 +358,7 @@ int main(int argc, char* argv[]) {
     // Apply window config
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     
-    // 🎮 Enable native macOS Game Mode support
+    // 🎮 Enable native macOS fullscreen button
     // This adds the fullscreen button and enables Game Mode in fullscreen
     auto window_result = w.window();
     if (window_result.has_value()) {
@@ -362,15 +366,10 @@ int main(int argc, char* argv[]) {
         if (window_ptr) {
             bakery::window::enableFullscreenButton(window_ptr);
             
-            // 🎮 Enable PERSISTENT Game Mode AFTER window is created
-            // This ensures macOS associates the activity with the window
-            bakery::window::enablePersistentGameMode();
-            
             #ifndef NDEBUG
             std::cout << "🎮 Native fullscreen button enabled (Game Mode ready)" << std::endl;
             std::cout << "   ✅ Supports primary display (FullScreenPrimary)" << std::endl;
             std::cout << "   ✅ Supports external displays (FullScreenAuxiliary)" << std::endl;
-            std::cout << "🎮 Game Mode: PERSISTENT (NSProcessInfo Activity)" << std::endl;
             #endif
         }
     }

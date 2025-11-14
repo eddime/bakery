@@ -72,8 +72,8 @@ inline void enableWebViewContextMenu(void* webview_ptr) {
 
 /**
  * Enable persistent Game Mode via NSProcessInfo Activity
- * This ensures Game Mode activates EVERY time (like Godot!)
- * Must be called early in app lifecycle
+ * Implementation matches Godot Engine's approach for maximum reliability
+ * Must be called EARLY in app lifecycle (before window creation!)
  */
 inline void enablePersistentGameMode() {
     Class nsProcessInfoClass = objc_getClass("NSProcessInfo");
@@ -84,45 +84,33 @@ inline void enablePersistentGameMode() {
     
     if (!processInfo) return;
     
-    // Start activity assertion to keep Game Mode active
-    // NSActivityLatencyCritical = 0xFF00000000ULL (latency-critical)
-    // NSActivityUserInitiated = 0x00FFFFFFULL (user-initiated)
-    // Combine both for persistent Game Mode
+    // GODOT APPROACH: Use NSActivityLatencyCritical ONLY
+    // NSActivityLatencyCritical = 0xFF00000000ULL
+    // Don't combine with UserInitiated - it's not needed and can interfere!
     SEL beginActivitySel = sel_registerName("beginActivityWithOptions:reason:");
-    unsigned long long options = 0xFF00FFFFFFULL;  // LatencyCritical | UserInitiated
+    unsigned long long options = 0xFF00000000ULL;  // NSActivityLatencyCritical ONLY
     
-    // Create reason string
+    // Create reason string (shown in Activity Monitor)
     Class nsStringClass = objc_getClass("NSString");
     SEL stringWithUTF8Sel = sel_registerName("stringWithUTF8String:");
     id reasonStr = ((id (*)(Class, SEL, const char*))objc_msgSend)(
         nsStringClass, stringWithUTF8Sel, "Bakery Game - Latency Critical"
     );
     
-    // Begin activity (keeps Game Mode active for app lifetime)
-    // Store token as static to prevent deallocation
-    // IMPORTANT: Token must be kept alive for entire app lifetime!
+    // Store token as static (kept alive for entire app lifetime)
     static id activityToken = nullptr;
     
-    // CRITICAL: Always recreate activity (don't check if exists)
-    // macOS might have deactivated Game Mode, so we need to reactivate it
-    // End previous activity if exists
-    if (activityToken) {
-        SEL endActivitySel = sel_registerName("endActivity:");
-        ((void (*)(id, SEL, id))objc_msgSend)(processInfo, endActivitySel, activityToken);
-        CFRelease((CFTypeRef)activityToken);  // Release previous retain
-        activityToken = nullptr;
-    }
-    
-    // Create new activity EVERY time (ensures Game Mode activates)
-    activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
-        processInfo, beginActivitySel, options, reasonStr
-    );
-    
-    // CRITICAL: Explicitly retain token to prevent deallocation
-    // beginActivityWithOptions returns an autoreleased object
-    // We must retain it manually to keep it alive for app lifetime
-    if (activityToken) {
-        CFRetain((CFTypeRef)activityToken);
+    // Only create once (Godot's approach)
+    if (!activityToken) {
+        activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
+            processInfo, beginActivitySel, options, reasonStr
+        );
+        
+        // CRITICAL: Explicitly retain token (Godot uses [token retain])
+        // beginActivityWithOptions returns an autoreleased object
+        if (activityToken) {
+            CFRetain((CFTypeRef)activityToken);
+        }
     }
 }
 
