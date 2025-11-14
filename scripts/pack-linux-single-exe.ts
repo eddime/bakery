@@ -17,7 +17,7 @@ interface PackedData {
   steamSoSize: bigint;
 }
 
-function packSingleExecutable(
+async function packSingleExecutable(
   universalLauncher: string,
   x64Binary: string,
   outputPath: string,
@@ -26,6 +26,19 @@ function packSingleExecutable(
   console.log('🐧 Packing Linux Single Executable...');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('');
+
+  // Strip universal launcher BEFORE packing (reduces size by ~50%!)
+  console.log('🔧 Stripping universal launcher...');
+  try {
+    Bun.spawnSync(['strip', '--strip-all', universalLauncher], {
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
+    const strippedSize = await Bun.file(universalLauncher).stat();
+    console.log(`✅ Stripped to ${(strippedSize.size / 1024).toFixed(1)} KB`);
+  } catch (e) {
+    console.warn('⚠️  Failed to strip universal launcher');
+  }
 
   // Read all components
   const launcher = readFileSync(universalLauncher);
@@ -124,9 +137,23 @@ function packSingleExecutable(
   // Write output
   writeFileSync(outputPath, output, { mode: 0o755 });
   
+  // 🔧 Strip debug symbols to reduce size
+  console.log('🔧 Stripping debug symbols...');
+  try {
+    Bun.spawnSync(['strip', '--strip-all', outputPath], {
+      stdout: 'pipe',
+      stderr: 'pipe',
+    });
+    console.log('✅ Debug symbols stripped');
+  } catch (e) {
+    console.warn('⚠️  Failed to strip (strip command not found)');
+  }
+  
+  const finalStats = await Bun.file(outputPath).stat();
+  
   console.log('✅ Packed successfully!');
   console.log('');
-  console.log(`📊 Final size: ${(output.length / 1024 / 1024).toFixed(2)} MB`);
+  console.log(`📊 Final size: ${(finalStats.size / 1024 / 1024).toFixed(2)} MB`);
   console.log(`📍 Output: ${outputPath}`);
   console.log('');
   console.log('🔐 Structure:');
@@ -149,5 +176,5 @@ if (args.length < 3) {
 
 const [universalLauncher, x64Binary, output, steamSo] = args;
 
-packSingleExecutable(universalLauncher, x64Binary, output, steamSo);
+await packSingleExecutable(universalLauncher, x64Binary, output, steamSo);
 

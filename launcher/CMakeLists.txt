@@ -314,18 +314,27 @@ if(UNIX AND NOT APPLE)
             -static-libstdc++ -static-libgcc  # Required for single executable (no .so dependencies)
         )
         
-        # Strip debug symbols
-        find_program(LLVM_STRIP llvm-strip)
-        if(LLVM_STRIP)
+        # Strip debug symbols (use cross-compiler strip for cross-compilation)
+        if(CMAKE_CROSSCOMPILING AND CMAKE_STRIP)
+            # Cross-compiling: use toolchain strip (e.g., x86_64-linux-musl-strip)
             add_custom_command(TARGET bakery-universal-launcher-linux-embedded POST_BUILD
-                COMMAND ${LLVM_STRIP} --strip-all $<TARGET_FILE:bakery-universal-launcher-linux-embedded>
-                COMMENT "⚡ Stripping embedded launcher with llvm-strip..."
+                COMMAND ${CMAKE_STRIP} --strip-all $<TARGET_FILE:bakery-universal-launcher-linux-embedded>
+                COMMENT "⚡ Stripping embedded launcher with ${CMAKE_STRIP}..."
             )
         else()
-            add_custom_command(TARGET bakery-universal-launcher-linux-embedded POST_BUILD
-                COMMAND strip $<TARGET_FILE:bakery-universal-launcher-linux-embedded> 2>/dev/null || true
-                COMMENT "⚡ Stripping embedded launcher..."
-            )
+            # Native build: try llvm-strip first, then strip
+            find_program(LLVM_STRIP llvm-strip)
+            if(LLVM_STRIP)
+                add_custom_command(TARGET bakery-universal-launcher-linux-embedded POST_BUILD
+                    COMMAND ${LLVM_STRIP} --strip-all $<TARGET_FILE:bakery-universal-launcher-linux-embedded>
+                    COMMENT "⚡ Stripping embedded launcher with llvm-strip..."
+                )
+            else()
+                add_custom_command(TARGET bakery-universal-launcher-linux-embedded POST_BUILD
+                    COMMAND strip $<TARGET_FILE:bakery-universal-launcher-linux-embedded> 2>/dev/null || true
+                    COMMENT "⚡ Stripping embedded launcher..."
+                )
+            endif()
         endif()
     endif()
 endif()

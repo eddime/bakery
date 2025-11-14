@@ -61,6 +61,10 @@ if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
     exit 1
 fi
 
+# Strip debug symbols to reduce size
+echo "🔧 Stripping debug symbols from universal launcher..."
+strip --strip-all bakery-universal-launcher-linux-embedded 2>/dev/null || echo "⚠️  strip command not found"
+
 echo "✅ Universal launcher built"
 echo ""
 
