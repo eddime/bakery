@@ -354,6 +354,10 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
     <string>NSApplication</string>
     <key>LSApplicationCategoryType</key>
     <string>public.app-category.games</string>
+    <key>CSResourcesFileMapped</key>
+    <true/>
+    <key>LSRequiresNativeExecution</key>
+    <true/>
 </dict>
 </plist>`;
 
