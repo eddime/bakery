@@ -112,57 +112,10 @@ echo "✅ x86_64 launcher ready"
 echo ""
 
 # ============================================
-# 3. Build ARM64 launcher binary
+# ARM64 support removed (focus on x64 for gaming)
+# 99% of Linux gamers use x64 (Steam Deck, etc.)
+# ARM64 can be added back via separate command if needed
 # ============================================
-echo "🔨 Building ARM64 launcher binary..."
-
-# Try to use pre-built binary from GitHub (with WebKitGTK!)
-PREBUILT_ARM64="$FRAMEWORK_DIR/bin/linux-arm64/bakery-launcher"
-BUILD_ARM64="$FRAMEWORK_DIR/launcher/build-linux-arm64-embedded"
-LAUNCHER_ARM64="$BUILD_ARM64/bakery-launcher-linux"
-
-if [[ -f "$PREBUILT_ARM64" ]]; then
-    echo "✅ Using pre-built binary (with WebKitGTK support!)"
-    mkdir -p "$BUILD_ARM64"
-    cp "$PREBUILT_ARM64" "$LAUNCHER_ARM64"
-    chmod +x "$LAUNCHER_ARM64"
-    BUILD_ARM64="$BUILD_ARM64"
-elif [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
-    # Native ARM64 Linux build (with WebKitGTK)
-    mkdir -p "$BUILD_ARM64"
-    cd "$BUILD_ARM64"
-    cmake .. -DCMAKE_BUILD_TYPE=Release
-    make bakery-launcher-linux -j4
-    
-    if [ ! -f "bakery-launcher-linux" ]; then
-        echo "⚠️  ARM64 build failed! Skipping."
-        BUILD_ARM64=""
-    else
-        echo "✅ ARM64 launcher built"
-    fi
-else
-    # Cross-compile from macOS or x86_64 Linux (fallback, no WebKitGTK)
-    echo "⚠️  Cross-compiling ARM64 (no WebKitGTK - will use system browser)"
-    if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
-        echo "⚠️  aarch64-linux-musl-gcc not found! Skipping ARM64 build."
-        echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
-        BUILD_ARM64=""
-    else
-        mkdir -p "$BUILD_ARM64"
-        cd "$BUILD_ARM64"
-        cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake
-        make bakery-launcher-linux -j4
-        
-        if [ ! -f "bakery-launcher-linux" ]; then
-            echo "⚠️  ARM64 build failed! Skipping."
-            BUILD_ARM64=""
-        else
-            echo "✅ ARM64 launcher built"
-        fi
-    fi
-fi
-
-echo ""
 
 cd "$FRAMEWORK_DIR"
 
@@ -173,18 +126,15 @@ echo "📦 Packing single executables..."
 
 # Check if Steamworks is enabled
 STEAM_SO_X64=""
-STEAM_SO_ARM64=""
 CONFIG_FILE="$PROJECT_DIR/bakery.config.js"
 if [ -f "$CONFIG_FILE" ]; then
     if grep -q "enabled: true" "$CONFIG_FILE" 2>/dev/null; then
         STEAM_SO_X64="$FRAMEWORK_DIR/bin/steamworks/linux/libsteam_api.so"
-        # Note: Using same .so for ARM64 (should be compatible)
-        STEAM_SO_ARM64="$FRAMEWORK_DIR/bin/steamworks/linux/libsteam_api.so"
         
         if [ -f "$STEAM_SO_X64" ]; then
-            echo "🎮 Embedding Steam SDK (x86_64) into executable..."
+            echo "🎮 Embedding Steam SDK into executable..."
         else
-            echo "⚠️  Steam SDK (x86_64) not found at: $STEAM_SO_X64"
+            echo "⚠️  Steam SDK not found at: $STEAM_SO_X64"
             STEAM_SO_X64=""
         fi
     fi
@@ -201,48 +151,24 @@ bun scripts/pack-linux-single-exe.ts \
 echo "✅ x86_64 executable packed!"
 echo ""
 
-# Pack ARM64 executable if built
-if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/bakery-launcher-linux" ]; then
-    echo "📦 Packing ARM64 executable..."
-    
-    STEAM_ARG=""
-    if [ -f "$STEAM_SO_ARM64" ]; then
-        echo "🎮 Embedding Steam SDK (ARM64) into executable..."
-        STEAM_ARG="$STEAM_SO_ARM64"
-    fi
-    
-    bun scripts/pack-linux-single-exe.ts \
-        "$BUILD_EMBEDDED/bakery-universal-launcher-linux-embedded" \
-        "$BUILD_ARM64/bakery-launcher-linux" \
-        "$OUTPUT_DIR/${APP_NAME}-arm64" \
-        $STEAM_ARG
-    
-    echo "✅ ARM64 executable packed!"
-    echo ""
-fi
-
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Linux Single Executables complete!"
+echo "✅ Linux x64 build complete!"
 echo ""
 echo "📦 Output:"
 echo "   $OUTPUT_DIR/${APP_NAME}-x86_64"
-if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
-    echo "   $OUTPUT_DIR/${APP_NAME}-arm64"
-fi
 echo ""
-echo "📊 Sizes:"
+echo "📊 Size:"
 du -h "$OUTPUT_DIR/${APP_NAME}-x86_64" | awk '{print "   " $2 ": " $1}'
-if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
-    du -h "$OUTPUT_DIR/${APP_NAME}-arm64" | awk '{print "   " $2 ": " $1}'
-fi
 echo ""
 echo "🔐 Everything embedded (launcher + binary + assets + Steam)"
 echo ""
 echo "🎯 User experience:"
-echo "   → Download: ${APP_NAME}-x86_64 (or -arm64)"
+echo "   → Download: ${APP_NAME}-x86_64"
 echo "   → chmod +x ${APP_NAME}-x86_64"
 echo "   → ./${APP_NAME}-x86_64"
 echo "   → Everything embedded, instant launch!"
+echo ""
+echo "💡 Optimized for x64 (99% of Linux gamers, Steam Deck, etc.)"
 echo ""
 
 
