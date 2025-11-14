@@ -342,11 +342,11 @@ int main(int argc, char* argv[]) {
     // 8. Disable unnecessary macOS features for games
     setenv("NSAppSleepDisabled", "1", 1);  // Additional App Nap prevention
     
-    // 9. Additional Godot-inspired optimizations
+    // 9. Additional GPU optimizations (conservative settings)
     setenv("WEBKIT_ACCELERATED_COMPOSITING_ENABLED", "1", 1);  // Force GPU compositing
-    setenv("WEBKIT_DISABLE_BACKING_STORE_DISCARDING", "1", 1);  // Keep backing store (less redraws)
-    setenv("__GL_SYNC_TO_VBLANK", "1", 1);  // Enable VSync for smooth rendering
-    setenv("MTL_DEVICE_WRAPPER_TYPE", "1", 1);  // Metal device wrapper optimization
+    // NOTE: WEBKIT_DISABLE_BACKING_STORE_DISCARDING removed - causes memory pressure!
+    // NOTE: __GL_SYNC_TO_VBLANK removed - can limit FPS if not hitting 60!
+    // NOTE: MTL_DEVICE_WRAPPER_TYPE removed - undocumented, may cause issues
     
     #ifndef NDEBUG
     std::cout << "   ✅ Process priority: REALTIME (-20)" << std::endl;
