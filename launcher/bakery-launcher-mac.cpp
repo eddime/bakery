@@ -335,15 +335,9 @@ int main(int argc, char* argv[]) {
     // 8. Disable unnecessary macOS features for games
     setenv("NSAppSleepDisabled", "1", 1);  // Additional App Nap prevention
     
-    // 🎮 CRITICAL: Enable Game Mode BEFORE window creation (like Godot!)
-    // This ensures macOS activates Game Mode immediately
-    bakery::window::enablePersistentGameMode();
-    
     #ifndef NDEBUG
     std::cout << "   ✅ Process priority: REALTIME (-20)" << std::endl;
     std::cout << "   ✅ App Nap: Disabled (multiple methods)" << std::endl;
-    std::cout << "   ✅ Game Mode: ENABLED (NSActivityLatencyCritical)" << std::endl;
-    std::cout << "   ✅ Game Mode: Requested (macOS Sonoma 14+)" << std::endl;
     std::cout << "   ✅ Metal rendering: Forced (hardware)" << std::endl;
     std::cout << "   ✅ Discrete GPU: Requested" << std::endl;
     std::cout << "   ✅ WebKit optimizations: Image decoder + Workers" << std::endl;
@@ -352,7 +346,18 @@ int main(int argc, char* argv[]) {
     #endif
     
     // Create WebView with debug mode from config (enables right-click menu, DevTools)
+    // CRITICAL: This MUST be created BEFORE enablePersistentGameMode()!
+    // WebView creates NSApplication via [NSApplication sharedApplication]
     webview::webview w(config.app.debug, nullptr);
+    
+    // 🎮 CRITICAL: Enable Game Mode AFTER NSApplication exists (created by WebView)!
+    // This ensures macOS activates Game Mode immediately
+    bakery::window::enablePersistentGameMode();
+    
+    #ifndef NDEBUG
+    std::cout << "   ✅ Game Mode: ENABLED (NSActivityLatencyCritical)" << std::endl;
+    std::cout << "   ✅ Game Mode: Requested (macOS Sonoma 14+)" << std::endl;
+    #endif
     w.set_title(config.window.title.c_str());
     
     // Apply window config
