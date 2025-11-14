@@ -1,7 +1,7 @@
 export default {
   app: {
     name: "steamdemo", // IMPORTANT: 'name' determines the port for localStorage persistence!
-    version: "4.1.1",
+    version: "4.2.0",  // Testing with updated fast launcher
     entrypoint: "index.html",
     icon: "icon.png",  // 🎨 PNG will be auto-converted to ICNS/ICO
     debug: true  // Enable debug mode for testing
