@@ -7,13 +7,13 @@ export default {
     debug: true  // Enable debug mode for testing
   },
   window: {
-    title: "GemShell Steamworks Demo",
+    title: "🎮 Bakery Steamworks Demo",
     width: 1280,
     minWidth: 1280,
     minHeight: 720,
     height: 720,
     resizable: true,
-    startFullscreen: false,
+    startFullscreen: true,  // ← Enable for Game Mode notification!
     alwaysOnTop: false,
     frameless: false
   },
