@@ -5,11 +5,12 @@
 set -e
 
 PROJECT_DIR="$1"
+ENABLE_STEAMWORKS="${2:-OFF}"  # Default to OFF if not specified
 FRAMEWORK_DIR="$(cd "$(dirname "$0")/.." && pwd)"
 BUILD_DIR="$FRAMEWORK_DIR/launcher/build-shared"
 
 if [ -z "$PROJECT_DIR" ]; then
-    echo "❌ Usage: $0 <project_dir>"
+    echo "❌ Usage: $0 <project_dir> [ENABLE_STEAMWORKS=ON/OFF]"
     exit 1
 fi
 
@@ -38,6 +39,7 @@ cd "$BUILD_ARM64"
 cmake -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_OSX_ARCHITECTURES=arm64 \
       -DBAKERY_SHARED_ASSETS=ON \
+      -DENABLE_STEAMWORKS=$ENABLE_STEAMWORKS \
       "$FRAMEWORK_DIR/launcher"
 cmake --build . --target bakery-launcher-mac -j4
 
@@ -59,6 +61,7 @@ cd "$BUILD_X64"
 cmake -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_OSX_ARCHITECTURES=x86_64 \
       -DBAKERY_SHARED_ASSETS=ON \
+      -DENABLE_STEAMWORKS=$ENABLE_STEAMWORKS \
       "$FRAMEWORK_DIR/launcher"
 cmake --build . --target bakery-launcher-mac -j4
 

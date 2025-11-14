@@ -4,6 +4,9 @@ project(BakeryLauncher)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+# 🎮 Steamworks Support (optional, controlled by build script)
+option(ENABLE_STEAMWORKS "Enable Steamworks integration" OFF)
+
 # Architecture detection for macOS
 if(APPLE)
     if(NOT DEFINED CMAKE_OSX_ARCHITECTURES OR CMAKE_OSX_ARCHITECTURES STREQUAL "")
@@ -77,15 +80,27 @@ endif()
 
 if(APPLE)
     # bakery-launcher-mac: Uses external bakery-assets file (universal for all games!)
-    add_executable(bakery-launcher-mac bakery-launcher-mac.cpp bakery-steamworks.cpp)
+    if(ENABLE_STEAMWORKS)
+        add_executable(bakery-launcher-mac bakery-launcher-mac.cpp bakery-steamworks.cpp)
+        target_compile_definitions(bakery-launcher-mac PRIVATE ENABLE_STEAMWORKS)
+        message(STATUS "🎮 Building macOS launcher WITH Steamworks")
+    else()
+        add_executable(bakery-launcher-mac bakery-launcher-mac.cpp)
+        message(STATUS "📦 Building macOS launcher WITHOUT Steamworks")
+    endif()
     
-    # 🎮 Link Steamworks SDK
     target_link_libraries(bakery-launcher-mac 
         ${WEBVIEW_LIBS} 
         nlohmann_json::nlohmann_json 
         pthread
-        ${CMAKE_SOURCE_DIR}/../deps/steamworks/sdk/redistributable_bin/osx/libsteam_api.dylib
     )
+    
+    # Link Steamworks only if enabled
+    if(ENABLE_STEAMWORKS)
+        target_link_libraries(bakery-launcher-mac 
+            ${CMAKE_SOURCE_DIR}/../deps/steamworks/sdk/redistributable_bin/osx/libsteam_api.dylib
+        )
+    endif()
     
     # ⚡ OPTIMIZATION: Precompiled headers for faster builds
     target_precompile_headers(bakery-launcher-mac PRIVATE
@@ -143,18 +158,31 @@ endif()
 
 if(WIN32)
     # bakery-launcher-win: Uses external bakery-assets file (universal for all games!)
-    add_executable(bakery-launcher-win bakery-launcher-win.cpp bakery-steamworks.cpp)
+    if(ENABLE_STEAMWORKS)
+        add_executable(bakery-launcher-win bakery-launcher-win.cpp bakery-steamworks.cpp)
+        target_compile_definitions(bakery-launcher-win PRIVATE ENABLE_STEAMWORKS)
+        message(STATUS "🎮 Building Windows launcher WITH Steamworks")
+    else()
+        add_executable(bakery-launcher-win bakery-launcher-win.cpp)
+        message(STATUS "📦 Building Windows launcher WITHOUT Steamworks")
+    endif()
+    
     target_include_directories(bakery-launcher-win PRIVATE
         ${CMAKE_SOURCE_DIR}/deps/webview/core/include/webview/detail/platform/windows/webview2-headers
         ${CMAKE_SOURCE_DIR}/deps/webview/core/include)
     
-    # 🎮 Link Steamworks SDK
     target_link_libraries(bakery-launcher-win 
         ${WEBVIEW_LIBS} 
         nlohmann_json::nlohmann_json 
         ws2_32 shlwapi ole32 shell32 user32 version winmm
-        ${CMAKE_SOURCE_DIR}/../deps/steamworks/sdk/redistributable_bin/win64/steam_api64.lib
     )
+    
+    # Link Steamworks only if enabled
+    if(ENABLE_STEAMWORKS)
+        target_link_libraries(bakery-launcher-win 
+            ${CMAKE_SOURCE_DIR}/../deps/steamworks/sdk/redistributable_bin/win64/steam_api64.lib
+        )
+    endif()
     
     # ⚡ OPTIMIZATION: Precompiled headers for faster builds
     target_precompile_headers(bakery-launcher-win PRIVATE
@@ -219,16 +247,18 @@ endif()
 
 if(UNIX AND NOT APPLE)
     # bakery-launcher-linux: Uses external bakery-assets file (universal for all games!)
-    add_executable(bakery-launcher-linux 
-        bakery-launcher-linux.cpp 
-        bakery-steamworks.cpp
-        steam-api-stubs.cpp  # Weak symbols for cross-compilation
-    )
-    
-    # 🎮 Steamworks SDK
-    # Uses weak symbols to allow linking without libsteam_api.so
-    # At runtime, if Steam library is available, it will be used
-    target_compile_definitions(bakery-launcher-linux PRIVATE STEAM_API_NODLL)
+    if(ENABLE_STEAMWORKS)
+        add_executable(bakery-launcher-linux 
+            bakery-launcher-linux.cpp 
+            bakery-steamworks.cpp
+            steam-api-stubs.cpp  # Weak symbols for cross-compilation
+        )
+        target_compile_definitions(bakery-launcher-linux PRIVATE ENABLE_STEAMWORKS STEAM_API_NODLL)
+        message(STATUS "🎮 Building Linux launcher WITH Steamworks")
+    else()
+        add_executable(bakery-launcher-linux bakery-launcher-linux.cpp)
+        message(STATUS "📦 Building Linux launcher WITHOUT Steamworks")
+    endif()
     
     target_link_libraries(bakery-launcher-linux 
         nlohmann_json::nlohmann_json 

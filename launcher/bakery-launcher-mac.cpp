@@ -22,7 +22,10 @@
 #include "bakery-http-server.h"
 #include "bakery-asset-loader.h"
 #include "bakery-window-helper.h"          // Cross-platform window management
+
+#ifdef ENABLE_STEAMWORKS
 #include "bakery-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
+#endif
 
 using json = nlohmann::json;
 
@@ -257,7 +260,11 @@ int main(int argc, char* argv[]) {
     #endif
     
     // 🎮 Initialize Steamworks (cross-platform helper)
+    #ifdef ENABLE_STEAMWORKS
     bool steamEnabled = bakery::steamworks::initSteamworks(config);
+    #else
+    bool steamEnabled = false;
+    #endif
     
     // OPTIMIZATION 3: Setup server + Build cache in PARALLEL with WebView creation
     // 🔒 Use deterministic port based on app.name (NOT window.title!)
@@ -409,7 +416,9 @@ int main(int argc, char* argv[]) {
     // bakery::universal::enableUniversalPerformance(w);
     
     // 🎮 Bind Steamworks to JavaScript (cross-platform helper)
+    #ifdef ENABLE_STEAMWORKS
     bakery::steamworks::bindSteamworksToWebview(w, steamEnabled);
+    #endif
     
     // Build Bakery object with steam flag
     std::string bakeryInit = R"JS(
@@ -731,6 +740,7 @@ int main(int argc, char* argv[]) {
     w.navigate(url);
     
     // 🎮 Run Steamworks callbacks in background thread (if enabled)
+    #ifdef ENABLE_STEAMWORKS
     std::thread steamThread;
     if (steamEnabled) {
         steamThread = std::thread([]() {
@@ -740,18 +750,21 @@ int main(int argc, char* argv[]) {
             }
         });
     }
+    #endif
     
     w.run();
     
     g_running = false;
     
     // 🎮 Cleanup Steamworks
+    #ifdef ENABLE_STEAMWORKS
     if (steamEnabled) {
         if (steamThread.joinable()) {
             steamThread.join();
         }
         bakery::steamworks::shutdownSteamworks();
     }
+    #endif
     
     return 0;
 }

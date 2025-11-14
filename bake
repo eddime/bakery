@@ -249,8 +249,11 @@ async function buildForPlatform(platform: string, projectDir: string, projectCon
 async function buildMacOS(projectDir: string, projectConfig: any, appName: string, shouldRun: boolean, frameworkDir: string) {
   console.log('🍎 Building macOS Universal Binary (x64 + ARM64)...\n');
 
+  // Check if Steamworks is enabled
+  const steamworksEnabled = projectConfig.default?.steamworks?.enabled ? 'ON' : 'OFF';
+
   const buildScript = join(frameworkDir, 'scripts', 'build-shared-universal.sh');
-  const buildProc = Bun.spawn([buildScript, projectDir], {
+  const buildProc = Bun.spawn([buildScript, projectDir, steamworksEnabled], {
     cwd: frameworkDir,
     stdout: 'inherit',
     stderr: 'inherit',
@@ -296,12 +299,17 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   
   cpSync(assetsFile, join(macOSDir, 'bakery-assets'));
   
-  // 🎮 Copy Steam DLL if Steamworks is enabled
+  // 🎮 Copy Steam DLL only if Steamworks is enabled
   if (projectConfig.default?.steamworks?.enabled) {
     const steamDll = join(frameworkDir, 'bin', 'steamworks', 'macos', 'libsteam_api.dylib');
     if (existsSync(steamDll)) {
       cpSync(steamDll, join(macOSDir, 'libsteam_api.dylib'));
       console.log('🎮 Copied Steam SDK (libsteam_api.dylib)');
+      
+      // Copy steam_appid.txt for testing
+      const steamAppId = projectConfig.default?.steamworks?.appId || 480;
+      writeFileSync(join(macOSDir, 'steam_appid.txt'), steamAppId.toString());
+      console.log(`🎮 Created steam_appid.txt (${steamAppId})`);
     } else {
       console.warn('⚠️  Steam SDK not found at:', steamDll);
     }
