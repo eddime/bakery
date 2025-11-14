@@ -98,19 +98,21 @@ inline void enablePersistentGameMode() {
     );
     
     // Store token as static (kept alive for entire app lifetime)
+    // IMPORTANT: We store as static, but ALWAYS create new token on each app start!
+    // This ensures Game Mode icon appears every time (like Godot)
     static id activityToken = nullptr;
     
-    // Only create once (Godot's approach)
-    if (!activityToken) {
-        activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
-            processInfo, beginActivitySel, options, reasonStr
-        );
-        
-        // CRITICAL: Explicitly retain token (Godot uses [token retain])
-        // beginActivityWithOptions returns an autoreleased object
-        if (activityToken) {
-            CFRetain((CFTypeRef)activityToken);
-        }
+    // CRITICAL: ALWAYS create new token (even if static exists)
+    // macOS needs a fresh activity for each process instance
+    // This is why Game Mode icon appears on every launch!
+    activityToken = ((id (*)(id, SEL, unsigned long long, id))objc_msgSend)(
+        processInfo, beginActivitySel, options, reasonStr
+    );
+    
+    // CRITICAL: Explicitly retain token (Godot uses [token retain])
+    // beginActivityWithOptions returns an autoreleased object
+    if (activityToken) {
+        CFRetain((CFTypeRef)activityToken);
     }
 }
 
