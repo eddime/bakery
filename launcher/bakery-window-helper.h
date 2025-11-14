@@ -111,27 +111,12 @@ inline void enablePersistentGameMode() {
         
         // CRITICAL: Explicitly retain token (Godot uses [token retain])
         // beginActivityWithOptions returns an autoreleased object
+        // IMPORTANT: We DON'T call endActivity on exit!
+        // Letting the token live until process termination seems to work better
+        // for Game Mode icon persistence across launches
         if (activityToken) {
             CFRetain((CFTypeRef)activityToken);
             initialized = true;
-            
-            // Register cleanup handler to release token on app exit
-            // This ensures proper cleanup and allows fresh start next launch
-            std::atexit([]() {
-                static id token = activityToken;
-                if (token) {
-                    Class nsProcessInfoClass = objc_getClass("NSProcessInfo");
-                    SEL processInfoSel = sel_registerName("processInfo");
-                    id processInfo = ((id (*)(Class, SEL))objc_msgSend)(nsProcessInfoClass, processInfoSel);
-                    
-                    if (processInfo) {
-                        SEL endActivitySel = sel_registerName("endActivity:");
-                        ((void (*)(id, SEL, id))objc_msgSend)(processInfo, endActivitySel, token);
-                    }
-                    
-                    CFRelease((CFTypeRef)token);
-                }
-            });
         }
     }
 }

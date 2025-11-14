@@ -370,6 +370,24 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   });
   await xattrProc.exited;
 
+  // Sign the app with hardened runtime (required for Game Mode!)
+  // This matches Godot's approach and ensures macOS trusts the app
+  // NOTE: We use adhoc signing without hardened runtime to avoid entitlement issues
+  // Game Mode still works with proper Info.plist and NSProcessInfo activity
+  console.log('🔐 Signing app...');
+  const codesignProc = Bun.spawn([
+    'codesign',
+    '--force',
+    '--deep',
+    '--sign', '-',
+    appBundle
+  ], {
+    stdout: 'pipe',
+    stderr: 'pipe',
+  });
+  await codesignProc.exited;
+  console.log('✅ App signed\n');
+
   console.log('✅ Build complete!\n');
   console.log('📦 Output:', appBundle);
   console.log('📊 Size: ~9.2 MB (3 launchers + 1 shared assets file)');
