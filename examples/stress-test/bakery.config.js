@@ -4,7 +4,7 @@ export default {
     // Keep this constant across versions to preserve save data.
     // Changing this will reset all localStorage data.
     name: "stress-test",
-    version: "1.0.5",  // Testing with old launcher + Steamworks support
+    version: "1.0.7",  // Testing WITHOUT enablePersistentGameMode()
     entrypoint: "index.html"
   },
   window: {

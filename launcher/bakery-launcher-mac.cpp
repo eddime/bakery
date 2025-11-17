@@ -16,15 +16,19 @@
 #include <nlohmann/json.hpp>
 #include "webview/webview.h"
 
+#ifdef __APPLE__
+#include <objc/objc.h>
+#include <objc/runtime.h>
+#include <objc/message.h>
+#endif
 #include "webview-universal-performance.h"
 
 // NEW: Shared HTTP server and asset loader!
 #include "bakery-http-server.h"
 #include "bakery-asset-loader.h"
-#include "bakery-window-helper.h"          // Cross-platform window management
 
 #ifdef ENABLE_STEAMWORKS
-#include "bakery-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
+#include "bakery-steamworks-bindings.h"    // 🎮 Steamworks integration
 #endif
 
 using json = nlohmann::json;
@@ -259,7 +263,7 @@ int main(int argc, char* argv[]) {
     std::cout << std::endl;
     #endif
     
-    // 🎮 Initialize Steamworks (cross-platform helper)
+    // 🎮 Initialize Steamworks (must be done BEFORE WebView creation)
     #ifdef ENABLE_STEAMWORKS
     bool steamEnabled = bakery::steamworks::initSteamworks(config);
     #else
@@ -323,10 +327,9 @@ int main(int argc, char* argv[]) {
     setenv("CA_LAYER_OPTIMIZE_FOR_GAME", "1", 1);  // Optimize Core Animation
     setenv("MTL_SHADER_VALIDATION", "0", 1);  // Disable shader validation overhead
     
-    // 4. Metal optimizations (disable all debug/validation overhead)
+    // 4. Metal optimizations
     setenv("MTL_HUD_ENABLED", "0", 1);  // Disable Metal HUD
     setenv("MTL_DEBUG_LAYER", "0", 1);  // Disable debug layer
-    setenv("MTL_FORCE_SOFTWARE_RENDERING", "0", 1);  // Force hardware rendering
     
     // 5. Force Metal rendering for better performance
     setenv("WEBKIT_USE_METAL", "1", 1);
@@ -335,54 +338,39 @@ int main(int argc, char* argv[]) {
     // 6. Request high-performance GPU (discrete over integrated)
     setenv("WEBKIT_FORCE_DISCRETE_GPU", "1", 1);
     
-    // 7. Additional WebKit optimizations (like Godot)
-    setenv("WEBKIT_DISABLE_IMAGE_DECODER_PROCESS", "0", 1);  // Use separate process for image decoding
-    setenv("WEBKIT_ENABLE_DEDICATED_WORKERS", "1", 1);  // Enable dedicated workers for better threading
-    
-    // 8. Disable unnecessary macOS features for games
-    setenv("NSAppSleepDisabled", "1", 1);  // Additional App Nap prevention
-    
-    // 9. Additional Godot-inspired optimizations
-    setenv("WEBKIT_ACCELERATED_COMPOSITING_ENABLED", "1", 1);  // Force GPU compositing
-    setenv("WEBKIT_DISABLE_BACKING_STORE_DISCARDING", "1", 1);  // Keep backing store (less redraws)
-    setenv("__GL_SYNC_TO_VBLANK", "1", 1);  // Enable VSync for smooth rendering
-    setenv("MTL_DEVICE_WRAPPER_TYPE", "1", 1);  // Metal device wrapper optimization
-    
     #ifndef NDEBUG
     std::cout << "   ✅ Process priority: REALTIME (-20)" << std::endl;
-    std::cout << "   ✅ App Nap: Disabled (multiple methods)" << std::endl;
-    std::cout << "   ✅ Metal rendering: Forced (hardware)" << std::endl;
+    std::cout << "   ✅ App Nap: Disabled" << std::endl;
+    std::cout << "   ✅ Game Mode: Requested (macOS Sonoma 14+)" << std::endl;
+    std::cout << "   ✅ Metal rendering: Forced" << std::endl;
     std::cout << "   ✅ Discrete GPU: Requested" << std::endl;
-    std::cout << "   ✅ WebKit optimizations: Image decoder + Workers" << std::endl;
     std::cout << "   ⚠️  Note: Fullscreen will ALWAYS be faster (bypasses WindowServer)" << std::endl;
     #endif
     #endif
     
-    // Create WebView with debug mode from config (enables right-click menu, DevTools)
-    // CRITICAL: This MUST be created BEFORE enablePersistentGameMode()!
-    // WebView creates NSApplication via [NSApplication sharedApplication]
+    // Create WebView with debug mode from config (or default to true for compatibility)
     webview::webview w(config.app.debug, nullptr);
-    
-    // 🎮 CRITICAL: Enable Game Mode AFTER NSApplication exists (created by WebView)!
-    // This ensures macOS activates Game Mode immediately
-    bakery::window::enablePersistentGameMode();
-    
-    #ifndef NDEBUG
-    std::cout << "   ✅ Game Mode: ENABLED (NSActivityLatencyCritical)" << std::endl;
-    std::cout << "   ✅ Game Mode: Requested (macOS Sonoma 14+)" << std::endl;
-    #endif
     w.set_title(config.window.title.c_str());
     
     // Apply window config
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     
-    // 🎮 Enable native macOS fullscreen button
+    // 🎮 Enable native macOS Game Mode support
     // This adds the fullscreen button and enables Game Mode in fullscreen
+    #ifdef __APPLE__
     auto window_result = w.window();
     if (window_result.has_value()) {
         void* window_ptr = window_result.value();
         if (window_ptr) {
-            bakery::window::enableFullscreenButton(window_ptr);
+            id nswindow = (id)window_ptr;
+            
+            // Enable fullscreen button (green button) - required for Game Mode
+            // NSWindowCollectionBehaviorFullScreenPrimary = 1 << 7 = 128 (main display)
+            // NSWindowCollectionBehaviorFullScreenAuxiliary = 1 << 8 = 256 (external displays)
+            // Combine both for multi-display support (like Godot!)
+            SEL setCollectionBehavior = sel_registerName("setCollectionBehavior:");
+            NSUInteger behavior = 128 | 256;  // Primary + Auxiliary (works on all displays!)
+            ((void (*)(id, SEL, NSUInteger))objc_msgSend)(nswindow, setCollectionBehavior, behavior);
             
             #ifndef NDEBUG
             std::cout << "🎮 Native fullscreen button enabled (Game Mode ready)" << std::endl;
@@ -391,165 +379,61 @@ int main(int argc, char* argv[]) {
             #endif
         }
     }
+    #endif
     
-    // 🖥️ Native macOS Fullscreen mode for maximum performance (bypasses compositor)
+    // 🖥️ Fullscreen mode for maximum performance (bypasses compositor)
     if (config.window.fullscreen) {
         #ifndef NDEBUG
         std::cout << "🖥️  Fullscreen mode: ENABLED (better performance)" << std::endl;
         #endif
         
-        // Use native macOS fullscreen (required for Game Mode!)
-        auto window_result = w.window();
-        if (window_result.has_value()) {
-            void* window_ptr = window_result.value();
-            if (window_ptr) {
-                bakery::window::toggleFullscreen(window_ptr);
-                
-                #ifndef NDEBUG
-                std::cout << "   ✅ Native fullscreen activated (Game Mode ready!)" << std::endl;
-                #endif
-            }
-        }
+        // Set fullscreen via JavaScript after WebView is ready
+        // (WebView C++ API doesn't have direct fullscreen support)
     }
     
     // DISABLED: Performance optimizations causing issues with some games
     // bakery::universal::enableUniversalPerformance(w);
     
-    // 🎮 Bind Steamworks to JavaScript (cross-platform helper)
+    // 🎮 Bind Steamworks to JavaScript (if enabled)
     #ifdef ENABLE_STEAMWORKS
     bakery::steamworks::bindSteamworksToWebview(w, steamEnabled);
     #endif
     
-    // Build Bakery object with steam flag
-    std::string bakeryInit = R"JS(
+    w.init(R"JS(
     window.Bakery = {
         version: '1.0.0',
         platform: 'macos',
-        mode: 'shared-assets',
-        steam: )JS";
-    bakeryInit += steamEnabled ? "true" : "false";
-    bakeryInit += R"JS(
-    };
-    
-    // 🎮 Steam API Wrapper - Clean API for game developers with error logging
-    (function() {
-        function parse(v) {
-            if (v === null || v === undefined) return v;
-            if (typeof v !== 'string') return v;
-            try { return JSON.parse(v); } catch(e) { return v; }
-        }
-        
-        // Helper to wrap API calls with error logging
-        function wrapAPI(name, fn, logSuccess = false) {
-            return async (...args) => {
-                try {
-                    const result = await fn(...args);
-                    if (logSuccess && result !== false && result !== 0 && result !== '' && result !== null) {
-                        console.log(`[Gemshell Steam] ${name}:`, result);
-                    }
-                    return result;
-                } catch (error) {
-                    console.error(`[Gemshell Steam] ${name} failed:`, error);
-                    throw error;
-                }
-            };
-        }
-        
-        const available = window.Bakery && window.Bakery.steam === true;
-        
-        if (!available) {
-            console.warn('[Gemshell Steam] Steamworks is not available. Make sure Steam is running and steamworks is enabled in bakery.config.js');
-        }
-        
-        window.Steam = {
-            isAvailable: () => available,
-            getSteamID: wrapAPI('getSteamID', async () => available ? parse(await window.steamGetSteamID()) : '0'),
-            getPersonaName: wrapAPI('getPersonaName', async () => available ? parse(await window.steamGetPersonaName()) : ''),
-            getAppID: wrapAPI('getAppID', async () => available ? parseInt(parse(await window.steamGetAppID())) : 0),
-            unlockAchievement: wrapAPI('unlockAchievement', async (id) => available ? parse(await window.steamUnlockAchievement(id)) === true : false),
-            getAchievement: wrapAPI('getAchievement', async (id) => available ? parse(await window.steamGetAchievement(id)) === true : false),
-            storeStats: wrapAPI('storeStats', async () => available ? parse(await window.steamStoreStats()) === true : false),
-            setStatInt: wrapAPI('setStatInt', async (n, v) => available ? parse(await window.steamSetStatInt(n, v)) === true : false),
-            getStatInt: wrapAPI('getStatInt', async (n) => available ? parseInt(parse(await window.steamGetStatInt(n))) : 0),
-            fileWrite: wrapAPI('fileWrite', async (f, d) => available ? parse(await window.steamFileWrite(f, d)) === true : false),
-            fileRead: wrapAPI('fileRead', async (f) => available ? parse(await window.steamFileRead(f)) || '' : ''),
-            fileExists: wrapAPI('fileExists', async (f) => available ? parse(await window.steamFileExists(f)) === true : false),
-            setRichPresence: wrapAPI('setRichPresence', async (k, v) => available ? parse(await window.steamSetRichPresence(k, v)) === true : false),
-            isOverlayEnabled: wrapAPI('isOverlayEnabled', async () => available ? parse(await window.steamIsOverlayEnabled()) === true : false),
-            activateOverlay: wrapAPI('activateOverlay', async (d) => available ? parse(await window.steamActivateOverlay(d)) === true : false),
-            isDlcInstalled: wrapAPI('isDlcInstalled', async (id) => available ? parse(await window.steamIsDlcInstalled(id)) === true : false),
-            getDLCCount: wrapAPI('getDLCCount', async () => available ? parseInt(parse(await window.steamGetDLCCount())) : 0),
-            getFriendCount: wrapAPI('getFriendCount', async () => available ? parseInt(parse(await window.steamGetFriendCount())) : 0),
-            getFriendPersonaName: wrapAPI('getFriendPersonaName', async (i) => available ? parse(await window.steamGetFriendPersonaName(i)) || '' : ''),
-            triggerScreenshot: wrapAPI('triggerScreenshot', async () => available ? parse(await window.steamTriggerScreenshot()) === true : false),
-            getCurrentGameLanguage: wrapAPI('getCurrentGameLanguage', async () => available ? parse(await window.steamGetCurrentGameLanguage()) || 'english' : 'english'),
-            getAvailableGameLanguages: wrapAPI('getAvailableGameLanguages', async () => available ? parse(await window.steamGetAvailableGameLanguages()) || '' : ''),
-            isSteamInBigPictureMode: wrapAPI('isSteamInBigPictureMode', async () => available ? parse(await window.steamIsSteamInBigPictureMode()) === true : false),
-            isSteamDeck: wrapAPI('isSteamDeck', async () => available ? parse(await window.steamIsSteamDeck()) === true : false),
-            getFriends: wrapAPI('getFriends', async (max = 100) => {
-                if (!available) return [];
-                const count = parseInt(parse(await window.steamGetFriendCount()));
-                
-                // Request all friend names first (triggers Steam to load data)
-                for (let i = 0; i < Math.min(count, max); i++) {
-                    parse(await window.steamGetFriendPersonaName(i));
-                }
-                
-                // Wait for Steam to load the data
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Now collect all names
-                const friends = [];
-                for (let i = 0; i < Math.min(count, max); i++) {
-                    const name = parse(await window.steamGetFriendPersonaName(i)) || '';
-                    if (name) friends.push(name);
-                }
-                
-                return friends;
-            })
+            mode: 'shared-assets'
         };
-        window.Steamworks = window.Steam;
-    })();
-)JS";
-    
-    w.init(bakeryInit + R"JS(
       
-      // Wait for DOM to be ready
-      if (document.readyState === 'loading') {
-          document.addEventListener('DOMContentLoaded', initBakery);
-      } else {
-          initBakery();
-      }
-      
-      function initBakery() {
-          // 🎯 ANTI-STUTTER: Aggressive optimizations for smooth 60 FPS in window mode
-          (function() {
-              // 1. Force GPU acceleration on EVERYTHING
-              const style = document.createElement('style');
-              style.textContent = `
-                  * {
-                      -webkit-transform: translateZ(0);
-                      -webkit-backface-visibility: hidden;
-                      -webkit-perspective: 1000px;
-                      will-change: transform;
-                  }
-                  body, html {
-                      -webkit-font-smoothing: antialiased;
-                      -moz-osx-font-smoothing: grayscale;
-                  }
-                  canvas, video, img {
-                      -webkit-transform: translate3d(0,0,0);
-                      transform: translate3d(0,0,0);
-                      image-rendering: -webkit-optimize-contrast;
-                      image-rendering: crisp-edges;
-                  }
-                  /* Disable all animations that could cause jank */
-                  *, *::before, *::after {
-                      animation-duration: 0s !important;
-                      transition-duration: 0s !important;
-                  }
-              `;
-              document.head.appendChild(style);
+      // 🎯 ANTI-STUTTER: Aggressive optimizations for smooth 60 FPS in window mode
+      (function() {
+          // 1. Force GPU acceleration on EVERYTHING
+          const style = document.createElement('style');
+          style.textContent = `
+              * {
+                  -webkit-transform: translateZ(0);
+                  -webkit-backface-visibility: hidden;
+                  -webkit-perspective: 1000px;
+                  will-change: transform;
+              }
+              body, html {
+                  -webkit-font-smoothing: antialiased;
+                  -moz-osx-font-smoothing: grayscale;
+              }
+              canvas, video, img {
+                  -webkit-transform: translate3d(0,0,0);
+                  transform: translate3d(0,0,0);
+                  image-rendering: -webkit-optimize-contrast;
+                  image-rendering: crisp-edges;
+              }
+              /* Disable all animations that could cause jank */
+              *, *::before, *::after {
+                  animation-duration: 0s !important;
+                  transition-duration: 0s !important;
+              }
+          `;
+          document.head.appendChild(style);
           
           // 2. Disable smooth scrolling (causes jank)
           document.documentElement.style.scrollBehavior = 'auto';
@@ -636,7 +520,7 @@ int main(int argc, char* argv[]) {
     
     // 🖥️ FULLSCREEN: Auto-enable if configured (better performance)
     window.addEventListener('load', () => {
-        const fullscreenEnabled = )JS" + std::string(config.window.fullscreen ? "true" : "false") + R"JS(;
+        const fullscreenEnabled = )" + std::string(config.window.fullscreen ? "true" : "false") + R"JS(;
         
         if (fullscreenEnabled) {
             // Request fullscreen on document element
@@ -702,10 +586,9 @@ int main(int argc, char* argv[]) {
             transform: translate3d(0,0,0);
         }
     `;
-          document.addEventListener('DOMContentLoaded', () => {
-              document.head.appendChild(style);
-          });
-      } // end initBakery()
+    document.addEventListener('DOMContentLoaded', () => {
+        document.head.appendChild(style);
+    });
     )JS");
     
     // Wait for cache to be ready before navigation
@@ -739,7 +622,7 @@ int main(int argc, char* argv[]) {
     
     w.navigate(url);
     
-    // 🎮 Run Steamworks callbacks in background thread (if enabled)
+    // 🎮 Start Steamworks callback thread (if enabled)
     #ifdef ENABLE_STEAMWORKS
     std::thread steamThread;
     if (steamEnabled) {
@@ -756,7 +639,7 @@ int main(int argc, char* argv[]) {
     
     g_running = false;
     
-    // 🎮 Cleanup Steamworks
+    // 🎮 Cleanup Steamworks (if enabled)
     #ifdef ENABLE_STEAMWORKS
     if (steamEnabled) {
         if (steamThread.joinable()) {
