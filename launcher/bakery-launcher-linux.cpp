@@ -16,6 +16,7 @@
 // NEW: Shared HTTP server and asset loader!
 #include "bakery-http-server.h"
 #include "bakery-asset-loader.h"
+#include "bakery-cache-buster.h"
 #include "bakery-window-helper.h"          // Cross-platform window management
 #include "bakery-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
 
@@ -31,6 +32,7 @@ struct BakeryConfig {
     struct {
         std::string name;
         std::string version;
+        bool splash = false;
     } app;
     struct {
         bool enabled = false;
@@ -182,6 +184,9 @@ int main(int argc, char* argv[]) {
                 if (j["app"].contains("entrypoint")) {
                     config.entrypoint = j["app"]["entrypoint"].get<std::string>();
                 }
+                if (j["app"].contains("splash")) {
+                    config.app.splash = j["app"]["splash"].get<bool>();
+                }
             }
             if (j.contains("entrypoint")) {
                 config.entrypoint = j["entrypoint"].get<std::string>();
@@ -278,15 +283,34 @@ int main(int argc, char* argv[]) {
     std::cout << "🌐 Starting HTTP server..." << std::endl;
     #endif
     
-    // Open system browser
-    std::string url = "http://localhost:8765";
+    // 🔥 CACHE BUSTER: Use timestamp to force reload on every build
+    std::string cacheBuster = bakery::getCacheBuster();
+    std::string url = "http://localhost:" + std::to_string(port) + "/" + config.entrypoint + "?t=" + cacheBuster;
+    
+    // 🎬 Splash Screen: Show splash.html first (splash.html handles redirect itself)
+    std::string finalUrl = url;
+    if (config.app.splash) {
+        // Pass target URL as query parameter so splash.html knows where to redirect
+        finalUrl = "http://localhost:" + std::to_string(port) + "/splash.html?redirect=" + config.entrypoint + "&t=" + cacheBuster;
+        
+        #ifndef NDEBUG
+        std::cout << "🎬 Splash Screen: ENABLED (splash.html)" << std::endl;
+        std::cout << "🌐 Splash URL: " << finalUrl << std::endl;
+        std::cout << "💡 splash.html will redirect to game after 2 seconds" << std::endl;
+        #endif
+    } else {
+        #ifndef NDEBUG
+        std::cout << "🌐 URL: " << url << std::endl;
+        std::cout << "🔄 Cache Buster: t=" << cacheBuster << std::endl;
+        #endif
+    }
     
     #ifndef NDEBUG
-    std::cout << "🚀 Opening browser: " << url << std::endl;
+    std::cout << "🚀 Opening browser: " << finalUrl << std::endl;
     std::cout << std::endl;
     #endif
     
-    std::string openCmd = "xdg-open \"" + url + "\" 2>/dev/null || sensible-browser \"" + url + "\" 2>/dev/null &";
+    std::string openCmd = "xdg-open \"" + finalUrl + "\" 2>/dev/null || sensible-browser \"" + finalUrl + "\" 2>/dev/null &";
     system(openCmd.c_str());
     
     #ifndef NDEBUG

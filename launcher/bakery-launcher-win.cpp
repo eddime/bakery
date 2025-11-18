@@ -27,6 +27,7 @@
 // NEW: Shared HTTP server and asset loader!
 #include "bakery-http-server.h"
 #include "bakery-asset-loader.h"
+#include "bakery-cache-buster.h"
 #include "bakery-window-helper.h"          // Cross-platform window management
 #include "bakery-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
 
@@ -43,6 +44,7 @@ struct BakeryConfig {
         std::string name;
         std::string version;
         bool debug = false;
+        bool splash = false;
     } app;
     struct {
         bool enabled = false;
@@ -238,6 +240,9 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 }
                 if (j["app"].contains("debug")) {
                     config.app.debug = j["app"]["debug"].get<bool>();
+                }
+                if (j["app"].contains("splash")) {
+                    config.app.splash = j["app"]["splash"].get<bool>();
                 }
             }
             if (j.contains("entrypoint")) {
@@ -573,9 +578,36 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     std::cout << std::endl;
     #endif
     
-    // Navigate to entrypoint
-    std::string url = "http://127.0.0.1:" + std::to_string(port);
-    w.navigate(url.c_str());
+    // 🔥 CACHE BUSTER: Use timestamp to force reload on every build
+    std::string cacheBuster = bakery::getCacheBuster();
+    std::string url = "http://127.0.0.1:" + std::to_string(port) + "/" + config.entrypoint + "?t=" + cacheBuster;
+    
+    // 🎬 Splash Screen: Show splash.html first, then navigate to game after 2 seconds
+    if (config.app.splash) {
+        // Pass target URL as query parameter so splash.html knows where to redirect
+        std::string splashUrl = "http://127.0.0.1:" + std::to_string(port) + "/splash.html?redirect=" + config.entrypoint + "&t=" + cacheBuster;
+        
+        #ifndef NDEBUG
+        std::cout << "🎬 Splash Screen: ENABLED (splash.html)" << std::endl;
+        std::cout << "🌐 Splash URL: " << splashUrl << std::endl;
+        #endif
+        
+        w.navigate(splashUrl.c_str());
+        
+        // After 2 seconds, navigate to the actual game (backup if splash.html doesn't redirect)
+        std::thread([&w, url]() {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            std::string js = "window.location.href = '" + url + "';";
+            w.eval(js.c_str());
+        }).detach();
+    } else {
+        #ifndef NDEBUG
+        std::cout << "🌐 URL: " << url << std::endl;
+        std::cout << "🔄 Cache Buster: t=" << cacheBuster << std::endl;
+        #endif
+        
+        w.navigate(url.c_str());
+    }
     
     // 🎮 Run Steamworks callbacks in background thread (if enabled)
     std::thread steamThread;

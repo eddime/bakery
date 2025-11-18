@@ -4,8 +4,9 @@ export default {
     // Keep this constant across versions to preserve save data.
     // Changing this will reset all localStorage data.
     name: "stress-test",
-    version: "1.0.7",  // Testing WITHOUT enablePersistentGameMode()
-    entrypoint: "index.html"
+    version: "1.0.8",  // Testing splash screen
+    entrypoint: "index.html",
+    splash: true  // 🎬 Test splash screen
   },
   window: {
     title: "🔥 Bakery Stress Test",  // Can change freely (e.g., add version number)

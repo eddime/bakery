@@ -79,18 +79,32 @@ files.push({ path: 'bakery-webgpu-helper.js', data: webgpuHelper });
 // 🔒 Embed bakery.config.json (encrypted, not accessible to user)
 const configJsonPath = join(projectDir, 'bakery.config.json');
 const configJsPath = join(projectDir, 'bakery.config.js');
+let config: any = null;
 
 if (existsSync(configJsonPath)) {
   const configData = readFileSync(configJsonPath);
   files.push({ path: '.bakery-config.json', data: configData });
+  config = JSON.parse(configData.toString());
   console.log('🔒 Config embedded (JSON)');
 } else if (existsSync(configJsPath)) {
   // Convert JS config to JSON
   const configModule = await import(`file://${configJsPath}`);
-  const config = configModule.default;
+  config = configModule.default;
   const configJson = JSON.stringify(config, null, 2);
   files.push({ path: '.bakery-config.json', data: Buffer.from(configJson) });
   console.log('🔒 Config embedded (from JS)');
+}
+
+// 🎬 Add splash.html from framework assets if splash is enabled
+if (config?.app?.splash === true) {
+  const splashPath = join(import.meta.dir, '..', 'assets', 'splash.html');
+  if (existsSync(splashPath)) {
+    const splashData = readFileSync(splashPath);
+    files.push({ path: 'splash.html', data: splashData });
+    console.log('🎬 Splash screen embedded (from framework assets)');
+  } else {
+    console.warn('⚠️  splash.html not found in framework assets!');
+  }
 }
 
 console.log(`✅ Collected ${files.length} files (+ WebGPU helper + config)`);

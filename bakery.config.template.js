@@ -8,7 +8,8 @@ export default {
     version: "1.0.0",  // Semantic versioning (e.g., "1.2.3")
     entrypoint: "index.html",
     icon: "icon.png",  // 🎨 PNG icon (auto-converted to ICNS/ICO for all platforms!)
-    debug: false  // Enable debug mode (right-click menu, DevTools)
+    debug: false,  // Enable debug mode (right-click menu, DevTools)
+    splash: false  // 🎬 Set to true to show splash.html for 2 seconds on startup
   },
   
   window: {
