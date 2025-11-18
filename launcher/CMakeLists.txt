@@ -51,35 +51,49 @@ elseif(UNIX)
     # 🎯 Neutralino-style: Use system WebKitGTK via pkg-config
     # Exactly like Neutralino: $(pkg-config --cflags --libs gtk+-3.0 glib-2.0 xcb x11 xrandr)
     
-    find_package(PkgConfig REQUIRED)
-    
-    # Try webkit2gtk-4.1 first (newer), then fallback to 4.0
-    pkg_check_modules(WEBVIEW_GTK gtk+-3.0 glib-2.0 xcb x11 xrandr)
-    pkg_check_modules(WEBVIEW_WEBKIT webkit2gtk-4.1)
-    if(NOT WEBVIEW_WEBKIT_FOUND)
-        pkg_check_modules(WEBVIEW_WEBKIT webkit2gtk-4.0)
+    # Only require pkg-config on native Linux builds (not cross-compilation)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR)
+        find_package(PkgConfig REQUIRED)
+    else()
+        find_package(PkgConfig)
     endif()
     
-    if(WEBVIEW_GTK_FOUND AND WEBVIEW_WEBKIT_FOUND)
-        # Combine all libraries (like Neutralino does)
-        set(WEBVIEW_LIBS 
-            ${WEBVIEW_GTK_LIBRARIES}
-            ${WEBVIEW_WEBKIT_LIBRARIES}
-            pthread
-            png
-            stdc++fs
-            dl
-        )
-        include_directories(${WEBVIEW_GTK_INCLUDE_DIRS})
-        include_directories(${WEBVIEW_WEBKIT_INCLUDE_DIRS})
-        add_definitions(${WEBVIEW_GTK_CFLAGS_OTHER})
-        add_definitions(${WEBVIEW_WEBKIT_CFLAGS_OTHER})
-        message(STATUS "✅ Found system WebKitGTK (Neutralino-style)")
-        message(STATUS "   GTK: ${WEBVIEW_GTK_VERSION}")
-        message(STATUS "   WebKit: ${WEBVIEW_WEBKIT_VERSION}")
+    if(PkgConfig_FOUND)
+        # Try webkit2gtk-4.1 first (newer), then fallback to 4.0
+        pkg_check_modules(WEBVIEW_GTK gtk+-3.0 glib-2.0 xcb x11 xrandr)
+        pkg_check_modules(WEBVIEW_WEBKIT webkit2gtk-4.1)
+        if(NOT WEBVIEW_WEBKIT_FOUND)
+            pkg_check_modules(WEBVIEW_WEBKIT webkit2gtk-4.0)
+        endif()
+        
+        if(WEBVIEW_GTK_FOUND AND WEBVIEW_WEBKIT_FOUND)
+            # Combine all libraries (like Neutralino does)
+            set(WEBVIEW_LIBS 
+                ${WEBVIEW_GTK_LIBRARIES}
+                ${WEBVIEW_WEBKIT_LIBRARIES}
+                pthread
+                png
+                stdc++fs
+                dl
+            )
+            include_directories(${WEBVIEW_GTK_INCLUDE_DIRS})
+            include_directories(${WEBVIEW_WEBKIT_INCLUDE_DIRS})
+            add_definitions(${WEBVIEW_GTK_CFLAGS_OTHER})
+            add_definitions(${WEBVIEW_WEBKIT_CFLAGS_OTHER})
+            message(STATUS "✅ Found system WebKitGTK (Neutralino-style)")
+            message(STATUS "   GTK: ${WEBVIEW_GTK_VERSION}")
+            message(STATUS "   WebKit: ${WEBVIEW_WEBKIT_VERSION}")
+        else()
+            message(STATUS "⚠️  WebKitGTK not found - using minimal build (system browser)")
+            message(STATUS "💡 Install: sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev")
+            set(WEBVIEW_LIBS "")
+            add_definitions(-DWEBVIEW_STATIC)
+            include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
+        endif()
     else()
-        message(STATUS "⚠️  WebKitGTK not found - using minimal build (system browser)")
-        message(STATUS "💡 Install: sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev")
+        # Cross-compilation or pkg-config not available
+        message(STATUS "⚠️  pkg-config not available - using minimal build (system browser)")
+        message(STATUS "💡 For WebKitGTK support, build on Linux or install pkg-config")
         set(WEBVIEW_LIBS "")
         add_definitions(-DWEBVIEW_STATIC)
         include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
@@ -262,7 +276,7 @@ if(WIN32)
 endif()
 
 # ==================================================
-# Linux Launcher (Headless - opens system browser)
+# Linux Launcher (WebKitGTK WebView - like Neutralino)
 # ==================================================
 
 if(UNIX AND NOT APPLE)
@@ -281,6 +295,7 @@ if(UNIX AND NOT APPLE)
     endif()
     
     target_link_libraries(bakery-launcher-linux 
+        ${WEBVIEW_LIBS}
         nlohmann_json::nlohmann_json 
         pthread
         dl

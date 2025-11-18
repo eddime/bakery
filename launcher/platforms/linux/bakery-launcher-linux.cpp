@@ -1,6 +1,6 @@
 /**
- * 🥐 Bakery Launcher - Linux (Shared Assets from bakery-assets file)
- * Clean, shared-code version with zero duplication
+ * 🥐 Bakery Launcher - Linux (WebKitGTK WebView - like Neutralino)
+ * Uses system WebKitGTK via pkg-config (no bundling needed)
  */
 
 #include <iostream>
@@ -12,6 +12,7 @@
 #include <sys/resource.h>  // For setpriority
 
 #include <nlohmann/json.hpp>
+#include "webview/webview.h"
 
 // NEW: Shared HTTP server and asset loader!
 #include "bakery-http-server.h"
@@ -32,6 +33,7 @@ struct BakeryConfig {
     struct {
         std::string name;
         std::string version;
+        bool debug = false;
         bool splash = false;
     } app;
     struct {
@@ -114,7 +116,7 @@ int main(int argc, char* argv[]) {
     #ifdef NDEBUG
     std::ios::sync_with_stdio(false);
     #else
-    std::cout << "🥐 Bakery Launcher (Linux Headless)" << std::endl;
+    std::cout << "🥐 Bakery Launcher (Linux WebKitGTK)" << std::endl;
     std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
     std::cout << std::endl;
     #endif
@@ -183,6 +185,9 @@ int main(int argc, char* argv[]) {
                 }
                 if (j["app"].contains("entrypoint")) {
                     config.entrypoint = j["app"]["entrypoint"].get<std::string>();
+                }
+                if (j["app"].contains("debug")) {
+                    config.app.debug = j["app"]["debug"].get<bool>();
                 }
                 if (j["app"].contains("splash")) {
                     config.app.splash = j["app"]["splash"].get<bool>();
@@ -266,7 +271,7 @@ int main(int argc, char* argv[]) {
     setpriority(PRIO_PROCESS, 0, -10);  // Higher priority (requires root or CAP_SYS_NICE)
     #endif
     
-    // Start HTTP server
+    // Start HTTP server (runs in background)
     std::thread serverThread(runServer, &server);
     serverThread.detach();
     
@@ -280,45 +285,62 @@ int main(int argc, char* argv[]) {
     
     #ifndef NDEBUG
     std::cout << "⚡ STARTUP TIME: " << startupDuration.count() << "ms (all optimizations active)" << std::endl;
-    std::cout << "🌐 Starting HTTP server..." << std::endl;
+    std::cout << "🚀 Launching WebView..." << std::endl;
+    std::cout << std::endl;
     #endif
+    
+    // Create WebView with debug mode from config
+    webview::webview w(config.app.debug, nullptr);
+    w.set_title(config.window.title.c_str());
+    
+    // Apply window config
+    w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
+    
+    // 🎮 Bind Steamworks to JavaScript (if enabled)
+    #ifdef ENABLE_STEAMWORKS
+    bakery::steamworks::bindSteamworksToWebview(w, steamEnabled);
+    #endif
+    
+    w.init(R"JS(
+    window.Bakery = {
+        version: '1.0.0',
+        platform: 'linux',
+        mode: 'shared-assets'
+    };
+    )JS");
     
     // 🔥 CACHE BUSTER: Use timestamp to force reload on every build
     std::string cacheBuster = bakery::getCacheBuster();
-    std::string url = "http://localhost:" + std::to_string(port) + "/" + config.entrypoint + "?t=" + cacheBuster;
+    std::string url = "http://127.0.0.1:" + std::to_string(port) + "/" + config.entrypoint + "?t=" + cacheBuster;
     
-    // 🎬 Splash Screen: Show splash.html first (splash.html handles redirect itself)
-    std::string finalUrl = url;
+    // 🎬 Splash Screen: Show splash.html first, then navigate to game after 2 seconds
     if (config.app.splash) {
         // Pass target URL as query parameter so splash.html knows where to redirect
-        finalUrl = "http://localhost:" + std::to_string(port) + "/splash.html?redirect=" + config.entrypoint + "&t=" + cacheBuster;
+        std::string splashUrl = "http://127.0.0.1:" + std::to_string(port) + "/splash.html?redirect=" + config.entrypoint + "&t=" + cacheBuster;
         
         #ifndef NDEBUG
         std::cout << "🎬 Splash Screen: ENABLED (splash.html)" << std::endl;
-        std::cout << "🌐 Splash URL: " << finalUrl << std::endl;
-        std::cout << "💡 splash.html will redirect to game after 2 seconds" << std::endl;
+        std::cout << "🌐 Splash URL: " << splashUrl << std::endl;
         #endif
+        
+        w.navigate(splashUrl.c_str());
+        
+        // After 2 seconds, navigate to the actual game (backup if splash.html doesn't redirect)
+        std::thread([&w, url]() {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            w.eval(("window.location.href = '" + url + "';").c_str());
+        }).detach();
     } else {
         #ifndef NDEBUG
         std::cout << "🌐 URL: " << url << std::endl;
         std::cout << "🔄 Cache Buster: t=" << cacheBuster << std::endl;
         #endif
+        
+        w.navigate(url.c_str());
     }
     
-    #ifndef NDEBUG
-    std::cout << "🚀 Opening browser: " << finalUrl << std::endl;
-    std::cout << std::endl;
-    #endif
-    
-    std::string openCmd = "xdg-open \"" + finalUrl + "\" 2>/dev/null || sensible-browser \"" + finalUrl + "\" 2>/dev/null &";
-    system(openCmd.c_str());
-    
-    #ifndef NDEBUG
-    std::cout << "✅ Server running! Press Ctrl+C to stop." << std::endl;
-    #endif
-    std::cout << "💡 Close browser tab to exit." << std::endl;
-    
-    // 🎮 Run Steamworks callbacks in background thread (if enabled)
+    // 🎮 Start Steamworks callback thread (if enabled)
+    #ifdef ENABLE_STEAMWORKS
     std::thread steamThread;
     if (steamEnabled) {
         steamThread = std::thread([]() {
@@ -328,19 +350,22 @@ int main(int argc, char* argv[]) {
             }
         });
     }
+    #endif
     
-    // Keep server running
-    serverThread.join();
+    // Run WebView event loop (blocks until window is closed)
+    w.run();
     
     g_running = false;
     
     // 🎮 Cleanup Steamworks
+    #ifdef ENABLE_STEAMWORKS
     if (steamEnabled) {
         if (steamThread.joinable()) {
             steamThread.join();
         }
         bakery::steamworks::shutdownSteamworks();
     }
+    #endif
     
     return 0;
 }
