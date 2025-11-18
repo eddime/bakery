@@ -48,22 +48,38 @@ if(APPLE)
 elseif(WIN32)
     set(WEBVIEW_LIBS ole32 oleaut32 uuid gdi32 comctl32 shlwapi ws2_32)
 elseif(UNIX)
-    # Try to find GTK/WebKit via pkg-config (for native Linux builds)
-    find_package(PkgConfig)
-    if(PkgConfig_FOUND AND NOT DEFINED WEBVIEW_LIBRARIES)
-        pkg_check_modules(WEBVIEW gtk+-3.0 webkit2gtk-4.0)
-        if(WEBVIEW_FOUND)
-            set(WEBVIEW_LIBS ${WEBVIEW_LIBRARIES})
-            include_directories(${WEBVIEW_INCLUDE_DIRS})
-            message(STATUS "✅ Found GTK/WebKit2GTK")
-        else()
-            message(STATUS "⚠️  GTK/WebKit2GTK not found - using minimal build")
-            set(WEBVIEW_LIBS "")
-            add_definitions(-DWEBVIEW_STATIC)
-        endif()
+    # 🎯 Neutralino-style: Use system WebKitGTK via pkg-config
+    # Exactly like Neutralino: $(pkg-config --cflags --libs gtk+-3.0 glib-2.0 xcb x11 xrandr)
+    
+    find_package(PkgConfig REQUIRED)
+    
+    # Try webkit2gtk-4.1 first (newer), then fallback to 4.0
+    pkg_check_modules(WEBVIEW_GTK gtk+-3.0 glib-2.0 xcb x11 xrandr)
+    pkg_check_modules(WEBVIEW_WEBKIT webkit2gtk-4.1)
+    if(NOT WEBVIEW_WEBKIT_FOUND)
+        pkg_check_modules(WEBVIEW_WEBKIT webkit2gtk-4.0)
+    endif()
+    
+    if(WEBVIEW_GTK_FOUND AND WEBVIEW_WEBKIT_FOUND)
+        # Combine all libraries (like Neutralino does)
+        set(WEBVIEW_LIBS 
+            ${WEBVIEW_GTK_LIBRARIES}
+            ${WEBVIEW_WEBKIT_LIBRARIES}
+            pthread
+            png
+            stdc++fs
+            dl
+        )
+        include_directories(${WEBVIEW_GTK_INCLUDE_DIRS})
+        include_directories(${WEBVIEW_WEBKIT_INCLUDE_DIRS})
+        add_definitions(${WEBVIEW_GTK_CFLAGS_OTHER})
+        add_definitions(${WEBVIEW_WEBKIT_CFLAGS_OTHER})
+        message(STATUS "✅ Found system WebKitGTK (Neutralino-style)")
+        message(STATUS "   GTK: ${WEBVIEW_GTK_VERSION}")
+        message(STATUS "   WebKit: ${WEBVIEW_WEBKIT_VERSION}")
     else()
-        # Cross-compile mode - skip WebView headers
-        message(STATUS "🔨 Cross-compile mode - minimal WebView")
+        message(STATUS "⚠️  WebKitGTK not found - using minimal build (system browser)")
+        message(STATUS "💡 Install: sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev")
         set(WEBVIEW_LIBS "")
         add_definitions(-DWEBVIEW_STATIC)
         include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)

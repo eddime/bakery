@@ -21,15 +21,15 @@
 #include <objc/runtime.h>
 #include <objc/message.h>
 #endif
-#include "../shared/webview-universal-performance.h"
+#include "webview-universal-performance.h"
 
 // NEW: Shared HTTP server and asset loader!
-#include "../shared/bakery-http-server.h"
-#include "../shared/bakery-asset-loader.h"
-#include "../shared/bakery-cache-buster.h"
+#include "bakery-http-server.h"
+#include "bakery-asset-loader.h"
+#include "bakery-cache-buster.h"
 
 #ifdef ENABLE_STEAMWORKS
-#include "../steamworks/bakery-steamworks-bindings.h"    // 🎮 Steamworks integration
+#include "bakery-steamworks-bindings.h"    // 🎮 Steamworks integration
 #endif
 
 using json = nlohmann::json;

@@ -25,11 +25,11 @@
 #include "webview/webview.h"
 
 // NEW: Shared HTTP server and asset loader!
-#include "../shared/bakery-http-server.h"
-#include "../shared/bakery-asset-loader.h"
-#include "../shared/bakery-cache-buster.h"
-#include "../shared/bakery-window-helper.h"          // Cross-platform window management
-#include "../steamworks/bakery-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
+#include "bakery-http-server.h"
+#include "bakery-asset-loader.h"
+#include "bakery-cache-buster.h"
+#include "bakery-window-helper.h"          // Cross-platform window management
+#include "bakery-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
 
 using json = nlohmann::json;
 

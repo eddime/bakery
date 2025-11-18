@@ -1,0 +1,109 @@
+name: Build Linux Binaries (WebKitGTK)
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: false
+        default: 'latest'
+
+jobs:
+  build-linux-x64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            pkg-config \
+            libssl-dev \
+            libcurl4-openssl-dev
+
+      - name: Build x64 launcher
+        run: |
+          cd launcher
+          mkdir -p build-linux-x64
+          cd build-linux-x64
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make bakery-launcher-linux -j$(nproc)
+          strip bakery-launcher-linux
+
+      - name: Upload x64 binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: bakery-launcher-linux-x64
+          path: launcher/build-linux-x64/bakery-launcher-linux
+          retention-days: 30
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: launcher/build-linux-x64/bakery-launcher-linux
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  build-linux-arm64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            build-essential \
+            cmake \
+            gcc-aarch64-linux-gnu \
+            g++-aarch64-linux-gnu \
+            libgtk-3-dev:arm64 \
+            libwebkit2gtk-4.1-dev:arm64 \
+            pkg-config \
+            libssl-dev:arm64 \
+            libcurl4-openssl-dev:arm64
+
+      - name: Build ARM64 launcher (cross-compile)
+        run: |
+          cd launcher
+          mkdir -p build-linux-arm64
+          cd build-linux-arm64
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=Linux \
+            -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+            -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+            -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++
+          make bakery-launcher-linux -j$(nproc)
+          aarch64-linux-gnu-strip bakery-launcher-linux
+
+      - name: Upload ARM64 binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: bakery-launcher-linux-arm64
+          path: launcher/build-linux-arm64/bakery-launcher-linux
+          retention-days: 30
+
+      - name: Create Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: launcher/build-linux-arm64/bakery-launcher-linux
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
