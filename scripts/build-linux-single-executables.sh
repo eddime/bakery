@@ -12,7 +12,7 @@ if [ -z "$PROJECT_DIR" ] || [ -z "$APP_NAME" ]; then
     exit 1
 fi
 
-echo "🐧 Building Linux Single Executables (x86_64 + ARM64)"
+echo "🐧 Building Linux Single Executable (x86_64)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
@@ -80,38 +80,6 @@ fi
 echo "✅ x86_64 launcher built"
 echo ""
 
-# ============================================
-# 3. Build ARM64 launcher binary
-# ============================================
-echo "🔨 Building ARM64 launcher binary..."
-BUILD_ARM64="$FRAMEWORK_DIR/launcher/build-linux-arm64-embedded"
-mkdir -p "$BUILD_ARM64"
-cd "$BUILD_ARM64"
-
-if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
-    # Native ARM64 Linux build
-    cmake .. -DCMAKE_BUILD_TYPE=Release
-else
-    # Cross-compile from macOS or x86_64 Linux
-    if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
-        echo "⚠️  aarch64-linux-musl-gcc not found! Skipping ARM64 build."
-        echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
-        BUILD_ARM64=""
-    else
-        cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake
-        make bakery-launcher-linux -j4
-        
-        if [ ! -f "bakery-launcher-linux" ]; then
-            echo "⚠️  ARM64 build failed! Skipping."
-            BUILD_ARM64=""
-        else
-            echo "✅ ARM64 launcher built"
-        fi
-    fi
-fi
-
-echo ""
-
 cd "$FRAMEWORK_DIR"
 
 # ============================================
@@ -121,13 +89,10 @@ echo "📦 Packing single executables..."
 
 # Check if Steamworks is enabled
 STEAM_SO_X64=""
-STEAM_SO_ARM64=""
 CONFIG_FILE="$PROJECT_DIR/bakery.config.js"
 if [ -f "$CONFIG_FILE" ]; then
     if grep -q "enabled: true" "$CONFIG_FILE" 2>/dev/null; then
         STEAM_SO_X64="$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux64/libsteam_api.so"
-        # Note: Steam doesn't provide ARM64 Linux binaries yet, but we prepare for it
-        STEAM_SO_ARM64="$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux_arm64/libsteam_api.so"
         
         if [ -f "$STEAM_SO_X64" ]; then
             echo "🎮 Embedding Steam SDK (x86_64) into executable..."
@@ -149,45 +114,19 @@ bun scripts/pack-linux-single-exe.ts \
 echo "✅ x86_64 executable packed!"
 echo ""
 
-# Pack ARM64 executable if built
-if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/bakery-launcher-linux" ]; then
-    echo "📦 Packing ARM64 executable..."
-    
-    STEAM_ARG=""
-    if [ -f "$STEAM_SO_ARM64" ]; then
-        echo "🎮 Embedding Steam SDK (ARM64) into executable..."
-        STEAM_ARG="$STEAM_SO_ARM64"
-    fi
-    
-    bun scripts/pack-linux-single-exe.ts \
-        "$BUILD_EMBEDDED/bakery-universal-launcher-linux-embedded" \
-        "$BUILD_ARM64/bakery-launcher-linux" \
-        "$OUTPUT_DIR/${APP_NAME}-arm64" \
-        $STEAM_ARG
-    
-    echo "✅ ARM64 executable packed!"
-    echo ""
-fi
-
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Linux Single Executables complete!"
+echo "✅ Linux Single Executable complete!"
 echo ""
 echo "📦 Output:"
 echo "   $OUTPUT_DIR/${APP_NAME}-x86_64"
-if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
-    echo "   $OUTPUT_DIR/${APP_NAME}-arm64"
-fi
 echo ""
-echo "📊 Sizes:"
+echo "📊 Size:"
 du -h "$OUTPUT_DIR/${APP_NAME}-x86_64" | awk '{print "   " $2 ": " $1}'
-if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
-    du -h "$OUTPUT_DIR/${APP_NAME}-arm64" | awk '{print "   " $2 ": " $1}'
-fi
 echo ""
 echo "🔐 Everything embedded (launcher + binary + assets + Steam)"
 echo ""
 echo "🎯 User experience:"
-echo "   → Download: ${APP_NAME}-x86_64 (or -arm64)"
+echo "   → Download: ${APP_NAME}-x86_64"
 echo "   → chmod +x ${APP_NAME}-x86_64"
 echo "   → ./${APP_NAME}-x86_64"
 echo "   → Everything embedded, instant launch!"
