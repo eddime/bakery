@@ -211,8 +211,14 @@ export async function autoConvertIcon(
   const baseName = iconPath.replace(/\.png$/i, '');
   const icnsPath = join(assetsDir, 'icon.icns');
   const icoPath = join(assetsDir, 'icon.ico');
+  const pngPath = join(assetsDir, 'icon.png');  // Linux uses PNG directly
   
   try {
+    // Copy PNG for Linux (no conversion needed)
+    const { cpSync } = await import('fs');
+    cpSync(fullIconPath, pngPath);
+    console.log('🐧 PNG copied for Linux');
+    
     // Convert to ICNS (macOS)
     await convertPngToIcns(fullIconPath, icnsPath);
     
@@ -223,7 +229,7 @@ export async function autoConvertIcon(
     return {
       icns: icnsPath,
       ico: icoPath,
-      png: fullIconPath,
+      png: pngPath,  // Return copied PNG path for Linux
     };
   } catch (error) {
     console.error('❌ Icon conversion failed:', error);

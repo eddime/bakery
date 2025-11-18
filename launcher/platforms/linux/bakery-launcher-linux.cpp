@@ -10,12 +10,14 @@
 #include <atomic>
 #include <chrono>
 #include <sys/resource.h>  // For setpriority
+#include <unistd.h>         // For access()
 
 #include <nlohmann/json.hpp>
 
 // WebView support (only if GTK headers are available)
 #ifdef WEBVIEW_GTK
 #include "webview/webview.h"
+#include <gtk/gtk.h>        // For gtk_window_set_icon_from_file
 #define USE_WEBVIEW 1
 #else
 #define USE_WEBVIEW 0
@@ -42,6 +44,7 @@ struct BakeryConfig {
         std::string version;
         bool debug = false;
         bool splash = false;
+        std::string iconPng;  // Linux icon path
     } app;
     struct {
         bool enabled = false;
@@ -199,6 +202,9 @@ int main(int argc, char* argv[]) {
                 if (j["app"].contains("splash")) {
                     config.app.splash = j["app"]["splash"].get<bool>();
                 }
+                if (j["app"].contains("iconPng")) {
+                    config.app.iconPng = j["app"]["iconPng"].get<std::string>();
+                }
             }
             if (j.contains("entrypoint")) {
                 config.entrypoint = j["entrypoint"].get<std::string>();
@@ -312,6 +318,31 @@ int main(int argc, char* argv[]) {
     // Create WebView with debug mode from config
     webview::webview w(config.app.debug, nullptr);
     w.set_title(config.window.title.c_str());
+    
+    // 🎨 Set window icon (Linux/GTK)
+    // Set icon if available (requires GTK)
+    #ifdef WEBVIEW_GTK
+    if (!config.app.iconPng.empty()) {
+        // Try to set icon if file exists
+        if (access(config.app.iconPng.c_str(), F_OK) == 0) {
+            auto window_result = w.window();
+            if (window_result.has_value()) {
+                void* window_ptr = window_result.value();
+                if (window_ptr) {
+                    GtkWindow* gtk_window = GTK_WINDOW(window_ptr);
+                    gtk_window_set_icon_from_file(gtk_window, config.app.iconPng.c_str(), nullptr);
+                    #ifndef NDEBUG
+                    std::cout << "🎨 Icon set: " << config.app.iconPng << std::endl;
+                    #endif
+                }
+            }
+        } else {
+            #ifndef NDEBUG
+            std::cout << "⚠️  Icon not found: " << config.app.iconPng << std::endl;
+            #endif
+        }
+    }
+    #endif
     
     // Apply window config
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);

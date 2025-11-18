@@ -197,6 +197,9 @@ async function buildCommand(args: string[]) {
     if (convertedIcons.ico) {
       projectConfig.default.app.iconIco = convertedIcons.ico;
     }
+    if (convertedIcons.png) {
+      projectConfig.default.app.iconPng = convertedIcons.png;  // Linux uses PNG
+    }
   }
   
   console.log('');
