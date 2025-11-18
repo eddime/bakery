@@ -51,14 +51,18 @@ elseif(UNIX)
     # 🎯 Neutralino-style: Use system WebKitGTK via pkg-config
     # Exactly like Neutralino: $(pkg-config --cflags --libs gtk+-3.0 glib-2.0 xcb x11 xrandr)
     
-    # Only require pkg-config on native Linux builds (not cross-compilation)
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR)
-        find_package(PkgConfig REQUIRED)
-    else()
-        find_package(PkgConfig)
+    # Only use pkg-config on native Linux builds (not cross-compilation from macOS)
+    # Skip pkg-config if we're on macOS (cross-compiling) or if CMAKE_CROSSCOMPILING is set
+    set(USE_PKG_CONFIG FALSE)
+    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT APPLE AND NOT CMAKE_CROSSCOMPILING)
+        set(USE_PKG_CONFIG TRUE)
     endif()
     
-    if(PkgConfig_FOUND)
+    if(USE_PKG_CONFIG)
+        find_package(PkgConfig REQUIRED)
+    endif()
+    
+    if(USE_PKG_CONFIG AND PkgConfig_FOUND)
         # Try webkit2gtk-4.1 first (newer), then fallback to 4.0
         pkg_check_modules(WEBVIEW_GTK gtk+-3.0 glib-2.0 xcb x11 xrandr)
         pkg_check_modules(WEBVIEW_WEBKIT webkit2gtk-4.1)
@@ -80,6 +84,7 @@ elseif(UNIX)
             include_directories(${WEBVIEW_WEBKIT_INCLUDE_DIRS})
             add_definitions(${WEBVIEW_GTK_CFLAGS_OTHER})
             add_definitions(${WEBVIEW_WEBKIT_CFLAGS_OTHER})
+            add_definitions(-DWEBVIEW_GTK)  # Enable WebView support
             message(STATUS "✅ Found system WebKitGTK (Neutralino-style)")
             message(STATUS "   GTK: ${WEBVIEW_GTK_VERSION}")
             message(STATUS "   WebKit: ${WEBVIEW_WEBKIT_VERSION}")

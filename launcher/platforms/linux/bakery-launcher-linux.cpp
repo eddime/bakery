@@ -12,7 +12,14 @@
 #include <sys/resource.h>  // For setpriority
 
 #include <nlohmann/json.hpp>
+
+// WebView support (only if GTK headers are available)
+#ifdef WEBVIEW_GTK
 #include "webview/webview.h"
+#define USE_WEBVIEW 1
+#else
+#define USE_WEBVIEW 0
+#endif
 
 // NEW: Shared HTTP server and asset loader!
 #include "bakery-http-server.h"
@@ -259,7 +266,11 @@ int main(int argc, char* argv[]) {
     cacheThread.join();
     
     // 🎮 Initialize Steamworks (cross-platform helper)
+    #ifdef ENABLE_STEAMWORKS
     bool steamEnabled = bakery::steamworks::initSteamworks(config);
+    #else
+    bool steamEnabled = false;
+    #endif
     
     // 🚀 HIGH-PERFORMANCE MODE: Set high process priority
     #ifndef NDEBUG
@@ -285,6 +296,15 @@ int main(int argc, char* argv[]) {
     
     #ifndef NDEBUG
     std::cout << "⚡ STARTUP TIME: " << startupDuration.count() << "ms (all optimizations active)" << std::endl;
+    #endif
+    
+    // 🔥 CACHE BUSTER: Use timestamp to force reload on every build
+    std::string cacheBuster = bakery::getCacheBuster();
+    std::string url = "http://127.0.0.1:" + std::to_string(port) + "/" + config.entrypoint + "?t=" + cacheBuster;
+    
+    #if USE_WEBVIEW
+    // WebView mode (requires WebKitGTK)
+    #ifndef NDEBUG
     std::cout << "🚀 Launching WebView..." << std::endl;
     std::cout << std::endl;
     #endif
@@ -308,10 +328,6 @@ int main(int argc, char* argv[]) {
         mode: 'shared-assets'
     };
     )JS");
-    
-    // 🔥 CACHE BUSTER: Use timestamp to force reload on every build
-    std::string cacheBuster = bakery::getCacheBuster();
-    std::string url = "http://127.0.0.1:" + std::to_string(port) + "/" + config.entrypoint + "?t=" + cacheBuster;
     
     // 🎬 Splash Screen: Show splash.html first, then navigate to game after 2 seconds
     if (config.app.splash) {
@@ -365,6 +381,72 @@ int main(int argc, char* argv[]) {
         }
         bakery::steamworks::shutdownSteamworks();
     }
+    #endif
+    #else
+    // System browser mode (fallback for cross-compilation)
+    #ifndef NDEBUG
+    std::cout << "🌐 Opening system browser..." << std::endl;
+    std::cout << std::endl;
+    #endif
+    
+    // 🎬 Splash Screen: Show splash.html first (splash.html handles redirect itself)
+    std::string finalUrl = url;
+    if (config.app.splash) {
+        // Pass target URL as query parameter so splash.html knows where to redirect
+        finalUrl = "http://127.0.0.1:" + std::to_string(port) + "/splash.html?redirect=" + config.entrypoint + "&t=" + cacheBuster;
+        
+        #ifndef NDEBUG
+        std::cout << "🎬 Splash Screen: ENABLED (splash.html)" << std::endl;
+        std::cout << "🌐 Splash URL: " << finalUrl << std::endl;
+        std::cout << "💡 splash.html will redirect to game after 2 seconds" << std::endl;
+        #endif
+    } else {
+        #ifndef NDEBUG
+        std::cout << "🌐 URL: " << url << std::endl;
+        std::cout << "🔄 Cache Buster: t=" << cacheBuster << std::endl;
+        #endif
+    }
+    
+    #ifndef NDEBUG
+    std::cout << "🚀 Opening browser: " << finalUrl << std::endl;
+    std::cout << std::endl;
+    #endif
+    
+    std::string openCmd = "xdg-open \"" + finalUrl + "\" 2>/dev/null || sensible-browser \"" + finalUrl + "\" 2>/dev/null &";
+    system(openCmd.c_str());
+    
+    #ifndef NDEBUG
+    std::cout << "✅ Server running! Press Ctrl+C to stop." << std::endl;
+    #endif
+    std::cout << "💡 Close browser tab to exit." << std::endl;
+    
+    // 🎮 Run Steamworks callbacks in background thread (if enabled)
+    #ifdef ENABLE_STEAMWORKS
+    std::thread steamThread;
+    if (steamEnabled) {
+        steamThread = std::thread([]() {
+            while (g_running) {
+                bakery::steamworks::SteamworksManager::RunCallbacks();
+                std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
+            }
+        });
+    }
+    #endif
+    
+    // Keep server running
+    serverThread.join();
+    
+    g_running = false;
+    
+    // 🎮 Cleanup Steamworks
+    #ifdef ENABLE_STEAMWORKS
+    if (steamEnabled) {
+        if (steamThread.joinable()) {
+            steamThread.join();
+        }
+        bakery::steamworks::shutdownSteamworks();
+    }
+    #endif
     #endif
     
     return 0;
