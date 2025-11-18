@@ -72,7 +72,7 @@ function collectFiles(dir: string, baseDir: string = dir): Array<{ path: string;
 const files = collectFiles(srcDir);
 
 // 🚀 Add WebGPU helper script (universal, framework-agnostic)
-const webgpuHelperPath = join(import.meta.dir, '..', 'launcher', 'bakery-webgpu-helper.js');
+const webgpuHelperPath = join(import.meta.dir, '..', 'launcher', 'assets', 'bakery-webgpu-helper.js');
 const webgpuHelper = readFileSync(webgpuHelperPath);
 files.push({ path: 'bakery-webgpu-helper.js', data: webgpuHelper });
 

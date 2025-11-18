@@ -36,6 +36,10 @@ include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
 # 🎮 Include Steamworks SDK
 include_directories(${CMAKE_SOURCE_DIR}/../deps/steamworks/sdk/public)
 
+# 📦 Include shared headers and steamworks
+include_directories(${CMAKE_SOURCE_DIR}/shared)
+include_directories(${CMAKE_SOURCE_DIR}/steamworks)
+
 # Platform-specific libraries
 if(APPLE)
     find_library(WEBKIT_FRAMEWORK WebKit)
@@ -81,11 +85,11 @@ endif()
 if(APPLE)
     # bakery-launcher-mac: Uses external bakery-assets file (universal for all games!)
     if(ENABLE_STEAMWORKS)
-        add_executable(bakery-launcher-mac bakery-launcher-mac.cpp bakery-steamworks.cpp)
+        add_executable(bakery-launcher-mac platforms/mac/bakery-launcher-mac.cpp steamworks/bakery-steamworks.cpp)
         target_compile_definitions(bakery-launcher-mac PRIVATE ENABLE_STEAMWORKS)
         message(STATUS "🎮 Building macOS launcher WITH Steamworks")
     else()
-        add_executable(bakery-launcher-mac bakery-launcher-mac.cpp)
+        add_executable(bakery-launcher-mac platforms/mac/bakery-launcher-mac.cpp)
         message(STATUS "📦 Building macOS launcher WITHOUT Steamworks")
     endif()
     
@@ -137,7 +141,7 @@ if(APPLE)
     )
     
     # bakery-universal-launcher: Wrapper that detects architecture and launches correct binary
-    add_executable(bakery-universal-launcher bakery-universal-launcher.cpp)
+    add_executable(bakery-universal-launcher universal/bakery-universal-launcher.cpp)
     if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64;x86_64|x86_64;arm64")
         set_target_properties(bakery-universal-launcher PROPERTIES
             OSX_ARCHITECTURES "arm64;x86_64"
@@ -159,11 +163,11 @@ endif()
 if(WIN32)
     # bakery-launcher-win: Uses external bakery-assets file (universal for all games!)
     if(ENABLE_STEAMWORKS)
-        add_executable(bakery-launcher-win bakery-launcher-win.cpp bakery-steamworks.cpp)
+        add_executable(bakery-launcher-win platforms/win/bakery-launcher-win.cpp steamworks/bakery-steamworks.cpp)
         target_compile_definitions(bakery-launcher-win PRIVATE ENABLE_STEAMWORKS)
         message(STATUS "🎮 Building Windows launcher WITH Steamworks")
     else()
-        add_executable(bakery-launcher-win bakery-launcher-win.cpp)
+        add_executable(bakery-launcher-win platforms/win/bakery-launcher-win.cpp)
         message(STATUS "📦 Building Windows launcher WITHOUT Steamworks")
     endif()
     
@@ -218,7 +222,7 @@ if(WIN32)
     endif()
     
     # bakery-universal-launcher-windows-embedded: Single EXE with embedded binaries
-    add_executable(bakery-universal-launcher-windows-embedded bakery-universal-launcher-windows-embedded.cpp)
+    add_executable(bakery-universal-launcher-windows-embedded universal/bakery-universal-launcher-windows-embedded.cpp)
     target_link_libraries(bakery-universal-launcher-windows-embedded shlwapi)
     if(MSVC)
         target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE /O2)
@@ -249,14 +253,14 @@ if(UNIX AND NOT APPLE)
     # bakery-launcher-linux: Uses external bakery-assets file (universal for all games!)
     if(ENABLE_STEAMWORKS)
         add_executable(bakery-launcher-linux 
-            bakery-launcher-linux.cpp 
-            bakery-steamworks.cpp
-            steam-api-stubs.cpp  # Weak symbols for cross-compilation
+            platforms/linux/bakery-launcher-linux.cpp 
+            steamworks/bakery-steamworks.cpp
+            steamworks/steam-api-stubs.cpp  # Weak symbols for cross-compilation
         )
         target_compile_definitions(bakery-launcher-linux PRIVATE ENABLE_STEAMWORKS STEAM_API_NODLL)
         message(STATUS "🎮 Building Linux launcher WITH Steamworks")
     else()
-        add_executable(bakery-launcher-linux bakery-launcher-linux.cpp)
+        add_executable(bakery-launcher-linux platforms/linux/bakery-launcher-linux.cpp)
         message(STATUS "📦 Building Linux launcher WITHOUT Steamworks")
     endif()
     
@@ -320,7 +324,7 @@ if(UNIX AND NOT APPLE)
     endif()
     
     # bakery-universal-launcher-linux: Wrapper that detects architecture (OLD - NOT USED)
-    add_executable(bakery-universal-launcher-linux bakery-universal-launcher-linux.cpp)
+    add_executable(bakery-universal-launcher-linux universal/bakery-universal-launcher-linux.cpp)
     target_link_libraries(bakery-universal-launcher-linux)
     target_compile_options(bakery-universal-launcher-linux PRIVATE -O2)
     
@@ -331,7 +335,7 @@ if(UNIX AND NOT APPLE)
     
     # bakery-universal-launcher-linux-embedded: Extracts embedded resources (NEW!)
     if(BUILD_UNIVERSAL_LAUNCHER_LINUX)
-        add_executable(bakery-universal-launcher-linux-embedded bakery-universal-launcher-linux-embedded.cpp)
+        add_executable(bakery-universal-launcher-linux-embedded universal/bakery-universal-launcher-linux-embedded.cpp)
         target_link_libraries(bakery-universal-launcher-linux-embedded)
         
         # Minimal size optimizations
