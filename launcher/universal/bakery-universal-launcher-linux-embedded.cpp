@@ -15,6 +15,8 @@
 #include <sys/wait.h>
 #include <limits.h>
 #include <dlfcn.h>
+#include <errno.h>
+#include <cstring>
 
 struct EmbeddedData {
     uint64_t x64Offset;
@@ -131,12 +133,26 @@ int main(int argc, char* argv[]) {
     std::string arch = getCPUArchitecture();
     std::string tempDir = getTempDir();
     
+    #ifndef NDEBUG
+    std::cout << "🥐 Bakery Universal Launcher" << std::endl;
+    std::cout << "   Executable: " << exePath << std::endl;
+    std::cout << "   Architecture: " << arch << std::endl;
+    std::cout << "   Temp Dir: " << tempDir << std::endl;
+    #endif
+    
     // Read embedded data
     EmbeddedData data;
     if (!readEmbeddedData(exePath, data)) {
-        std::cerr << "❌ Failed to read embedded data!" << std::endl;
+        std::cerr << "❌ Failed to read embedded data from: " << exePath << std::endl;
+        std::cerr << "   Make sure this is a valid Bakery executable!" << std::endl;
         return 1;
     }
+    
+    #ifndef NDEBUG
+    std::cout << "   x64 Binary: " << data.x64Size << " bytes" << std::endl;
+    std::cout << "   Assets: " << data.assetsSize << " bytes" << std::endl;
+    std::cout << "   Steam Library: " << data.steamSoSize << " bytes" << std::endl;
+    #endif
     
     // Extract files
     std::string x64Path = tempDir + "/bakery-x64";
@@ -155,6 +171,12 @@ int main(int argc, char* argv[]) {
             std::cerr << "❌ Failed to extract assets!" << std::endl;
             return 1;
         }
+        #ifndef NDEBUG
+        std::cout << "✅ Extracted assets to: " << assetsPath << std::endl;
+        #endif
+    } else {
+        std::cerr << "⚠️  No assets embedded in executable!" << std::endl;
+        std::cerr << "   App may not work correctly without assets." << std::endl;
     }
     
     if (data.configSize > 0) {
@@ -208,10 +230,14 @@ int main(int argc, char* argv[]) {
     pid_t pid = fork();
     if (pid == 0) {
         // Child process
+        #ifndef NDEBUG
+        std::cout << "🚀 Launching " << arch << " binary: " << binaryPath << std::endl;
+        #endif
         execv(binaryPath.c_str(), args);
         
         // If we get here, exec failed
-        std::cerr << "❌ Failed to launch " << arch << " binary" << std::endl;
+        std::cerr << "❌ Failed to launch " << arch << " binary: " << binaryPath << std::endl;
+        std::cerr << "   Error: " << strerror(errno) << std::endl;
         return 1;
     } else if (pid > 0) {
         // Parent process - wait for child
