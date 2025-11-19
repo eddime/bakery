@@ -22,17 +22,23 @@ Cross-platform game launcher with WebView - like Neutralino, but optimized for g
 ### For Game Developers (End-Users)
 
 ```bash
-# Install Bakery
-bun install -g bakery
+# 1. Clone or add as submodule
+git clone https://github.com/eddime/bakery.git
+cd bakery
 
-# Package your game
-cd my-game
-bake all
+# 2. Setup (downloads pre-built binaries once)
+bun scripts/setup.ts
+
+# 3. Build your game for all platforms!
+cd examples/stress-test
+bun bake build --platform=all
 
 # Your game is ready in dist/!
 ```
 
 **That's it!** No CMake, no compilers, no build tools needed.
+
+After initial setup, Bakery works **100% offline**!
 
 ---
 

@@ -33,6 +33,10 @@ launcher/bakery-assets
 launcher/build-*/
 examples/*/dist/
 
+# Pre-built binaries (cached locally, like Neutralino)
+launcher/prebuilt/
+!launcher/prebuilt/.gitkeep
+
 # IDE
 .vscode/
 .idea/

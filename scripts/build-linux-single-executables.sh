@@ -31,27 +31,40 @@ BUILD_EMBEDDED="$FRAMEWORK_DIR/launcher/build-linux-universal-embedded"
 mkdir -p "$BUILD_EMBEDDED"
 cd "$BUILD_EMBEDDED"
 
-if [[ $(uname) == "Linux" ]]; then
-    # Native Linux build
-    cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-else
-    # Cross-compile from macOS
-    if ! command -v x86_64-linux-musl-gcc &> /dev/null; then
-        echo "❌ x86_64-linux-musl-gcc not found!"
-        echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
+# Check if pre-built binary is cached locally (like Neutralino!)
+PREBUILT_UNIVERSAL="$FRAMEWORK_DIR/launcher/prebuilt/bakery-universal-launcher-linux-embedded"
+UNIVERSAL_CACHED=false
+
+if [ -f "$PREBUILT_UNIVERSAL" ]; then
+    echo "💾 Using cached pre-built universal launcher"
+    cp "$PREBUILT_UNIVERSAL" "bakery-universal-launcher-linux-embedded"
+    chmod +x "bakery-universal-launcher-linux-embedded"
+    UNIVERSAL_CACHED=true
+fi
+
+if [ "$UNIVERSAL_CACHED" = false ]; then
+    if [[ $(uname) == "Linux" ]]; then
+        # Native Linux build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+    else
+        # Cross-compile from macOS
+        if ! command -v x86_64-linux-musl-gcc &> /dev/null; then
+            echo "❌ x86_64-linux-musl-gcc not found!"
+            echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
+            exit 1
+        fi
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+    fi
+
+    make bakery-universal-launcher-linux-embedded -j4
+
+    if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
+        echo "❌ Universal launcher build failed!"
         exit 1
     fi
-    cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
 fi
 
-make bakery-universal-launcher-linux-embedded -j4
-
-if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
-    echo "❌ Universal launcher build failed!"
-    exit 1
-fi
-
-echo "✅ Universal launcher built"
+echo "✅ Universal launcher ready"
 echo ""
 
 # ============================================
@@ -62,14 +75,23 @@ BUILD_X64="$FRAMEWORK_DIR/launcher/build-linux-x64-embedded"
 mkdir -p "$BUILD_X64"
 cd "$BUILD_X64"
 
-# Try to download pre-built binary from GitHub Actions first
-GITHUB_REPO="eddime/bakery"
-VERSION="latest"
-BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/bakery-launcher-linux-x64"
+# Check if pre-built binary is cached locally (like Neutralino!)
+PREBUILT_DIR="$FRAMEWORK_DIR/launcher/prebuilt"
+PREBUILT_BINARY="$PREBUILT_DIR/bakery-launcher-linux-x64"
 DOWNLOADED=false
 
-if [[ $(uname) != "Linux" ]]; then
-    echo "📥 Attempting to download pre-built x64 binary (with WebKitGTK) from GitHub Actions..."
+if [ -f "$PREBUILT_BINARY" ]; then
+    echo "💾 Using cached pre-built x64 binary (with WebKitGTK)"
+    cp "$PREBUILT_BINARY" "bakery-launcher-linux"
+    chmod +x "bakery-launcher-linux"
+    DOWNLOADED=true
+elif [[ $(uname) != "Linux" ]]; then
+    # Try to download from GitHub if not cached
+    echo "📥 Attempting to download pre-built x64 binary (with WebKitGTK)..."
+    GITHUB_REPO="eddime/bakery"
+    VERSION="latest"
+    BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/bakery-launcher-linux-x64"
+    
     if curl -L -f -o "bakery-launcher-linux" "${BINARY_URL}" 2>/dev/null; then
         chmod +x "bakery-launcher-linux"
         echo "✅ Downloaded pre-built x64 binary (with WebKitGTK)"

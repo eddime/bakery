@@ -10,6 +10,27 @@ import { existsSync, mkdirSync, writeFileSync, cpSync, rmSync, chmodSync } from 
 // Get framework directory (where this script is located)
 const FRAMEWORK_DIR = dirname(import.meta.url.replace('file://', ''));
 
+// Check if pre-built binaries are available (for offline usage)
+async function ensurePrebuiltBinaries() {
+  const { areBinariesCached } = await import(join(FRAMEWORK_DIR, 'scripts', 'download-prebuilt-binaries.ts'));
+  
+  if (!areBinariesCached()) {
+    console.log('');
+    console.log('📦 First-time setup: Downloading pre-built binaries...');
+    console.log('💡 This enables cross-platform builds and offline usage');
+    console.log('');
+    
+    try {
+      const { downloadAllBinaries } = await import(join(FRAMEWORK_DIR, 'scripts', 'download-prebuilt-binaries.ts'));
+      await downloadAllBinaries('latest', false);
+    } catch (error) {
+      console.warn('⚠️  Could not download pre-built binaries (will build locally if needed)');
+      console.warn('   Error:', error.message);
+      console.log('');
+    }
+  }
+}
+
 // Load bakery.config.js if it exists
 async function loadConfig() {
   const configPath = resolve('./bakery.config.js');
@@ -42,6 +63,11 @@ async function main() {
   if (command === '--help' || command === '-h') {
     helpCommand();
     process.exit(0);
+  }
+
+  // Ensure pre-built binaries are available (only for build commands)
+  if (['build', 'mac', 'win', 'linux', 'all', 'release'].includes(command)) {
+    await ensurePrebuiltBinaries();
   }
 
   const handler = commands[command as keyof typeof commands];
