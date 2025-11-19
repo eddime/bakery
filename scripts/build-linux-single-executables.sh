@@ -129,26 +129,44 @@ BUILD_ARM64="$FRAMEWORK_DIR/launcher/build-linux-arm64-embedded"
 mkdir -p "$BUILD_ARM64"
 cd "$BUILD_ARM64"
 
-if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
-    # Native ARM64 Linux build
-    cmake .. -DCMAKE_BUILD_TYPE=Release
-else
-    # Cross-compile from macOS or x86_64 Linux
-    if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
-        echo "⚠️  aarch64-linux-musl-gcc not found! Skipping ARM64 build."
-        echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
-        BUILD_ARM64=""
-    else
-        cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake
+# Check if pre-built ARM64 binary with WebKitGTK is cached locally (like Neutralino!)
+PREBUILT_ARM64="$FRAMEWORK_DIR/launcher/prebuilt/bakery-launcher-linux-arm64"
+ARM64_CACHED=false
+
+if [ -f "$PREBUILT_ARM64" ]; then
+    echo "💾 Using cached pre-built ARM64 binary (with WebKitGTK)"
+    cp "$PREBUILT_ARM64" "bakery-launcher-linux"
+    chmod +x "bakery-launcher-linux"
+    ARM64_CACHED=true
+fi
+
+if [ "$ARM64_CACHED" = false ]; then
+    if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
+        # Native ARM64 Linux build with WebKitGTK
+        cmake .. -DCMAKE_BUILD_TYPE=Release
         make bakery-launcher-linux -j4
-        
-        if [ ! -f "bakery-launcher-linux" ]; then
-            echo "⚠️  ARM64 build failed! Skipping."
+    else
+        # Cross-compile from macOS or x86_64 Linux (without WebKitGTK - fallback)
+        if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
+            echo "⚠️  aarch64-linux-musl-gcc not found! Skipping ARM64 build."
+            echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
             BUILD_ARM64=""
         else
-            echo "✅ ARM64 launcher built"
+            cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake
+            make bakery-launcher-linux -j4
+            
+            if [ ! -f "bakery-launcher-linux" ]; then
+                echo "⚠️  ARM64 build failed! Skipping."
+                BUILD_ARM64=""
+            else
+                echo "✅ ARM64 launcher built (without WebKitGTK - cross-compiled)"
+            fi
         fi
     fi
+fi
+
+if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/bakery-launcher-linux" ]; then
+    echo "✅ ARM64 launcher ready"
 fi
 
 echo ""
@@ -220,20 +238,34 @@ if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/bakery-launcher-linux" ]; then
     mkdir -p "$BUILD_ARM64_UNIVERSAL"
     cd "$BUILD_ARM64_UNIVERSAL"
     
-    if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
-        # Native ARM64 Linux build
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-    else
-        # Cross-compile from macOS or x86_64 Linux
-        if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
-            echo "⚠️  aarch64-linux-musl-gcc not found! Using x86-64 universal launcher (won't work on ARM64)"
-            BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
-        else
-            cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+    # Check if pre-built ARM64 universal launcher is cached locally
+    PREBUILT_ARM64_UNIVERSAL="$FRAMEWORK_DIR/launcher/prebuilt/bakery-universal-launcher-linux-embedded-arm64"
+    ARM64_UNIVERSAL_CACHED=false
+    
+    if [ -f "$PREBUILT_ARM64_UNIVERSAL" ]; then
+        echo "💾 Using cached pre-built ARM64 universal launcher"
+        cp "$PREBUILT_ARM64_UNIVERSAL" "bakery-universal-launcher-linux-embedded"
+        chmod +x "bakery-universal-launcher-linux-embedded"
+        ARM64_UNIVERSAL_CACHED=true
+    fi
+    
+    if [ "$ARM64_UNIVERSAL_CACHED" = false ]; then
+        if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
+            # Native ARM64 Linux build
+            cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
             make bakery-universal-launcher-linux-embedded -j4
-            if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
-                echo "⚠️  ARM64 universal launcher build failed! Using x86-64 (won't work on ARM64)"
+        else
+            # Cross-compile from macOS or x86_64 Linux
+            if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
+                echo "⚠️  aarch64-linux-musl-gcc not found! Using x86-64 universal launcher (won't work on ARM64)"
                 BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
+            else
+                cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+                make bakery-universal-launcher-linux-embedded -j4
+                if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
+                    echo "⚠️  ARM64 universal launcher build failed! Using x86-64 (won't work on ARM64)"
+                    BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
+                fi
             fi
         fi
     fi
