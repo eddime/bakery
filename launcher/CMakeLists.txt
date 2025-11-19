@@ -306,6 +306,15 @@ if(UNIX AND NOT APPLE)
         dl
     )
     
+    # Fully static linking for cross-compilation (no WebKitGTK, no Steam)
+    # This ensures the binary works on all Linux distros (Ubuntu, etc.)
+    if(CMAKE_CROSSCOMPILING AND NOT ENABLE_STEAMWORKS)
+        target_link_options(bakery-launcher-linux PRIVATE 
+            -static
+        )
+        message(STATUS "🔗 Fully static linking (cross-compilation, no Steam)")
+    endif()
+    
     # ⚡ OPTIMIZATION: Precompiled headers for faster builds
     target_precompile_headers(bakery-launcher-linux PRIVATE
         <iostream>
@@ -381,7 +390,7 @@ if(UNIX AND NOT APPLE)
         )
         target_link_options(bakery-universal-launcher-linux-embedded PRIVATE 
             -Wl,--gc-sections
-            -static-libstdc++ -static-libgcc  # Required for single executable (no .so dependencies)
+            -static  # Fully static linking (works on all Linux distros!)
         )
         
         # Strip debug symbols (use cross-compiler strip for cross-compilation)
