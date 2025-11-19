@@ -306,14 +306,12 @@ if(UNIX AND NOT APPLE)
         dl
     )
     
-    # Fully static linking for cross-compilation (no WebKitGTK, no Steam)
-    # This ensures the binary works on all Linux distros (Ubuntu, etc.)
-    if(CMAKE_CROSSCOMPILING AND NOT ENABLE_STEAMWORKS)
-        target_link_options(bakery-launcher-linux PRIVATE 
-            -static
-        )
-        message(STATUS "🔗 Fully static linking (cross-compilation, no Steam)")
-    endif()
+    # Like Neutralino: Use -no-pie for Linux binaries (works on all distros!)
+    # Position Independent Executable flag
+    target_link_options(bakery-launcher-linux PRIVATE 
+        -no-pie
+    )
+    message(STATUS "🔗 Using -no-pie (like Neutralino, works on all Linux distros)")
     
     # ⚡ OPTIMIZATION: Precompiled headers for faster builds
     target_precompile_headers(bakery-launcher-linux PRIVATE
@@ -335,22 +333,14 @@ if(UNIX AND NOT APPLE)
         )
     endif()
     
-    # MAXIMUM PERFORMANCE optimizations + startup improvements
+    # Like Neutralino: Simple optimization flags
     target_compile_options(bakery-launcher-linux PRIVATE
-        -O3 -flto -ffast-math -fomit-frame-pointer
-        -ffunction-sections -fdata-sections -DNDEBUG
-        -finline-functions -funroll-loops
+        -Os  # Optimize for size (like Neutralino)
+        -DNDEBUG
     )
     
-    # Only use -march=native if not cross-compiling
-    if(CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR)
-        target_compile_options(bakery-launcher-linux PRIVATE -march=native -mtune=native)
-    endif()
-    
     target_link_options(bakery-launcher-linux PRIVATE 
-        -flto 
         -Wl,--gc-sections
-        # Note: Can't use -static-libstdc++ -static-libgcc because we link dynamically to Steam
     )
     
     # Strip debug symbols (use llvm-strip for cross-compilation)
@@ -390,7 +380,7 @@ if(UNIX AND NOT APPLE)
         )
         target_link_options(bakery-universal-launcher-linux-embedded PRIVATE 
             -Wl,--gc-sections
-            -static  # Fully static linking (works on all Linux distros!)
+            -no-pie  # Like Neutralino: Position Independent Executable (works on all Linux distros!)
         )
         
         # Strip debug symbols (use cross-compiler strip for cross-compilation)

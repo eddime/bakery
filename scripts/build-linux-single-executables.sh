@@ -55,24 +55,26 @@ fi
 
 if [ "$UNIVERSAL_DOWNLOADED" = false ]; then
     if [[ $(uname) == "Linux" ]]; then
-        # Native Linux build (glibc-based, works on Ubuntu!)
+        # Native Linux build (glibc-based, like Neutralino!)
         cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-    else
-        # Cross-compile from macOS (musl-based - may not work on Ubuntu!)
-        echo "⚠️  WARNING: Cross-compiling with musl - resulting binary may not work on Ubuntu!"
-        echo "💡 Suggestion: Build on native Linux or use GitHub Actions pre-built binaries"
-        if ! command -v x86_64-linux-musl-gcc &> /dev/null; then
-            echo "❌ x86_64-linux-musl-gcc not found!"
-            echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
+        make bakery-universal-launcher-linux-embedded -j4
+        
+        if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
+            echo "❌ Universal launcher build failed!"
             exit 1
         fi
-        cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-    fi
-
-    make bakery-universal-launcher-linux-embedded -j4
-
-    if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
-        echo "❌ Universal launcher build failed!"
+    else
+        # Not on Linux: Can't build without pre-built binaries
+        echo "❌ ERROR: Universal launcher not available!"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        echo "🔧 Like Neutralino, Linux binaries must be built natively on Linux."
+        echo ""
+        echo "📥 Options:"
+        echo "   1. Wait for GitHub Actions to build and release binaries"
+        echo "   2. Build on a native Linux machine"
+        echo "   3. Use Docker: docker run --rm -v \$(pwd):/work ubuntu:latest bash -c 'cd /work && ./bake linux --dir ./examples/stress-test'"
+        echo ""
         exit 1
     fi
 fi
@@ -107,17 +109,26 @@ fi
 
 if [ "$DOWNLOADED" = false ]; then
     if [[ $(uname) == "Linux" ]]; then
-        # Native Linux build with WebKitGTK
+        # Native Linux build with WebKitGTK (like Neutralino!)
         cmake .. -DCMAKE_BUILD_TYPE=Release
         make bakery-launcher-linux -j4
+        
+        if [ ! -f "bakery-launcher-linux" ]; then
+            echo "❌ x86_64 build failed!"
+            exit 1
+        fi
     else
-        # Cross-compile from macOS (without WebKitGTK - fallback)
-        cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake
-        make bakery-launcher-linux -j4
-    fi
-    
-    if [ ! -f "bakery-launcher-linux" ]; then
-        echo "❌ x86_64 build failed!"
+        # Not on Linux: Can't build without pre-built binaries
+        echo "❌ ERROR: x64 launcher not available!"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo ""
+        echo "🔧 Like Neutralino, Linux binaries must be built natively on Linux."
+        echo ""
+        echo "📥 Options:"
+        echo "   1. Wait for GitHub Actions to build and release binaries"
+        echo "   2. Build on a native Linux machine"
+        echo "   3. Use Docker: docker run --rm -v \$(pwd):/work ubuntu:latest bash -c 'cd /work && ./bake linux --dir ./examples/stress-test'"
+        echo ""
         exit 1
     fi
 fi
