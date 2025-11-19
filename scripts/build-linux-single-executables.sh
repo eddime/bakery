@@ -40,16 +40,25 @@ cd "$BUILD_EMBEDDED"
 
 UNIVERSAL_DOWNLOADED=false
 
-# Try to download pre-built universal launcher from GitHub Actions (glibc-based, works on Ubuntu!)
-if [[ $(uname) != "Linux" ]]; then
-    echo "📥 Attempting to download pre-built universal launcher (glibc-based, Ubuntu-compatible)..."
-    UNIVERSAL_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/bakery-universal-launcher-linux-embedded"
-    if curl -L -f -o "bakery-universal-launcher-linux-embedded" "${UNIVERSAL_URL}" 2>/dev/null; then
-        chmod +x "bakery-universal-launcher-linux-embedded"
-        echo "✅ Downloaded pre-built universal launcher (glibc-based)"
-        UNIVERSAL_DOWNLOADED=true
-    else
-        echo "⚠️  Pre-built universal launcher not available, will cross-compile (musl-based)"
+# Try to use pre-built universal launcher from bin/ (like Neutralino!)
+BIN_UNIVERSAL="$FRAMEWORK_DIR/bin/linux-universal/bakery-universal-launcher-linux-embedded"
+if [ -f "$BIN_UNIVERSAL" ]; then
+    echo "✅ Using pre-built universal launcher from bin/ (like Neutralino)"
+    cp "$BIN_UNIVERSAL" "bakery-universal-launcher-linux-embedded"
+    chmod +x "bakery-universal-launcher-linux-embedded"
+    UNIVERSAL_DOWNLOADED=true
+else
+    # Try to download from GitHub Actions
+    if [[ $(uname) != "Linux" ]]; then
+        echo "📥 Attempting to download pre-built universal launcher from GitHub..."
+        UNIVERSAL_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/bakery-universal-launcher-linux-embedded"
+        if curl -L -f -o "bakery-universal-launcher-linux-embedded" "${UNIVERSAL_URL}" 2>/dev/null; then
+            chmod +x "bakery-universal-launcher-linux-embedded"
+            echo "✅ Downloaded pre-built universal launcher"
+            UNIVERSAL_DOWNLOADED=true
+        else
+            echo "⚠️  Pre-built universal launcher not available"
+        fi
     fi
 fi
 
@@ -90,20 +99,29 @@ BUILD_X64="$FRAMEWORK_DIR/launcher/build-linux-x64-embedded"
 mkdir -p "$BUILD_X64"
 cd "$BUILD_X64"
 
-# Try to download pre-built binary from GitHub Actions first
+# Try to use pre-built x64 binary from bin/ (like Neutralino!)
 GITHUB_REPO="eddime/bakery"
 VERSION="latest"
-BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/bakery-launcher-linux-x64"
+BIN_X64="$FRAMEWORK_DIR/bin/linux-x64/bakery-launcher-linux"
 DOWNLOADED=false
 
-if [[ $(uname) != "Linux" ]]; then
-    echo "📥 Attempting to download pre-built x64 binary (with WebKitGTK) from GitHub Actions..."
-    if curl -L -f -o "bakery-launcher-linux" "${BINARY_URL}" 2>/dev/null; then
-        chmod +x "bakery-launcher-linux"
-        echo "✅ Downloaded pre-built x64 binary (with WebKitGTK)"
-        DOWNLOADED=true
-    else
-        echo "⚠️  Pre-built binary not available, will cross-compile (without WebKitGTK)"
+if [ -f "$BIN_X64" ]; then
+    echo "✅ Using pre-built x64 binary from bin/ (like Neutralino)"
+    cp "$BIN_X64" "bakery-launcher-linux"
+    chmod +x "bakery-launcher-linux"
+    DOWNLOADED=true
+else
+    # Try to download from GitHub Actions
+    if [[ $(uname) != "Linux" ]]; then
+        echo "📥 Attempting to download pre-built x64 binary from GitHub..."
+        BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/bakery-launcher-linux-x64"
+        if curl -L -f -o "bakery-launcher-linux" "${BINARY_URL}" 2>/dev/null; then
+            chmod +x "bakery-launcher-linux"
+            echo "✅ Downloaded pre-built x64 binary"
+            DOWNLOADED=true
+        else
+            echo "⚠️  Pre-built binary not available"
+        fi
     fi
 fi
 
