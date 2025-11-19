@@ -149,19 +149,21 @@ int main(int argc, char* argv[]) {
     }
     
     #ifndef NDEBUG
-    std::cout << "   x64 Binary: " << data.x64Size << " bytes" << std::endl;
+    std::cout << "   Binary: " << data.x64Size << " bytes" << std::endl;
     std::cout << "   Assets: " << data.assetsSize << " bytes" << std::endl;
     std::cout << "   Steam Library: " << data.steamSoSize << " bytes" << std::endl;
     #endif
     
     // Extract files
-    std::string x64Path = tempDir + "/bakery-x64";
+    // Note: x64Offset/x64Size actually contains the architecture-specific binary
+    // (could be x64 or ARM64 depending on which was packed)
+    std::string binaryPath = tempDir + "/bakery-binary";
     std::string assetsPath = tempDir + "/bakery-assets";
     std::string configPath = tempDir + "/bakery.config.json";
     
     if (data.x64Size > 0) {
-        if (!extractFile(exePath, data.x64Offset, data.x64Size, x64Path)) {
-            std::cerr << "❌ Failed to extract x64 binary!" << std::endl;
+        if (!extractFile(exePath, data.x64Offset, data.x64Size, binaryPath)) {
+            std::cerr << "❌ Failed to extract binary!" << std::endl;
             return 1;
         }
     }
@@ -207,16 +209,8 @@ int main(int argc, char* argv[]) {
         }
     }
     
-    // Launch architecture-specific binary
-    std::string binaryPath = tempDir + "/bakery-" + arch;
-    
-    // For now, we only have x64
-    if (arch != "x64") {
-        std::cerr << "⚠️  Only x64 is currently supported, falling back..." << std::endl;
-        binaryPath = x64Path;
-    } else {
-        binaryPath = x64Path;
-    }
+    // Launch the extracted binary (it's already architecture-specific)
+    // The binary was extracted to binaryPath above
     
     // Build arguments
     char** args = new char*[argc + 1];
@@ -245,7 +239,7 @@ int main(int argc, char* argv[]) {
         waitpid(pid, &status, 0);
         
         // Cleanup temp files
-        unlink(x64Path.c_str());
+        unlink(binaryPath.c_str());
         unlink(assetsPath.c_str());
         unlink(configPath.c_str());
         

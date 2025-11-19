@@ -21,7 +21,8 @@ async function packSingleExecutable(
   universalLauncher: string,
   x64Binary: string,
   outputPath: string,
-  steamSoPath?: string
+  steamSoPath?: string,
+  assetsPath?: string
 ) {
   console.log('🐧 Packing Linux Single Executable...');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
@@ -44,14 +45,23 @@ async function packSingleExecutable(
   const launcher = readFileSync(universalLauncher);
   const x64 = readFileSync(x64Binary);
   
-  // Assets and config are embedded in the x64 binary already
-  // We just need to extract them
-  const assets = Buffer.alloc(0); // Placeholder
-  const config = Buffer.alloc(0); // Placeholder
+  // Read assets if provided (skip if empty string)
+  let assets = Buffer.alloc(0);
+  if (assetsPath && assetsPath.length > 0 && assetsPath !== '""') {
+    try {
+      assets = readFileSync(assetsPath);
+      console.log(`📦 Assets: ${(assets.length / 1024).toFixed(1)} KB`);
+    } catch (e) {
+      console.warn('⚠️  Assets file not found, skipping...');
+    }
+  }
   
-  // Read Steam .so if provided
+  // Config is embedded in assets, so we don't need it separately
+  const config = Buffer.alloc(0);
+  
+  // Read Steam .so if provided (skip if empty string)
   let steamSo = Buffer.alloc(0);
-  if (steamSoPath) {
+  if (steamSoPath && steamSoPath.length > 0 && steamSoPath !== '""') {
     try {
       steamSo = readFileSync(steamSoPath);
       console.log(`🎮 Steam library: ${(steamSo.length / 1024).toFixed(1)} KB`);
@@ -89,6 +99,14 @@ async function packSingleExecutable(
   currentOffset += BigInt(x64.length);
   currentOffset = align(currentOffset);
   
+  // Add assets if present
+  if (assets.length > 0) {
+    data.assetsOffset = currentOffset;
+    data.assetsSize = BigInt(assets.length);
+    currentOffset += BigInt(assets.length);
+    currentOffset = align(currentOffset);
+  }
+  
   // Add Steam .so if present
   if (steamSo.length > 0) {
     data.steamSoOffset = currentOffset;
@@ -120,8 +138,11 @@ async function packSingleExecutable(
   
   // Calculate padding
   const padding1 = Buffer.alloc(Number(data.x64Offset - BigInt(launcher.length)));
-  const padding2 = steamSo.length > 0 
-    ? Buffer.alloc(Number(data.steamSoOffset - (data.x64Offset + data.x64Size)))
+  const padding2 = assets.length > 0
+    ? Buffer.alloc(Number(data.assetsOffset - (data.x64Offset + data.x64Size)))
+    : Buffer.alloc(0);
+  const padding3 = steamSo.length > 0 
+    ? Buffer.alloc(Number(data.steamSoOffset - (data.assetsOffset + data.assetsSize)))
     : Buffer.alloc(0);
   
   // Concatenate all parts
@@ -130,6 +151,8 @@ async function packSingleExecutable(
     padding1,
     x64,
     padding2,
+    assets,
+    padding3,
     steamSo,
     header
   ]);
@@ -159,6 +182,9 @@ async function packSingleExecutable(
   console.log('🔐 Structure:');
   console.log(`   • Universal Launcher: 0 - ${launcher.length}`);
   console.log(`   • x64 Binary: ${data.x64Offset} - ${data.x64Offset + data.x64Size}`);
+  if (assets.length > 0) {
+    console.log(`   • Assets: ${data.assetsOffset} - ${data.assetsOffset + data.assetsSize}`);
+  }
   if (steamSo.length > 0) {
     console.log(`   • Steam Library: ${data.steamSoOffset} - ${data.steamSoOffset + data.steamSoSize}`);
   }
@@ -170,11 +196,11 @@ async function packSingleExecutable(
 const args = process.argv.slice(2);
 
 if (args.length < 3) {
-  console.error('Usage: pack-linux-single-exe.ts <universal-launcher> <x64-binary> <output> [steam-so.so]');
+  console.error('Usage: pack-linux-single-exe.ts <universal-launcher> <x64-binary> <output> [steam-so.so] [assets]');
   process.exit(1);
 }
 
-const [universalLauncher, x64Binary, output, steamSo] = args;
+const [universalLauncher, x64Binary, output, steamSo, assets] = args;
 
-await packSingleExecutable(universalLauncher, x64Binary, output, steamSo);
+await packSingleExecutable(universalLauncher, x64Binary, output, steamSo, assets);
 

@@ -156,6 +156,21 @@ echo ""
 cd "$FRAMEWORK_DIR"
 
 # ============================================
+# 3.5. Embed assets (needed for single executable)
+# ============================================
+echo "📦 Embedding assets..."
+ASSETS_PATH="$BUILD_X64/bakery-assets"
+bun scripts/embed-assets-shared.ts "$PROJECT_DIR" "$ASSETS_PATH"
+
+if [ ! -f "$ASSETS_PATH" ]; then
+    echo "❌ Failed to embed assets!"
+    exit 1
+fi
+
+echo "✅ Assets embedded: $(du -h "$ASSETS_PATH" | awk '{print $1}')"
+echo ""
+
+# ============================================
 # 4. Pack everything into single executables
 # ============================================
 echo "📦 Packing single executables..."
@@ -181,11 +196,17 @@ fi
 
 # Pack x86_64 executable
 echo "📦 Packing x86_64 executable..."
+if [ -f "$ASSETS_PATH" ]; then
+    echo "   Using assets: $ASSETS_PATH ($(du -h "$ASSETS_PATH" | awk '{print $1}'))"
+else
+    echo "   ⚠️  Assets not found at: $ASSETS_PATH"
+fi
 bun scripts/pack-linux-single-exe.ts \
     "$BUILD_EMBEDDED/bakery-universal-launcher-linux-embedded" \
     "$BUILD_X64/bakery-launcher-linux" \
     "$OUTPUT_DIR/${APP_NAME}-x86_64" \
-    $STEAM_SO_X64
+    ${STEAM_SO_X64:-""} \
+    "$ASSETS_PATH"
 
 echo "✅ x86_64 executable packed!"
 echo ""
@@ -194,17 +215,52 @@ echo ""
 if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/bakery-launcher-linux" ]; then
     echo "📦 Packing ARM64 executable..."
     
+    # Build ARM64 Universal Launcher (needed for ARM64 builds!)
+    BUILD_ARM64_UNIVERSAL="$FRAMEWORK_DIR/launcher/build-linux-universal-embedded-arm64"
+    mkdir -p "$BUILD_ARM64_UNIVERSAL"
+    cd "$BUILD_ARM64_UNIVERSAL"
+    
+    if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
+        # Native ARM64 Linux build
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+    else
+        # Cross-compile from macOS or x86_64 Linux
+        if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
+            echo "⚠️  aarch64-linux-musl-gcc not found! Using x86-64 universal launcher (won't work on ARM64)"
+            BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
+        else
+            cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+            make bakery-universal-launcher-linux-embedded -j4
+            if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
+                echo "⚠️  ARM64 universal launcher build failed! Using x86-64 (won't work on ARM64)"
+                BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
+            fi
+        fi
+    fi
+    
+    cd "$FRAMEWORK_DIR"
+    
     STEAM_ARG=""
     if [ -f "$STEAM_SO_ARM64" ]; then
         echo "🎮 Embedding Steam SDK (ARM64) into executable..."
         STEAM_ARG="$STEAM_SO_ARM64"
     fi
     
-    bun scripts/pack-linux-single-exe.ts \
-        "$BUILD_EMBEDDED/bakery-universal-launcher-linux-embedded" \
-        "$BUILD_ARM64/bakery-launcher-linux" \
-        "$OUTPUT_DIR/${APP_NAME}-arm64" \
-        $STEAM_ARG
+    if [ -n "$STEAM_ARG" ]; then
+        bun scripts/pack-linux-single-exe.ts \
+            "$BUILD_ARM64_UNIVERSAL/bakery-universal-launcher-linux-embedded" \
+            "$BUILD_ARM64/bakery-launcher-linux" \
+            "$OUTPUT_DIR/${APP_NAME}-arm64" \
+            "$STEAM_ARG" \
+            "$ASSETS_PATH"
+    else
+        bun scripts/pack-linux-single-exe.ts \
+            "$BUILD_ARM64_UNIVERSAL/bakery-universal-launcher-linux-embedded" \
+            "$BUILD_ARM64/bakery-launcher-linux" \
+            "$OUTPUT_DIR/${APP_NAME}-arm64" \
+            "" \
+            "$ASSETS_PATH"
+    fi
     
     echo "✅ ARM64 executable packed!"
     echo ""
@@ -227,10 +283,57 @@ fi
 echo ""
 echo "🔐 Everything embedded (launcher + binary + assets + Steam)"
 echo ""
+# ============================================
+# 4. Create .desktop files for double-click support
+# ============================================
+echo "📝 Creating .desktop files for double-click support..."
+
+# Load config to get app name and icon
+CONFIG_PATH="$PROJECT_DIR/bakery.config.js"
+APP_TITLE="$APP_NAME"
+ICON_PATH=""
+
+if [ -f "$CONFIG_PATH" ]; then
+    # Try to extract title and icon from config (macOS-compatible grep)
+    APP_TITLE=$(grep -o 'title:[[:space:]]*"[^"]*"' "$CONFIG_PATH" | head -1 | sed 's/title:[[:space:]]*"\(.*\)"/\1/' || echo "$APP_NAME")
+    ICON_PATH=$(grep -o 'icon:[[:space:]]*"[^"]*"' "$CONFIG_PATH" | head -1 | sed 's/icon:[[:space:]]*"\(.*\)"/\1/' || echo "")
+fi
+
+# Create .desktop file for x86_64
+cat > "$OUTPUT_DIR/${APP_NAME}-x86_64.desktop" << EOF
+[Desktop Entry]
+Type=Application
+Name=${APP_TITLE}
+Exec=${APP_NAME}-x86_64
+Path=$(dirname "$OUTPUT_DIR")/linux
+Icon=${APP_NAME}
+Terminal=false
+Categories=Game;
+EOF
+chmod +x "$OUTPUT_DIR/${APP_NAME}-x86_64.desktop"
+
+# Create .desktop file for ARM64 if built
+if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
+    cat > "$OUTPUT_DIR/${APP_NAME}-arm64.desktop" << EOF
+[Desktop Entry]
+Type=Application
+Name=${APP_TITLE}
+Exec=${APP_NAME}-arm64
+Path=$(dirname "$OUTPUT_DIR")/linux
+Icon=${APP_NAME}
+Terminal=false
+Categories=Game;
+EOF
+    chmod +x "$OUTPUT_DIR/${APP_NAME}-arm64.desktop"
+fi
+
+echo "✅ .desktop files created!"
+echo ""
+
 echo "🎯 User experience:"
 echo "   → Download: ${APP_NAME}-x86_64 (or -arm64)"
-echo "   → chmod +x ${APP_NAME}-x86_64"
-echo "   → ./${APP_NAME}-x86_64"
+echo "   → Double-click: ${APP_NAME}-x86_64.desktop (or right-click → Properties → Allow executing)"
+echo "   → Or terminal: chmod +x ${APP_NAME}-x86_64 && ./${APP_NAME}-x86_64"
 echo "   → Everything embedded, instant launch!"
 echo ""
 
