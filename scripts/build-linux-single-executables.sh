@@ -38,27 +38,46 @@ BUILD_EMBEDDED="$FRAMEWORK_DIR/launcher/build-linux-universal-embedded"
 mkdir -p "$BUILD_EMBEDDED"
 cd "$BUILD_EMBEDDED"
 
-if [[ $(uname) == "Linux" ]]; then
-    # Native Linux build
-    cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-else
-    # Cross-compile from macOS
-    if ! command -v x86_64-linux-musl-gcc &> /dev/null; then
-        echo "❌ x86_64-linux-musl-gcc not found!"
-        echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
+UNIVERSAL_DOWNLOADED=false
+
+# Try to download pre-built universal launcher from GitHub Actions (glibc-based, works on Ubuntu!)
+if [[ $(uname) != "Linux" ]]; then
+    echo "📥 Attempting to download pre-built universal launcher (glibc-based, Ubuntu-compatible)..."
+    UNIVERSAL_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/bakery-universal-launcher-linux-embedded"
+    if curl -L -f -o "bakery-universal-launcher-linux-embedded" "${UNIVERSAL_URL}" 2>/dev/null; then
+        chmod +x "bakery-universal-launcher-linux-embedded"
+        echo "✅ Downloaded pre-built universal launcher (glibc-based)"
+        UNIVERSAL_DOWNLOADED=true
+    else
+        echo "⚠️  Pre-built universal launcher not available, will cross-compile (musl-based)"
+    fi
+fi
+
+if [ "$UNIVERSAL_DOWNLOADED" = false ]; then
+    if [[ $(uname) == "Linux" ]]; then
+        # Native Linux build (glibc-based, works on Ubuntu!)
+        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+    else
+        # Cross-compile from macOS (musl-based - may not work on Ubuntu!)
+        echo "⚠️  WARNING: Cross-compiling with musl - resulting binary may not work on Ubuntu!"
+        echo "💡 Suggestion: Build on native Linux or use GitHub Actions pre-built binaries"
+        if ! command -v x86_64-linux-musl-gcc &> /dev/null; then
+            echo "❌ x86_64-linux-musl-gcc not found!"
+            echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
+            exit 1
+        fi
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+    fi
+
+    make bakery-universal-launcher-linux-embedded -j4
+
+    if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
+        echo "❌ Universal launcher build failed!"
         exit 1
     fi
-    cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
 fi
 
-make bakery-universal-launcher-linux-embedded -j4
-
-if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
-    echo "❌ Universal launcher build failed!"
-    exit 1
-fi
-
-echo "✅ Universal launcher built"
+echo "✅ Universal launcher ready"
 echo ""
 
 # ============================================

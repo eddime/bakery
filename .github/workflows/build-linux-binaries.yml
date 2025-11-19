@@ -39,6 +39,15 @@ jobs:
           make bakery-launcher-linux -j$(nproc)
           strip bakery-launcher-linux
 
+      - name: Build universal launcher (glibc-based, Ubuntu-compatible)
+        run: |
+          cd launcher
+          mkdir -p build-linux-universal-embedded
+          cd build-linux-universal-embedded
+          cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+          make bakery-universal-launcher-linux-embedded -j$(nproc)
+          strip bakery-universal-launcher-linux-embedded
+
       - name: Upload x64 binary
         uses: actions/upload-artifact@v4
         with:
@@ -46,11 +55,20 @@ jobs:
           path: launcher/build-linux-x64/bakery-launcher-linux
           retention-days: 30
 
+      - name: Upload universal launcher
+        uses: actions/upload-artifact@v4
+        with:
+          name: bakery-universal-launcher-linux-embedded
+          path: launcher/build-linux-universal-embedded/bakery-universal-launcher-linux-embedded
+          retention-days: 30
+
       - name: Create Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v1
         with:
-          files: launcher/build-linux-x64/bakery-launcher-linux
+          files: |
+            launcher/build-linux-x64/bakery-launcher-linux
+            launcher/build-linux-universal-embedded/bakery-universal-launcher-linux-embedded
           tag_name: ${{ github.ref_name }}
           name: Release ${{ github.ref_name }}
         env:
