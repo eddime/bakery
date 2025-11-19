@@ -1,6 +1,6 @@
 /**
- * 🥐 Bakery Launcher - Linux (WebKitGTK WebView - like Neutralino)
- * Uses system WebKitGTK via pkg-config (no bundling needed)
+ * 🥐 Bakery Launcher - Linux (Dynamic WebKitGTK - like Neutralino)
+ * Loads WebKitGTK at runtime via dlopen() for universal compatibility
  */
 
 #include <iostream>
@@ -14,16 +14,10 @@
 
 #include <nlohmann/json.hpp>
 
-// WebView support (only if GTK headers are available)
-#ifdef WEBVIEW_GTK
-#include "webview/webview.h"
-#include <gtk/gtk.h>        // For gtk_window_set_icon_from_file
-#define USE_WEBVIEW 1
-#else
-#define USE_WEBVIEW 0
-#endif
+// Dynamic WebKitGTK loader (like Neutralino)
+#include "webkit-dynamic-loader.h"
 
-// NEW: Shared HTTP server and asset loader!
+// Shared HTTP server and asset loader
 #include "bakery-http-server.h"
 #include "bakery-asset-loader.h"
 #include "bakery-cache-buster.h"
