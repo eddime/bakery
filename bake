@@ -429,8 +429,7 @@ async function buildWindows(projectDir: string, projectConfig: any, appName: str
 async function buildLinux(projectDir: string, projectConfig: any, appName: string, frameworkDir: string) {
   console.log('🐧 Building for Linux...\n');
   
-  // Build AppImage (includes single executable build)
-  const buildScript = join(frameworkDir, 'scripts', 'build-linux-appimage.sh');
+  const buildScript = join(frameworkDir, 'scripts', 'build-linux-single-executables.sh');
   const buildProc = Bun.spawn([buildScript, projectDir, appName], {
     cwd: frameworkDir,
     stdout: 'inherit',

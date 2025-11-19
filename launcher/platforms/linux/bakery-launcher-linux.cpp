@@ -1,6 +1,6 @@
 /**
- * 🥐 Bakery Launcher - Linux (Dynamic WebKitGTK - like Neutralino)
- * Loads WebKitGTK at runtime via dlopen() for universal compatibility
+ * 🥐 Bakery Launcher - Linux (WebKitGTK WebView - like Neutralino)
+ * Uses system WebKitGTK via pkg-config (no bundling needed)
  */
 
 #include <iostream>
@@ -14,10 +14,16 @@
 
 #include <nlohmann/json.hpp>
 
-// Dynamic WebKitGTK loader (like Neutralino)
-#include "webkit-dynamic-loader.h"
+// WebView support (only if GTK headers are available)
+#ifdef WEBVIEW_GTK
+#include "webview/webview.h"
+#include <gtk/gtk.h>        // For gtk_window_set_icon_from_file
+#define USE_WEBVIEW 1
+#else
+#define USE_WEBVIEW 0
+#endif
 
-// Shared HTTP server and asset loader
+// NEW: Shared HTTP server and asset loader!
 #include "bakery-http-server.h"
 #include "bakery-asset-loader.h"
 #include "bakery-cache-buster.h"
@@ -408,31 +414,70 @@ int main(int argc, char* argv[]) {
     }
     #endif
     #else
-    // WebKitGTK not available - show error message (like Neutralino)
-    std::cerr << std::endl;
-    std::cerr << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
-    std::cerr << "❌ Unable to create webview instance" << std::endl;
-    std::cerr << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "🔧 WebKitGTK is required but not found on your system." << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "📦 Please install WebKitGTK:" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "   Ubuntu/Debian:" << std::endl;
-    std::cerr << "   $ sudo apt install libwebkit2gtk-4.1-0" << std::endl;
-    std::cerr << "   $ sudo apt install libgtk-3-0" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "   Fedora:" << std::endl;
-    std::cerr << "   $ sudo dnf install webkit2gtk4.1" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "   Arch Linux:" << std::endl;
-    std::cerr << "   $ sudo pacman -S webkit2gtk" << std::endl;
-    std::cerr << std::endl;
-    std::cerr << "💡 After installation, restart the application." << std::endl;
-    std::cerr << std::endl;
+    // System browser mode (fallback for cross-compilation)
+    #ifndef NDEBUG
+    std::cout << "🌐 Opening system browser..." << std::endl;
+    std::cout << std::endl;
+    #endif
+    
+    // 🎬 Splash Screen: Show splash.html first (splash.html handles redirect itself)
+    std::string finalUrl = url;
+    if (config.app.splash) {
+        // Pass target URL as query parameter so splash.html knows where to redirect
+        finalUrl = "http://127.0.0.1:" + std::to_string(port) + "/splash.html?redirect=" + config.entrypoint + "&t=" + cacheBuster;
+        
+        #ifndef NDEBUG
+        std::cout << "🎬 Splash Screen: ENABLED (splash.html)" << std::endl;
+        std::cout << "🌐 Splash URL: " << finalUrl << std::endl;
+        std::cout << "💡 splash.html will redirect to game after 2 seconds" << std::endl;
+        #endif
+    } else {
+        #ifndef NDEBUG
+        std::cout << "🌐 URL: " << url << std::endl;
+        std::cout << "🔄 Cache Buster: t=" << cacheBuster << std::endl;
+        #endif
+    }
+    
+    #ifndef NDEBUG
+    std::cout << "🚀 Opening browser: " << finalUrl << std::endl;
+    std::cout << std::endl;
+    #endif
+    
+    std::string openCmd = "xdg-open \"" + finalUrl + "\" 2>/dev/null || sensible-browser \"" + finalUrl + "\" 2>/dev/null &";
+    system(openCmd.c_str());
+    
+    #ifndef NDEBUG
+    std::cout << "✅ Server running! Press Ctrl+C to stop." << std::endl;
+    #endif
+    std::cout << "💡 Close browser tab to exit." << std::endl;
+    
+    // 🎮 Run Steamworks callbacks in background thread (if enabled)
+    #ifdef ENABLE_STEAMWORKS
+    std::thread steamThread;
+    if (steamEnabled) {
+        steamThread = std::thread([]() {
+            while (g_running) {
+                bakery::steamworks::SteamworksManager::RunCallbacks();
+                std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
+            }
+        });
+    }
+    #endif
+    
+    // Keep server running
+    serverThread.join();
     
     g_running = false;
-    return 1;
+    
+    // 🎮 Cleanup Steamworks
+    #ifdef ENABLE_STEAMWORKS
+    if (steamEnabled) {
+        if (steamThread.joinable()) {
+            steamThread.join();
+        }
+        bakery::steamworks::shutdownSteamworks();
+    }
+    #endif
     #endif
     
     return 0;

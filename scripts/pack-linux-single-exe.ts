@@ -4,8 +4,7 @@
  * Embeds launcher + assets + config + Steam .so into a single executable
  */
 
-import { readFileSync, writeFileSync, existsSync } from 'fs';
-import { join, dirname } from 'path';
+import { readFileSync, writeFileSync } from 'fs';
 
 interface PackedData {
   x64Offset: bigint;
@@ -45,18 +44,10 @@ async function packSingleExecutable(
   const launcher = readFileSync(universalLauncher);
   const x64 = readFileSync(x64Binary);
   
-  // Read bakery-assets file (contains encrypted assets + config)
-  const assetsPath = join(dirname(x64Binary), '..', 'bakery-assets');
-  let assets = Buffer.alloc(0);
-  if (existsSync(assetsPath)) {
-    assets = readFileSync(assetsPath);
-    console.log(`✅ Assets: ${(assets.length / 1024 / 1024).toFixed(2)} MB`);
-  } else {
-    console.warn('⚠️  Assets file not found, app may not work correctly');
-  }
-  
-  // Config is embedded in assets, so we don't need a separate config file
-  const config = Buffer.alloc(0);
+  // Assets and config are embedded in the x64 binary already
+  // We just need to extract them
+  const assets = Buffer.alloc(0); // Placeholder
+  const config = Buffer.alloc(0); // Placeholder
   
   // Read Steam .so if provided
   let steamSo = Buffer.alloc(0);
@@ -98,14 +89,6 @@ async function packSingleExecutable(
   currentOffset += BigInt(x64.length);
   currentOffset = align(currentOffset);
   
-  // Add assets if present
-  if (assets.length > 0) {
-    data.assetsOffset = currentOffset;
-    data.assetsSize = BigInt(assets.length);
-    currentOffset += BigInt(assets.length);
-    currentOffset = align(currentOffset);
-  }
-  
   // Add Steam .so if present
   if (steamSo.length > 0) {
     data.steamSoOffset = currentOffset;
@@ -137,25 +120,19 @@ async function packSingleExecutable(
   
   // Calculate padding
   const padding1 = Buffer.alloc(Number(data.x64Offset - BigInt(launcher.length)));
-  const padding2 = assets.length > 0
-    ? Buffer.alloc(Number(data.assetsOffset - (data.x64Offset + data.x64Size)))
-    : Buffer.alloc(0);
-  const padding3 = steamSo.length > 0 
-    ? Buffer.alloc(Number(data.steamSoOffset - (assets.length > 0 ? (data.assetsOffset + data.assetsSize) : (data.x64Offset + data.x64Size))))
+  const padding2 = steamSo.length > 0 
+    ? Buffer.alloc(Number(data.steamSoOffset - (data.x64Offset + data.x64Size)))
     : Buffer.alloc(0);
   
   // Concatenate all parts
-  const parts = [
+  const output = Buffer.concat([
     launcher,
     padding1,
     x64,
     padding2,
-    assets,
-    padding3,
-    steamSo
-  ];
-  
-  const output = Buffer.concat([...parts, header]);
+    steamSo,
+    header
+  ]);
   
   // Write output
   writeFileSync(outputPath, output, { mode: 0o755 });
@@ -182,9 +159,6 @@ async function packSingleExecutable(
   console.log('🔐 Structure:');
   console.log(`   • Universal Launcher: 0 - ${launcher.length}`);
   console.log(`   • x64 Binary: ${data.x64Offset} - ${data.x64Offset + data.x64Size}`);
-  if (assets.length > 0) {
-    console.log(`   • Assets: ${data.assetsOffset} - ${data.assetsOffset + data.assetsSize}`);
-  }
   if (steamSo.length > 0) {
     console.log(`   • Steam Library: ${data.steamSoOffset} - ${data.steamSoOffset + data.steamSoSize}`);
   }

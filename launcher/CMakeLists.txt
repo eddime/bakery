@@ -306,13 +306,6 @@ if(UNIX AND NOT APPLE)
         dl
     )
     
-    # Like Neutralino: Use -no-pie for Linux binaries (works on all distros!)
-    # Position Independent Executable flag
-    target_link_options(bakery-launcher-linux PRIVATE 
-        -no-pie
-    )
-    message(STATUS "🔗 Using -no-pie (like Neutralino, works on all Linux distros)")
-    
     # ⚡ OPTIMIZATION: Precompiled headers for faster builds
     target_precompile_headers(bakery-launcher-linux PRIVATE
         <iostream>
@@ -333,14 +326,22 @@ if(UNIX AND NOT APPLE)
         )
     endif()
     
-    # Like Neutralino: Simple optimization flags
+    # MAXIMUM PERFORMANCE optimizations + startup improvements
     target_compile_options(bakery-launcher-linux PRIVATE
-        -Os  # Optimize for size (like Neutralino)
-        -DNDEBUG
+        -O3 -flto -ffast-math -fomit-frame-pointer
+        -ffunction-sections -fdata-sections -DNDEBUG
+        -finline-functions -funroll-loops
     )
     
+    # Only use -march=native if not cross-compiling
+    if(CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR)
+        target_compile_options(bakery-launcher-linux PRIVATE -march=native -mtune=native)
+    endif()
+    
     target_link_options(bakery-launcher-linux PRIVATE 
+        -flto 
         -Wl,--gc-sections
+        # Note: Can't use -static-libstdc++ -static-libgcc because we link dynamically to Steam
     )
     
     # Strip debug symbols (use llvm-strip for cross-compilation)
@@ -380,7 +381,7 @@ if(UNIX AND NOT APPLE)
         )
         target_link_options(bakery-universal-launcher-linux-embedded PRIVATE 
             -Wl,--gc-sections
-            -no-pie  # Like Neutralino: Position Independent Executable (works on all Linux distros!)
+            -static-libstdc++ -static-libgcc  # Required for single executable (no .so dependencies)
         )
         
         # Strip debug symbols (use cross-compiler strip for cross-compilation)

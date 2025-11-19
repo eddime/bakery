@@ -12,7 +12,7 @@ if [ -z "$PROJECT_DIR" ] || [ -z "$APP_NAME" ]; then
     exit 1
 fi
 
-echo "🐧 Building Linux Single Executable (x86_64 only)"
+echo "🐧 Building Linux Single Executables (x86_64 + ARM64)"
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
 echo ""
 
@@ -24,13 +24,6 @@ OUTPUT_DIR="$(cd "$PROJECT_DIR" && pwd)/dist/linux"
 mkdir -p "$OUTPUT_DIR"
 
 # ============================================
-# 0. Create ENCRYPTED shared assets (ALWAYS rebuild!)
-# ============================================
-echo "📦 Creating ENCRYPTED shared assets..."
-bun scripts/embed-assets-shared.ts "$PROJECT_DIR" launcher/bakery-assets
-echo ""
-
-# ============================================
 # 1. Build Universal Launcher (Embedded)
 # ============================================
 echo "🔨 Building universal launcher..."
@@ -38,57 +31,27 @@ BUILD_EMBEDDED="$FRAMEWORK_DIR/launcher/build-linux-universal-embedded"
 mkdir -p "$BUILD_EMBEDDED"
 cd "$BUILD_EMBEDDED"
 
-UNIVERSAL_DOWNLOADED=false
-
-# Try to use pre-built universal launcher from bin/ (like Neutralino!)
-BIN_UNIVERSAL="$FRAMEWORK_DIR/bin/linux-universal/bakery-universal-launcher-linux-embedded"
-if [ -f "$BIN_UNIVERSAL" ]; then
-    echo "✅ Using pre-built universal launcher from bin/ (like Neutralino)"
-    cp "$BIN_UNIVERSAL" "bakery-universal-launcher-linux-embedded"
-    chmod +x "bakery-universal-launcher-linux-embedded"
-    UNIVERSAL_DOWNLOADED=true
+if [[ $(uname) == "Linux" ]]; then
+    # Native Linux build
+    cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
 else
-    # Try to download from GitHub Actions
-    if [[ $(uname) != "Linux" ]]; then
-        echo "📥 Attempting to download pre-built universal launcher from GitHub..."
-        UNIVERSAL_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/bakery-universal-launcher-linux-embedded"
-        if curl -L -f -o "bakery-universal-launcher-linux-embedded" "${UNIVERSAL_URL}" 2>/dev/null; then
-            chmod +x "bakery-universal-launcher-linux-embedded"
-            echo "✅ Downloaded pre-built universal launcher"
-            UNIVERSAL_DOWNLOADED=true
-        else
-            echo "⚠️  Pre-built universal launcher not available"
-        fi
-    fi
-fi
-
-if [ "$UNIVERSAL_DOWNLOADED" = false ]; then
-    if [[ $(uname) == "Linux" ]]; then
-        # Native Linux build (glibc-based, like Neutralino!)
-        cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-        make bakery-universal-launcher-linux-embedded -j4
-        
-        if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
-            echo "❌ Universal launcher build failed!"
-            exit 1
-        fi
-    else
-        # Not on Linux: Can't build without pre-built binaries
-        echo "❌ ERROR: Universal launcher not available!"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo ""
-        echo "🔧 Like Neutralino, Linux binaries must be built natively on Linux."
-        echo ""
-        echo "📥 Options:"
-        echo "   1. Wait for GitHub Actions to build and release binaries"
-        echo "   2. Build on a native Linux machine"
-        echo "   3. Use Docker: docker run --rm -v \$(pwd):/work ubuntu:latest bash -c 'cd /work && ./bake linux --dir ./examples/stress-test'"
-        echo ""
+    # Cross-compile from macOS
+    if ! command -v x86_64-linux-musl-gcc &> /dev/null; then
+        echo "❌ x86_64-linux-musl-gcc not found!"
+        echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
         exit 1
     fi
+    cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
 fi
 
-echo "✅ Universal launcher ready"
+make bakery-universal-launcher-linux-embedded -j4
+
+if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
+    echo "❌ Universal launcher build failed!"
+    exit 1
+fi
+
+echo "✅ Universal launcher built"
 echo ""
 
 # ============================================
@@ -99,54 +62,36 @@ BUILD_X64="$FRAMEWORK_DIR/launcher/build-linux-x64-embedded"
 mkdir -p "$BUILD_X64"
 cd "$BUILD_X64"
 
-# Try to use pre-built x64 binary from bin/ (like Neutralino!)
+# Try to download pre-built binary from GitHub Actions first
 GITHUB_REPO="eddime/bakery"
 VERSION="latest"
-BIN_X64="$FRAMEWORK_DIR/bin/linux-x64/bakery-launcher-linux"
+BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/bakery-launcher-linux-x64"
 DOWNLOADED=false
 
-if [ -f "$BIN_X64" ]; then
-    echo "✅ Using pre-built x64 binary from bin/ (like Neutralino)"
-    cp "$BIN_X64" "bakery-launcher-linux"
-    chmod +x "bakery-launcher-linux"
-    DOWNLOADED=true
-else
-    # Try to download from GitHub Actions
-    if [[ $(uname) != "Linux" ]]; then
-        echo "📥 Attempting to download pre-built x64 binary from GitHub..."
-        BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/bakery-launcher-linux-x64"
-        if curl -L -f -o "bakery-launcher-linux" "${BINARY_URL}" 2>/dev/null; then
-            chmod +x "bakery-launcher-linux"
-            echo "✅ Downloaded pre-built x64 binary"
-            DOWNLOADED=true
-        else
-            echo "⚠️  Pre-built binary not available"
-        fi
+if [[ $(uname) != "Linux" ]]; then
+    echo "📥 Attempting to download pre-built x64 binary (with WebKitGTK) from GitHub Actions..."
+    if curl -L -f -o "bakery-launcher-linux" "${BINARY_URL}" 2>/dev/null; then
+        chmod +x "bakery-launcher-linux"
+        echo "✅ Downloaded pre-built x64 binary (with WebKitGTK)"
+        DOWNLOADED=true
+    else
+        echo "⚠️  Pre-built binary not available, will cross-compile (without WebKitGTK)"
     fi
 fi
 
 if [ "$DOWNLOADED" = false ]; then
     if [[ $(uname) == "Linux" ]]; then
-        # Native Linux build with WebKitGTK (like Neutralino!)
+        # Native Linux build with WebKitGTK
         cmake .. -DCMAKE_BUILD_TYPE=Release
         make bakery-launcher-linux -j4
-        
-        if [ ! -f "bakery-launcher-linux" ]; then
-            echo "❌ x86_64 build failed!"
-            exit 1
-        fi
     else
-        # Not on Linux: Can't build without pre-built binaries
-        echo "❌ ERROR: x64 launcher not available!"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo ""
-        echo "🔧 Like Neutralino, Linux binaries must be built natively on Linux."
-        echo ""
-        echo "📥 Options:"
-        echo "   1. Wait for GitHub Actions to build and release binaries"
-        echo "   2. Build on a native Linux machine"
-        echo "   3. Use Docker: docker run --rm -v \$(pwd):/work ubuntu:latest bash -c 'cd /work && ./bake linux --dir ./examples/stress-test'"
-        echo ""
+        # Cross-compile from macOS (without WebKitGTK - fallback)
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake
+        make bakery-launcher-linux -j4
+    fi
+    
+    if [ ! -f "bakery-launcher-linux" ]; then
+        echo "❌ x86_64 build failed!"
         exit 1
     fi
 fi
@@ -154,11 +99,36 @@ fi
 echo "✅ x86_64 launcher ready"
 echo ""
 
-# ARM64 builds require native compilation on ARM64 Linux
-# Cross-compilation from macOS/x64 is not reliable
-# Users on ARM64 should build natively on their system
-BUILD_ARM64=""
-echo "💡 ARM64: Build natively on ARM64 Linux for best compatibility"
+# ============================================
+# 3. Build ARM64 launcher binary
+# ============================================
+echo "🔨 Building ARM64 launcher binary..."
+BUILD_ARM64="$FRAMEWORK_DIR/launcher/build-linux-arm64-embedded"
+mkdir -p "$BUILD_ARM64"
+cd "$BUILD_ARM64"
+
+if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
+    # Native ARM64 Linux build
+    cmake .. -DCMAKE_BUILD_TYPE=Release
+else
+    # Cross-compile from macOS or x86_64 Linux
+    if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
+        echo "⚠️  aarch64-linux-musl-gcc not found! Skipping ARM64 build."
+        echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
+        BUILD_ARM64=""
+    else
+        cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake
+        make bakery-launcher-linux -j4
+        
+        if [ ! -f "bakery-launcher-linux" ]; then
+            echo "⚠️  ARM64 build failed! Skipping."
+            BUILD_ARM64=""
+        else
+            echo "✅ ARM64 launcher built"
+        fi
+    fi
+fi
+
 echo ""
 
 cd "$FRAMEWORK_DIR"
@@ -198,26 +168,48 @@ bun scripts/pack-linux-single-exe.ts \
 echo "✅ x86_64 executable packed!"
 echo ""
 
-# ARM64: Skipped (requires native build on ARM64 Linux)
+# Pack ARM64 executable if built
+if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/bakery-launcher-linux" ]; then
+    echo "📦 Packing ARM64 executable..."
+    
+    STEAM_ARG=""
+    if [ -f "$STEAM_SO_ARM64" ]; then
+        echo "🎮 Embedding Steam SDK (ARM64) into executable..."
+        STEAM_ARG="$STEAM_SO_ARM64"
+    fi
+    
+    bun scripts/pack-linux-single-exe.ts \
+        "$BUILD_EMBEDDED/bakery-universal-launcher-linux-embedded" \
+        "$BUILD_ARM64/bakery-launcher-linux" \
+        "$OUTPUT_DIR/${APP_NAME}-arm64" \
+        $STEAM_ARG
+    
+    echo "✅ ARM64 executable packed!"
+    echo ""
+fi
 
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Linux Single Executable complete!"
+echo "✅ Linux Single Executables complete!"
 echo ""
 echo "📦 Output:"
 echo "   $OUTPUT_DIR/${APP_NAME}-x86_64"
+if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
+    echo "   $OUTPUT_DIR/${APP_NAME}-arm64"
+fi
 echo ""
-echo "📊 Size:"
+echo "📊 Sizes:"
 du -h "$OUTPUT_DIR/${APP_NAME}-x86_64" | awk '{print "   " $2 ": " $1}'
+if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
+    du -h "$OUTPUT_DIR/${APP_NAME}-arm64" | awk '{print "   " $2 ": " $1}'
+fi
 echo ""
 echo "🔐 Everything embedded (launcher + binary + assets + Steam)"
 echo ""
 echo "🎯 User experience:"
-echo "   → Download: ${APP_NAME}-x86_64"
+echo "   → Download: ${APP_NAME}-x86_64 (or -arm64)"
 echo "   → chmod +x ${APP_NAME}-x86_64"
 echo "   → ./${APP_NAME}-x86_64"
 echo "   → Everything embedded, instant launch!"
-echo ""
-echo "💡 ARM64 Linux: Build natively on your system for best compatibility"
 echo ""
 
 
