@@ -112,14 +112,15 @@ if [[ $(uname) == "Linux" ]]; then
 else
     echo ""
     echo "⚠️  AppImage can only be built on Linux"
-    echo "💡 The AppDir structure is ready at: $APPDIR"
-    echo "💡 On Linux, run: ARCH=x86_64 appimagetool \"$APPDIR\" \"$OUTPUT_DIR/${APP_NAME}-${APP_VERSION}-x86_64.AppImage\""
+    echo "💡 AppDir structure prepared at: $APPDIR"
     echo ""
-    echo "📦 Single executable is available:"
+    echo "📦 To finalize on Linux:"
+    echo "   1. Copy entire project to Linux"
+    echo "   2. Run: ./scripts/finalize-linux-appimage.sh $PROJECT_DIR"
+    echo ""
+    echo "📦 Single executable is available now:"
     echo "   $OUTPUT_DIR/${APP_NAME}-x86_64"
-    
-    # Cleanup AppDir
-    rm -rf "$APPDIR"
+    echo ""
     exit 0
 fi
 
