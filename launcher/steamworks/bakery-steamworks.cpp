@@ -6,8 +6,8 @@
 #include "bakery-steamworks.h"
 
 // Include Steam API headers
-#include "../deps/steamworks/sdk/public/steam/steam_api.h"
-#include "../deps/steamworks/sdk/public/steam/steam_api_flat.h"  // C API for ABI compatibility!
+#include "steam/steam_api.h"
+#include "steam/steam_api_flat.h"  // C API for ABI compatibility!
 
 #include <iostream>
 

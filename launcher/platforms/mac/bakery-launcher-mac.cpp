@@ -402,12 +402,16 @@ int main(int argc, char* argv[]) {
     bakery::steamworks::bindSteamworksToWebview(w, steamEnabled);
     #endif
     
-    w.init(R"JS(
+    // Build JavaScript init code with fullscreen value
+    std::string jsInit = R"JS(
     window.Bakery = {
         version: '1.0.0',
         platform: 'macos',
-            mode: 'shared-assets'
-        };
+        mode: 'shared-assets',
+        steam: )JS";
+    jsInit += steamEnabled ? "true" : "false";
+    jsInit += R"JS(
+    };
       
       // 🎯 ANTI-STUTTER: Aggressive optimizations for smooth 60 FPS in window mode
       (function() {
@@ -436,7 +440,16 @@ int main(int argc, char* argv[]) {
                   transition-duration: 0s !important;
               }
           `;
-          document.head.appendChild(style);
+          if (document.head) {
+              document.head.appendChild(style);
+          } else {
+              // Wait for DOM to be ready
+              document.addEventListener('DOMContentLoaded', () => {
+                  if (document.head) {
+                      document.head.appendChild(style);
+                  }
+              });
+          }
           
           // 2. Disable smooth scrolling (causes jank)
           document.documentElement.style.scrollBehavior = 'auto';
@@ -523,7 +536,9 @@ int main(int argc, char* argv[]) {
     
     // 🖥️ FULLSCREEN: Auto-enable if configured (better performance)
     window.addEventListener('load', () => {
-        const fullscreenEnabled = )" + std::string(config.window.fullscreen ? "true" : "false") + R"JS(;
+        const fullscreenEnabled = )JS";
+    jsInit += (config.window.fullscreen ? "true" : "false");
+    jsInit += R"JS(;
         
         if (fullscreenEnabled) {
             // Request fullscreen on document element
@@ -589,10 +604,18 @@ int main(int argc, char* argv[]) {
             transform: translate3d(0,0,0);
         }
     `;
-    document.addEventListener('DOMContentLoaded', () => {
+    if (document.head) {
         document.head.appendChild(style);
-    });
-    )JS");
+    } else {
+        document.addEventListener('DOMContentLoaded', () => {
+            if (document.head) {
+                document.head.appendChild(style);
+            }
+        });
+    }
+    )JS";
+    
+    w.init(jsInit.c_str());
     
     // Wait for cache to be ready before navigation
     cacheThread.join();
