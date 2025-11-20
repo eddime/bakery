@@ -16,8 +16,10 @@ set(CMAKE_STRIP "x86_64-linux-gnu-strip")
 set(CMAKE_C_FLAGS_INIT "-m64 -isystem /usr/include/x86_64-linux-gnu -idirafter /usr/include")
 set(CMAKE_CXX_FLAGS_INIT "-m64 -isystem /usr/include/x86_64-linux-gnu -idirafter /usr/include")
 
-# Also explicitly set the sysroot to use x86_64 libraries
-set(CMAKE_SYSROOT "/usr/x86_64-linux-gnu")
+# Don't use sysroot - multiarch setups don't need it
+# Instead, set library search paths explicitly
+set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu")
+set(CMAKE_LINK_DIRECTORIES "/usr/lib/x86_64-linux-gnu")
 
 # Find root path mode
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
