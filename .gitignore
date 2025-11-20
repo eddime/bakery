@@ -36,6 +36,10 @@ examples/*/dist/
 # Pre-built binaries (cached locally, like Neutralino)
 launcher/prebuilt/
 !launcher/prebuilt/.gitkeep
+# Exception: Linux launchers (for cross-compilation from macOS/Windows)
+!launcher/prebuilt/linux/
+!launcher/prebuilt/linux/gemcore-launcher-linux-arm64
+!launcher/prebuilt/linux/gemcore-launcher-linux-x64
 
 # IDE
 .vscode/
