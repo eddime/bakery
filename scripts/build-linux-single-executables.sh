@@ -214,14 +214,24 @@ STEAM_SO_ARM64=""
 CONFIG_FILE="$PROJECT_DIR/gemcore.config.js"
 if [ -f "$CONFIG_FILE" ]; then
     if grep -q "enabled: true" "$CONFIG_FILE" 2>/dev/null; then
-        STEAM_SO_X64="$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux64/libsteam_api.so"
-        # Note: Steam doesn't provide ARM64 Linux binaries yet, but we prepare for it
-        STEAM_SO_ARM64="$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux_arm64/libsteam_api.so"
+        # Try bin/steamworks first (prebuilt), then deps/steamworks (SDK)
+        if [ -f "$FRAMEWORK_DIR/bin/steamworks/linux/libsteam_api.so" ]; then
+            STEAM_SO_X64="$FRAMEWORK_DIR/bin/steamworks/linux/libsteam_api.so"
+        elif [ -f "$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux64/libsteam_api.so" ]; then
+            STEAM_SO_X64="$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux64/libsteam_api.so"
+        fi
         
-        if [ -f "$STEAM_SO_X64" ]; then
+        # Note: Steam doesn't provide ARM64 Linux binaries yet, but we prepare for it
+        if [ -f "$FRAMEWORK_DIR/bin/steamworks/linux-arm64/libsteam_api.so" ]; then
+            STEAM_SO_ARM64="$FRAMEWORK_DIR/bin/steamworks/linux-arm64/libsteam_api.so"
+        elif [ -f "$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux_arm64/libsteam_api.so" ]; then
+            STEAM_SO_ARM64="$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux_arm64/libsteam_api.so"
+        fi
+        
+        if [ -n "$STEAM_SO_X64" ] && [ -f "$STEAM_SO_X64" ]; then
             echo "🎮 Embedding Steam SDK (x86_64) into executable..."
         else
-            echo "⚠️  Steam SDK (x86_64) not found at: $STEAM_SO_X64"
+            echo "⚠️  Steam SDK (x86_64) not found"
             STEAM_SO_X64=""
         fi
     fi
