@@ -467,7 +467,8 @@ private:
         send(fd, (const char*)resp.body, resp.bodySize, 0);
 #else
         // Unix: writev() for zero-copy scatter-gather I/O
-        writev(fd, resp.iov, 2);
+        ssize_t written = writev(fd, resp.iov, 2);
+        (void)written;  // Suppress unused result warning
 #endif
     }
     

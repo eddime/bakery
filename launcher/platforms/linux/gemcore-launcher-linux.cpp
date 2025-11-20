@@ -319,20 +319,20 @@ int main(int argc, char* argv[]) {
     #ifdef WEBVIEW_GTK
     std::string iconPathForWindow;
     auto iconAsset = assetLoader.getAsset("icon.png");
-    if (!iconAsset.empty()) {
+    if (iconAsset.data && iconAsset.size > 0) {
         std::string tmpIconPath = "/tmp/gemcore_icon_" + config.appName + ".png";
         std::ofstream iconFile(tmpIconPath, std::ios::binary);
         if (iconFile) {
-            iconFile.write(iconAsset.data(), iconAsset.size());
+            iconFile.write(reinterpret_cast<const char*>(iconAsset.data), iconAsset.size);
             iconFile.close();
             iconPathForWindow = tmpIconPath;
             // Always log icon extraction (even in release mode)
-            std::cout << "🎨 Icon extracted: " << tmpIconPath << " (" << iconAsset.size() << " bytes)" << std::endl;
+            std::cout << "🎨 Icon extracted: " << tmpIconPath << " (" << iconAsset.size << " bytes)" << std::endl;
         } else {
             std::cout << "⚠️  Failed to write icon to: " << tmpIconPath << std::endl;
         }
     } else {
-        std::cout << "⚠️  Icon not found in assets (size: " << iconAsset.size() << ")" << std::endl;
+        std::cout << "⚠️  Icon not found in assets" << std::endl;
         if (!config.app.iconPng.empty() && access(config.app.iconPng.c_str(), F_OK) == 0) {
             iconPathForWindow = config.app.iconPng;
         }
@@ -496,7 +496,8 @@ int main(int argc, char* argv[]) {
     #endif
     
     std::string openCmd = "xdg-open \"" + finalUrl + "\" 2>/dev/null || sensible-browser \"" + finalUrl + "\" 2>/dev/null &";
-    system(openCmd.c_str());
+    int result = system(openCmd.c_str());
+    (void)result;  // Suppress unused result warning
     
     #ifndef NDEBUG
     std::cout << "✅ Server running! Press Ctrl+C to stop." << std::endl;
