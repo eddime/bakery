@@ -402,6 +402,17 @@ int main(int argc, char* argv[]) {
     bakery::steamworks::bindSteamworksToWebview(w, steamEnabled);
     #endif
     
+    // Load Steamworks wrapper from assets (if available)
+    std::string steamworksWrapperScript;
+    #ifdef ENABLE_STEAMWORKS
+    if (steamEnabled) {
+        auto steamworksAsset = assetLoader.getAsset("bakery-steamworks-wrapper.js");
+        if (steamworksAsset.data && steamworksAsset.size > 0) {
+            steamworksWrapperScript = std::string(reinterpret_cast<const char*>(steamworksAsset.data), steamworksAsset.size);
+        }
+    }
+    #endif
+    
     // Build JavaScript init code with fullscreen value
     std::string jsInit = R"JS(
     window.Bakery = {
@@ -412,6 +423,13 @@ int main(int argc, char* argv[]) {
     jsInit += steamEnabled ? "true" : "false";
     jsInit += R"JS(
     };
+    
+    // 🎮 Inject Steamworks wrapper (from separate file, but executed here for correct order)
+    )JS";
+    if (!steamworksWrapperScript.empty()) {
+        jsInit += steamworksWrapperScript;
+    }
+    jsInit += R"JS(
       
       // 🎯 ANTI-STUTTER: Aggressive optimizations for smooth 60 FPS in window mode
       (function() {

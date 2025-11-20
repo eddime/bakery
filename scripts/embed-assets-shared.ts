@@ -76,6 +76,13 @@ const webgpuHelperPath = join(import.meta.dir, '..', 'launcher', 'assets', 'bake
 const webgpuHelper = readFileSync(webgpuHelperPath);
 files.push({ path: 'bakery-webgpu-helper.js', data: webgpuHelper });
 
+// 🎮 Add Steamworks wrapper script (if Steamworks is enabled)
+const steamworksWrapperPath = join(import.meta.dir, '..', 'launcher', 'steamworks', 'bakery-steamworks-wrapper.js');
+if (existsSync(steamworksWrapperPath)) {
+  const steamworksWrapper = readFileSync(steamworksWrapperPath);
+  files.push({ path: 'bakery-steamworks-wrapper.js', data: steamworksWrapper });
+}
+
 // 🔒 Embed bakery.config.json (encrypted, not accessible to user)
 const configJsonPath = join(projectDir, 'bakery.config.json');
 const configJsPath = join(projectDir, 'bakery.config.js');

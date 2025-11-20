@@ -380,7 +380,18 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // 🎮 Bind Steamworks to JavaScript (cross-platform helper)
     bakery::steamworks::bindSteamworksToWebview(w, steamEnabled);
     
-    // Inject Bakery API + Runtime Optimizations + Steam Wrapper
+    // Load Steamworks wrapper from assets (if available)
+    std::string steamworksWrapperScript;
+    #ifdef ENABLE_STEAMWORKS
+    if (steamEnabled) {
+        auto steamworksAsset = assetLoader.getAsset("bakery-steamworks-wrapper.js");
+        if (steamworksAsset.data && steamworksAsset.size > 0) {
+            steamworksWrapperScript = std::string(reinterpret_cast<const char*>(steamworksAsset.data), steamworksAsset.size);
+        }
+    }
+    #endif
+    
+    // Inject Bakery API + Runtime Optimizations
     std::string bakeryInit = R"JS(
     window.Bakery = {
         version: '1.0.0',
@@ -392,85 +403,12 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     bakeryInit += R"JS(
     };
     
-    // 🎮 Steam API Wrapper - Clean API for game developers with error logging
-    (function() {
-        function parse(v) {
-            if (v === null || v === undefined) return v;
-            if (typeof v !== 'string') return v;
-            try { return JSON.parse(v); } catch(e) { return v; }
-        }
-        
-        // Helper to wrap API calls with error logging
-        function wrapAPI(name, fn, logSuccess = false) {
-            return async (...args) => {
-                try {
-                    const result = await fn(...args);
-                    if (logSuccess && result !== false && result !== 0 && result !== '' && result !== null) {
-                        console.log(`[Gemshell Steam] ${name}:`, result);
-                    }
-                    return result;
-                } catch (error) {
-                    console.error(`[Gemshell Steam] ${name} failed:`, error);
-                    throw error;
-                }
-            };
-        }
-        
-        const available = window.Bakery && window.Bakery.steam === true;
-        
-        if (!available) {
-            console.warn('[Gemshell Steam] Steamworks is not available. Make sure Steam is running and steamworks is enabled in bakery.config.js');
-        }
-        
-        window.Steam = {
-            isAvailable: () => available,
-            getSteamID: wrapAPI('getSteamID', async () => available ? parse(await window.steamGetSteamID()) : '0'),
-            getPersonaName: wrapAPI('getPersonaName', async () => available ? parse(await window.steamGetPersonaName()) : ''),
-            getAppID: wrapAPI('getAppID', async () => available ? parseInt(parse(await window.steamGetAppID())) : 0),
-            unlockAchievement: wrapAPI('unlockAchievement', async (id) => available ? parse(await window.steamUnlockAchievement(id)) === true : false),
-            getAchievement: wrapAPI('getAchievement', async (id) => available ? parse(await window.steamGetAchievement(id)) === true : false),
-            storeStats: wrapAPI('storeStats', async () => available ? parse(await window.steamStoreStats()) === true : false),
-            setStatInt: wrapAPI('setStatInt', async (n, v) => available ? parse(await window.steamSetStatInt(n, v)) === true : false),
-            getStatInt: wrapAPI('getStatInt', async (n) => available ? parseInt(parse(await window.steamGetStatInt(n))) : 0),
-            fileWrite: wrapAPI('fileWrite', async (f, d) => available ? parse(await window.steamFileWrite(f, d)) === true : false),
-            fileRead: wrapAPI('fileRead', async (f) => available ? parse(await window.steamFileRead(f)) || '' : ''),
-            fileExists: wrapAPI('fileExists', async (f) => available ? parse(await window.steamFileExists(f)) === true : false),
-            setRichPresence: wrapAPI('setRichPresence', async (k, v) => available ? parse(await window.steamSetRichPresence(k, v)) === true : false),
-            isOverlayEnabled: wrapAPI('isOverlayEnabled', async () => available ? parse(await window.steamIsOverlayEnabled()) === true : false),
-            activateOverlay: wrapAPI('activateOverlay', async (d) => available ? parse(await window.steamActivateOverlay(d)) === true : false),
-            isDlcInstalled: wrapAPI('isDlcInstalled', async (id) => available ? parse(await window.steamIsDlcInstalled(id)) === true : false),
-            getDLCCount: wrapAPI('getDLCCount', async () => available ? parseInt(parse(await window.steamGetDLCCount())) : 0),
-            getFriendCount: wrapAPI('getFriendCount', async () => available ? parseInt(parse(await window.steamGetFriendCount())) : 0),
-            getFriendPersonaName: wrapAPI('getFriendPersonaName', async (i) => available ? parse(await window.steamGetFriendPersonaName(i)) || '' : ''),
-            triggerScreenshot: wrapAPI('triggerScreenshot', async () => available ? parse(await window.steamTriggerScreenshot()) === true : false),
-            getCurrentGameLanguage: wrapAPI('getCurrentGameLanguage', async () => available ? parse(await window.steamGetCurrentGameLanguage()) || 'english' : 'english'),
-            getAvailableGameLanguages: wrapAPI('getAvailableGameLanguages', async () => available ? parse(await window.steamGetAvailableGameLanguages()) || '' : ''),
-            isSteamInBigPictureMode: wrapAPI('isSteamInBigPictureMode', async () => available ? parse(await window.steamIsSteamInBigPictureMode()) === true : false),
-            isSteamDeck: wrapAPI('isSteamDeck', async () => available ? parse(await window.steamIsSteamDeck()) === true : false),
-            getFriends: wrapAPI('getFriends', async (max = 100) => {
-                if (!available) return [];
-                const count = parseInt(parse(await window.steamGetFriendCount()));
-                const friends = [];
-                
-                // Request all friend names first (triggers Steam to load data)
-                for (let i = 0; i < Math.min(count, max); i++) {
-                    parse(await window.steamGetFriendPersonaName(i));
-                }
-                
-                // Wait for Steam to load the data
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Now collect all names
-                for (let i = 0; i < Math.min(count, max); i++) {
-                    const name = parse(await window.steamGetFriendPersonaName(i)) || '';
-                    if (name) friends.push(name);
-                }
-                
-                return friends;
-            })
-        };
-        window.Steamworks = window.Steam;
-    })();
+    // 🎮 Inject Steamworks wrapper (from separate file, but executed here for correct order)
+    )JS";
+    if (!steamworksWrapperScript.empty()) {
+        bakeryInit += steamworksWrapperScript;
+    }
+    bakeryInit += R"JS(
 )JS";
     
     w.init(bakeryInit + R"(

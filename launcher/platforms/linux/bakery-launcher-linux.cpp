@@ -380,13 +380,37 @@ int main(int argc, char* argv[]) {
     bakery::steamworks::bindSteamworksToWebview(w, steamEnabled);
     #endif
     
-    w.init(R"JS(
+    // Load Steamworks wrapper from assets (if available)
+    std::string steamworksWrapperScript;
+    #ifdef ENABLE_STEAMWORKS
+    if (steamEnabled) {
+        auto steamworksAsset = assetLoader.getAsset("bakery-steamworks-wrapper.js");
+        if (steamworksAsset.data && steamworksAsset.size > 0) {
+            steamworksWrapperScript = std::string(reinterpret_cast<const char*>(steamworksAsset.data), steamworksAsset.size);
+        }
+    }
+    #endif
+    
+    // Build JavaScript init code
+    std::string jsInit = R"JS(
     window.Bakery = {
         version: '1.0.0',
         platform: 'linux',
-        mode: 'shared-assets'
+        mode: 'shared-assets',
+        steam: )JS";
+    jsInit += steamEnabled ? "true" : "false";
+    jsInit += R"JS(
     };
-    )JS");
+    
+    // 🎮 Inject Steamworks wrapper (from separate file, but executed here for correct order)
+    )JS";
+    if (!steamworksWrapperScript.empty()) {
+        jsInit += steamworksWrapperScript;
+    }
+    jsInit += R"JS(
+    )JS";
+    
+    w.init(jsInit.c_str());
     
     // 🎬 Splash Screen: Show splash.html first, then navigate to game after 2 seconds
     if (config.app.splash) {

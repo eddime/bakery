@@ -184,6 +184,7 @@ public:
                 Response resp;
                 
                 // 🚀 INJECT WebGPU helper into HTML files (PHASE 1 TOO!)
+                // Note: Steamworks wrapper is injected directly in launcher (after window.Bakery)
                 bool isHTML = asset.mimeType.find("html") != std::string::npos;
                 
                 if (isHTML) {
@@ -264,6 +265,7 @@ public:
             Response resp;
             
             // 🚀 INJECT WebGPU helper into HTML files (universal, framework-agnostic)
+            // Note: Steamworks wrapper is injected directly in launcher (after window.Bakery)
             bool isHTML = asset.mimeType.find("html") != std::string::npos;
             
             if (isHTML) {
