@@ -73,18 +73,18 @@ elseif(UNIX)
         # For cross-compilation, try to find cross-pkg-config
         if(IS_CROSS_COMPILING)
             if(CMAKE_C_COMPILER MATCHES "x86_64-linux-gnu")
-                find_program(PKG_CONFIG_EXECUTABLE NAMES x86_64-linux-gnu-pkg-config PATHS /usr/bin)
+                # Set environment variables BEFORE finding pkg-config
+                set(ENV{PKG_CONFIG_PATH} "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig")
+                set(ENV{PKG_CONFIG_LIBDIR} "/usr/lib/x86_64-linux-gnu/pkgconfig")
+                
+                find_program(PKG_CONFIG_EXECUTABLE NAMES x86_64-linux-gnu-pkg-config pkg-config PATHS /usr/bin)
                 if(PKG_CONFIG_EXECUTABLE)
-                    set(PKG_CONFIG_PATH "/usr/lib/x86_64-linux-gnu/pkgconfig")
-                    message(STATUS "🔧 Using cross-pkg-config for x64: ${PKG_CONFIG_EXECUTABLE}")
+                    message(STATUS "🔧 Using pkg-config for x64: ${PKG_CONFIG_EXECUTABLE}")
+                    message(STATUS "   PKG_CONFIG_PATH: $ENV{PKG_CONFIG_PATH}")
+                    find_package(PkgConfig REQUIRED)
                 else()
-                    # Fallback: try setting PKG_CONFIG_PATH manually
-                    set(ENV{PKG_CONFIG_PATH} "/usr/lib/x86_64-linux-gnu/pkgconfig")
-                    find_package(PkgConfig)
-                    if(NOT PkgConfig_FOUND)
-                        message(STATUS "⚠️  Cross-pkg-config not found, trying native pkg-config with PKG_CONFIG_PATH")
-                        find_package(PkgConfig REQUIRED)
-                    endif()
+                    message(STATUS "⚠️  pkg-config not found")
+                    set(USE_PKG_CONFIG FALSE)
                 endif()
             elseif(CMAKE_C_COMPILER MATCHES "aarch64-linux-gnu")
                 find_program(PKG_CONFIG_EXECUTABLE NAMES aarch64-linux-gnu-pkg-config PATHS /usr/bin)
@@ -105,13 +105,6 @@ elseif(UNIX)
     endif()
     
     if(USE_PKG_CONFIG AND PkgConfig_FOUND)
-        # Set PKG_CONFIG_PATH for cross-compilation
-        if(IS_CROSS_COMPILING AND CMAKE_C_COMPILER MATCHES "x86_64-linux-gnu")
-            set(ENV{PKG_CONFIG_PATH} "/usr/lib/x86_64-linux-gnu/pkgconfig")
-        elseif(IS_CROSS_COMPILING AND CMAKE_C_COMPILER MATCHES "aarch64-linux-gnu")
-            set(ENV{PKG_CONFIG_PATH} "/usr/lib/aarch64-linux-gnu/pkgconfig")
-        endif()
-        
         # Try webkit2gtk-4.1 first (newer), then fallback to 4.0
         pkg_check_modules(WEBVIEW_GTK gtk+-3.0 glib-2.0 xcb x11 xrandr)
         pkg_check_modules(WEBVIEW_WEBKIT webkit2gtk-4.1)
