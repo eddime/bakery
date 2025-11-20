@@ -76,7 +76,7 @@ mkdir -p "$BUILD_X64"
 cd "$BUILD_X64"
 
 # Check if pre-built binary is cached locally (like Neutralino!)
-PREBUILT_DIR="$FRAMEWORK_DIR/launcher/prebuilt"
+PREBUILT_DIR="$FRAMEWORK_DIR/launcher/prebuilt/linux"
 PREBUILT_BINARY="$PREBUILT_DIR/gemcore-launcher-linux-x64"
 DOWNLOADED=false
 
@@ -130,7 +130,7 @@ mkdir -p "$BUILD_ARM64"
 cd "$BUILD_ARM64"
 
 # Check if pre-built ARM64 binary with WebKitGTK is cached locally (like Neutralino!)
-PREBUILT_ARM64="$FRAMEWORK_DIR/launcher/prebuilt/gemcore-launcher-linux-arm64"
+PREBUILT_ARM64="$FRAMEWORK_DIR/launcher/prebuilt/linux/gemcore-launcher-linux-arm64"
 ARM64_CACHED=false
 
 if [ -f "$PREBUILT_ARM64" ]; then
