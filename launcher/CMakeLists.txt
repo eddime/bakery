@@ -268,6 +268,7 @@ elseif(UNIX)
                     # Manually set libraries
                     set(WEBVIEW_LIBS
                         ${WEBKIT_LIB}
+                        javascriptcoregtk-4.1
                         gtk-3
                         gdk-3
                         gobject-2.0
