@@ -10,11 +10,10 @@ set(CMAKE_STRIP "x86_64-linux-gnu-strip")
 
 # Critical: Force x86_64 headers, not ARM64
 # The issue is that math.h includes bits/math-vector.h, and the compiler finds
-# the ARM64 version first. We need to ensure x86_64 headers come first.
-# Use -isystem to mark x86_64 headers as system headers (searched first)
-# and -idirafter to push /usr/include (where ARM64 headers are) to the end
-set(CMAKE_C_FLAGS_INIT "-m64 -isystem /usr/include/x86_64-linux-gnu -idirafter /usr/include")
-set(CMAKE_CXX_FLAGS_INIT "-m64 -isystem /usr/include/x86_64-linux-gnu -idirafter /usr/include")
+# the ARM64 version first. We need to disable standard includes and only use x86_64 paths.
+# Use -nostdinc to disable standard includes, then add only x86_64 paths
+set(CMAKE_C_FLAGS_INIT "-m64 -nostdinc -I/usr/x86_64-linux-gnu/include -I/usr/include/x86_64-linux-gnu")
+set(CMAKE_CXX_FLAGS_INIT "-m64 -nostdinc++ -I/usr/x86_64-linux-gnu/include/c++/15 -I/usr/x86_64-linux-gnu/include/x86_64-linux-gnu/c++/15 -I/usr/x86_64-linux-gnu/include -I/usr/include/x86_64-linux-gnu")
 
 # Don't use sysroot - multiarch setups don't need it
 # Instead, set library search paths explicitly
