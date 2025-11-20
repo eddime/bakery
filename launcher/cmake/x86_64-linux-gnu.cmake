@@ -9,9 +9,12 @@ set(CMAKE_RANLIB "x86_64-linux-gnu-ranlib")
 set(CMAKE_STRIP "x86_64-linux-gnu-strip")
 
 # Critical: Force x86_64 headers, not ARM64
-# Use -isystem to ensure x86_64 headers are found first
-set(CMAKE_C_FLAGS_INIT "-m64 -isystem /usr/include/x86_64-linux-gnu")
-set(CMAKE_CXX_FLAGS_INIT "-m64 -isystem /usr/include/x86_64-linux-gnu")
+# Use -idirafter to push ARM64 headers to the end, and -I to prioritize x86_64
+set(CMAKE_C_FLAGS_INIT "-m64 -I/usr/include/x86_64-linux-gnu -idirafter /usr/include")
+set(CMAKE_CXX_FLAGS_INIT "-m64 -I/usr/include/x86_64-linux-gnu -idirafter /usr/include")
+
+# Also set sysroot to prevent ARM64 header inclusion
+set(CMAKE_SYSROOT "/usr/x86_64-linux-gnu")
 
 # Find root path mode
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
