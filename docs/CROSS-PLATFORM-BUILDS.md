@@ -1,19 +1,19 @@
 # Cross-Platform Builds (wie Neutralino.js)
 
-Gemcore ermöglicht es, **von jedem Betriebssystem aus für alle Plattformen zu bauen** - genau wie Neutralino.js!
+Gemcore ermöglicht es, **von jedem Betriebssystem aus f�r alle Plattformen zu bauen** - genau wie Neutralino.js!
 
-## 🎯 Ziel
+##  Ziel
 
-- ✅ Von **macOS** aus für Windows + Linux bauen
-- ✅ Von **Windows** aus für macOS + Linux bauen  
-- ✅ Von **Linux** aus für macOS + Windows bauen
-- ✅ **Keine lokale Compilation** nötig (pre-built binaries)
+-  Von **macOS** aus f�r Windows + Linux bauen
+-  Von **Windows** aus f�r macOS + Linux bauen  
+-  Von **Linux** aus f�r macOS + Windows bauen
+-  **Keine lokale Compilation** nötig (pre-built binaries)
 
-## 🔧 Wie es funktioniert
+##  Wie es funktioniert
 
 ### 1. GitHub Actions baut native Binaries
 
-Wir verwenden GitHub Actions, um **native Binaries** für alle Plattformen zu bauen:
+Wir verwenden GitHub Actions, um **native Binaries** f�r alle Plattformen zu bauen:
 
 - **macOS**: Universal Binary (x64 + ARM64)
 - **Windows**: x64 Binary
@@ -23,7 +23,7 @@ Diese Binaries werden als **GitHub Releases** veröffentlicht.
 
 ### 2. Download pre-built Binaries
 
-Wenn du ein Spiel baust, lädt Gemcore automatisch die pre-built Binaries herunter:
+Wenn du ein Spiel baust, l�dt Gemcore automatisch die pre-built Binaries herunter:
 
 ```bash
 # Automatisch beim Build
@@ -35,16 +35,16 @@ bun scripts/download-prebuilt-binaries.ts
 
 ### 3. Fallback: Lokale Compilation
 
-Falls keine pre-built Binaries verfügbar sind:
+Falls keine pre-built Binaries verf�gbar sind:
 - **macOS**: Baut lokal mit Xcode
 - **Windows**: Baut lokal mit MSVC
 - **Linux**: Cross-Compilation mit musl (ohne WebKitGTK)
 
-## 📦 Setup
+##  Setup
 
 ### Schritt 1: GitHub Release erstellen
 
-Um die pre-built Binaries verfügbar zu machen, musst du einen GitHub Release erstellen:
+Um die pre-built Binaries verf�gbar zu machen, musst du einen GitHub Release erstellen:
 
 ```bash
 # 1. Tag erstellen
@@ -58,7 +58,7 @@ git push origin v1.0.0
 ### Schritt 2: Binaries herunterladen
 
 ```bash
-# Lädt alle pre-built Binaries herunter
+# L�dt alle pre-built Binaries herunter
 bun scripts/download-prebuilt-binaries.ts
 
 # Oder spezifische Version
@@ -68,7 +68,7 @@ bun scripts/download-prebuilt-binaries.ts v1.0.0
 ### Schritt 3: Spiel bauen
 
 ```bash
-# Baut für alle Plattformen (verwendet pre-built binaries)
+# Baut f�r alle Plattformen (verwendet pre-built binaries)
 bun bake build --platform=all
 
 # Oder einzelne Plattform
@@ -77,50 +77,50 @@ bun bake build --platform=win
 bun bake build --platform=linux
 ```
 
-## 🚀 Vorteile
+##  Vorteile
 
 ### Wie Neutralino.js
 
-- ✅ **Cross-Platform**: Von jedem OS aus für alle OS bauen
-- ✅ **Schnell**: Keine lokale Compilation nötig
-- ✅ **Konsistent**: Gleiche Binaries für alle Entwickler
-- ✅ **WebKitGTK**: Linux-Binaries haben WebView eingebettet
+-  **Cross-Platform**: Von jedem OS aus f�r alle OS bauen
+-  **Schnell**: Keine lokale Compilation nötig
+-  **Konsistent**: Gleiche Binaries f�r alle Entwickler
+-  **WebKitGTK**: Linux-Binaries haben WebView eingebettet
 
 ### Besser als Neutralino.js
 
-- ✅ **Single Executable**: Alles in einer Datei
-- ✅ **Steamworks**: Integriert und funktioniert
-- ✅ **Asset Encryption**: XOR-verschlüsselt
-- ✅ **Splash Screen**: Eingebaut
+-  **Single Executable**: Alles in einer Datei
+-  **Steamworks**: Integriert und funktioniert
+-  **Asset Encryption**: XOR-verschl�sselt
+-  **Splash Screen**: Eingebaut
 
-## 📊 Binary Sizes
+##  Binary Sizes
 
 Nach dem Download:
 
 ```
 launcher/prebuilt/
-├── gemcore-launcher-mac              ~500 KB (Universal)
-├── gemcore-launcher-win.exe          ~300 KB
-├── gemcore-launcher-linux-x64        ~2 MB (mit WebKitGTK)
-└── gemcore-universal-launcher-linux  ~200 KB
+ gemcore-launcher-mac              ~500 KB (Universal)
+ gemcore-launcher-win.exe          ~300 KB
+ gemcore-launcher-linux-x64        ~2 MB (mit WebKitGTK)
+ gemcore-universal-launcher-linux  ~200 KB
 ```
 
-## 🔄 Update-Workflow
+##  Update-Workflow
 
-### Für Framework-Entwickler
+### F�r Framework-Entwickler
 
-1. Code ändern
+1. Code �ndern
 2. `git tag v1.0.1 && git push origin v1.0.1`
 3. GitHub Actions baut automatisch neue Binaries
-4. Neue Binaries sind sofort verfügbar
+4. Neue Binaries sind sofort verf�gbar
 
-### Für App-Entwickler (Bunery)
+### F�r App-Entwickler (Bunery)
 
 1. Gemcore als Submodule updaten: `git submodule update --remote`
 2. Pre-built Binaries herunterladen: `bun scripts/download-prebuilt-binaries.ts`
 3. Fertig! Neue Version ist einsatzbereit
 
-## ⚙️ GitHub Actions Workflow
+##  GitHub Actions Workflow
 
 Die Workflows befinden sich in `.github/workflows/`:
 
@@ -131,16 +131,16 @@ Die Workflows befinden sich in `.github/workflows/`:
 
 Du kannst die Workflows auch manuell triggern:
 
-1. Gehe zu GitHub → Actions
-2. Wähle Workflow aus
+1. Gehe zu GitHub � Actions
+2. W�hle Workflow aus
 3. Klicke "Run workflow"
 4. Binaries werden gebaut und als Artifacts hochgeladen
 
-## 🐛 Troubleshooting
+##  Troubleshooting
 
 ### "Failed to fetch latest release"
 
-→ Es gibt noch keinen GitHub Release. Erstelle einen:
+� Es gibt noch keinen GitHub Release. Erstelle einen:
 
 ```bash
 git tag v1.0.0
@@ -149,7 +149,7 @@ git push origin v1.0.0
 
 ### "Pre-built binary not available"
 
-→ Fallback auf lokale Compilation. Für Linux ohne WebKitGTK:
+� Fallback auf lokale Compilation. F�r Linux ohne WebKitGTK:
 
 ```bash
 # macOS
@@ -161,35 +161,35 @@ bun bake build --platform=linux
 
 ### Linux: "No apps available"
 
-→ WebKitGTK fehlt. Entweder:
+� WebKitGTK fehlt. Entweder:
 
 1. Pre-built Binary verwenden (empfohlen)
 2. Auf Linux nativ bauen
 3. AppImage verwenden (TODO)
 
-## 🎯 Roadmap
+##  Roadmap
 
 - [x] Pre-built Binaries via GitHub Actions
 - [x] Automatischer Download beim Build
 - [x] Linux mit WebKitGTK
-- [ ] AppImage für Linux (alle Distros)
+- [ ] AppImage f�r Linux (alle Distros)
 - [ ] Windows Code Signing
 - [ ] macOS Notarization
 
-## 📚 Vergleich mit Neutralino.js
+##  Vergleich mit Neutralino.js
 
 | Feature | Neutralino.js | Gemcore |
 |---------|--------------|--------|
-| Cross-Platform Build | ✅ | ✅ |
-| Pre-built Binaries | ✅ | ✅ |
-| Single Executable | ❌ | ✅ |
-| WebKitGTK (Linux) | ✅ | ✅ |
-| Steamworks | ❌ | ✅ |
-| Asset Encryption | ❌ | ✅ |
-| Splash Screen | ❌ | ✅ |
+| Cross-Platform Build |  |  |
+| Pre-built Binaries |  |  |
+| Single Executable |  |  |
+| WebKitGTK (Linux) |  |  |
+| Steamworks |  |  |
+| Asset Encryption |  |  |
+| Splash Screen |  |  |
 | File Size | ~2 MB | ~2 MB |
 
-## 🔗 Links
+##  Links
 
 - [GitHub Actions Workflows](../.github/workflows/)
 - [Download Script](../scripts/download-prebuilt-binaries.ts)

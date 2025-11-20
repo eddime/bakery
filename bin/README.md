@@ -1,41 +1,41 @@
-# 📦 Pre-built Binaries
+#  Pre-built Binaries
 
 This directory contains pre-built launcher binaries and Steamworks libraries for all supported platforms.
 
-## 📊 Structure
+##  Structure
 
 ```
 bin/
-├── steamworks/              # Shared Steamworks DLLs (~1.3 MB)
-│   ├── macos/
-│   │   └── libsteam_api.dylib      # Universal (ARM64 + x64)
-│   ├── windows/
-│   │   ├── steam_api64.dll         # 64-bit
-│   │   └── steam_api.dll           # 32-bit
-│   └── linux/
-│       └── libsteam_api.so         # x64 + ARM64
-│
-├── mac-arm64/               # macOS ARM64 launcher (~192 KB)
-│   └── bakery-launcher
-│
-├── mac-x64/                 # macOS x64 launcher (~208 KB)
-│   └── bakery-launcher
-│
-├── win-x64/                 # Windows x64 launcher (~1 MB)
-│   └── bakery-launcher.exe
-│
-├── linux-x64/               # Linux x64 launcher (~140 KB)
-│   └── bakery-launcher
-│
-└── linux-arm64/             # Linux ARM64 launcher (~120 KB)
-    └── bakery-launcher
+ steamworks/              # Shared Steamworks DLLs (~1.3 MB)
+    macos/
+       libsteam_api.dylib      # Universal (ARM64 + x64)
+    windows/
+       steam_api64.dll         # 64-bit
+       steam_api.dll           # 32-bit
+    linux/
+        libsteam_api.so         # x64 + ARM64
+
+ mac-arm64/               # macOS ARM64 launcher (~192 KB)
+    bakery-launcher
+
+ mac-x64/                 # macOS x64 launcher (~208 KB)
+    bakery-launcher
+
+ win-x64/                 # Windows x64 launcher (~1 MB)
+    bakery-launcher.exe
+
+ linux-x64/               # Linux x64 launcher (~140 KB)
+    bakery-launcher
+
+ linux-arm64/             # Linux ARM64 launcher (~120 KB)
+     bakery-launcher
 ```
 
 **Total Size: ~3 MB** (all platforms + Steamworks)
 
 ---
 
-## 🎮 Steamworks Integration
+##  Steamworks Integration
 
 The Steamworks DLLs are stored **once** in `steamworks/` and copied to game bundles during build.
 
@@ -56,7 +56,7 @@ The Steamworks DLLs are stored **once** in `steamworks/` and copied to game bund
 
 ---
 
-## 🔄 Updating Binaries
+##  Updating Binaries
 
 ### From GitHub Actions (Automatic)
 
@@ -98,7 +98,7 @@ bun scripts/setup-bin-structure.ts
 
 ---
 
-## 📝 Notes
+##  Notes
 
 - **Launchers are architecture-specific** (separate binaries for ARM64/x64)
 - **Steamworks DLLs are universal** (macOS) or shared (Linux)
@@ -107,7 +107,7 @@ bun scripts/setup-bin-structure.ts
 
 ---
 
-## 🚀 Usage in Builds
+##  Usage in Builds
 
 Build scripts automatically copy binaries from `bin/` to game bundles:
 
@@ -118,32 +118,32 @@ Build scripts automatically copy binaries from `bin/` to game bundles:
 Output:
 ```
 dist/
-├── mac/
-│   └── steamdemo.app/
-│       └── Contents/MacOS/
-│           ├── steamdemo              # Launcher
-│           └── libsteam_api.dylib    # From bin/steamworks/macos/
-│
-├── windows/
-│   └── steamdemo.exe                 # Launcher + steam_api64.dll embedded
-│
-└── linux/
-    ├── steamdemo-x64                 # Launcher + libsteam_api.so embedded
-    └── steamdemo-arm64               # Launcher + libsteam_api.so embedded
+ mac/
+    steamdemo.app/
+        Contents/MacOS/
+            steamdemo              # Launcher
+            libsteam_api.dylib    # From bin/steamworks/macos/
+
+ windows/
+    steamdemo.exe                 # Launcher + steam_api64.dll embedded
+
+ linux/
+     steamdemo-x64                 # Launcher + libsteam_api.so embedded
+     steamdemo-arm64               # Launcher + libsteam_api.so embedded
 ```
 
 ---
 
-## 🔐 Security
+##  Security
 
 All binaries are:
-- ✅ Built from source in GitHub Actions (reproducible)
-- ✅ Stripped of debug symbols
-- ✅ Signed (macOS only, if configured)
-- ✅ Verified by CI/CD checksums
+-  Built from source in GitHub Actions (reproducible)
+-  Stripped of debug symbols
+-  Signed (macOS only, if configured)
+-  Verified by CI/CD checksums
 
 Steamworks DLLs are:
-- ✅ Official Valve redistributables
-- ✅ From Steamworks SDK v1.59
-- ✅ Unmodified (checksums match official release)
+-  Official Valve redistributables
+-  From Steamworks SDK v1.59
+-  Unmodified (checksums match official release)
 

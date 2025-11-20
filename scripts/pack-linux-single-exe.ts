@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * 🐧 Pack Linux Single Executable
+ *  Pack Linux Single Executable
  * Embeds launcher + assets + config + Steam .so into a single executable
  */
 
@@ -24,21 +24,21 @@ async function packSingleExecutable(
   steamSoPath?: string,
   assetsPath?: string
 ) {
-  console.log('🐧 Packing Linux Single Executable...');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(' Packing Linux Single Executable...');
+  console.log('');
   console.log('');
 
   // Strip universal launcher BEFORE packing (reduces size by ~50%!)
-  console.log('🔧 Stripping universal launcher...');
+  console.log(' Stripping universal launcher...');
   try {
     Bun.spawnSync(['strip', '--strip-all', universalLauncher], {
       stdout: 'pipe',
       stderr: 'pipe',
     });
     const strippedSize = await Bun.file(universalLauncher).stat();
-    console.log(`✅ Stripped to ${(strippedSize.size / 1024).toFixed(1)} KB`);
+    console.log(` Stripped to ${(strippedSize.size / 1024).toFixed(1)} KB`);
   } catch (e) {
-    console.warn('⚠️  Failed to strip universal launcher');
+    console.warn('  Failed to strip universal launcher');
   }
 
   // Read all components
@@ -50,9 +50,9 @@ async function packSingleExecutable(
   if (assetsPath && assetsPath.length > 0 && assetsPath !== '""') {
     try {
       assets = readFileSync(assetsPath);
-      console.log(`📦 Assets: ${(assets.length / 1024).toFixed(1)} KB`);
+      console.log(` Assets: ${(assets.length / 1024).toFixed(1)} KB`);
     } catch (e) {
-      console.warn('⚠️  Assets file not found, skipping...');
+      console.warn('  Assets file not found, skipping...');
     }
   }
   
@@ -64,14 +64,14 @@ async function packSingleExecutable(
   if (steamSoPath && steamSoPath.length > 0 && steamSoPath !== '""') {
     try {
       steamSo = readFileSync(steamSoPath);
-      console.log(`🎮 Steam library: ${(steamSo.length / 1024).toFixed(1)} KB`);
+      console.log(` Steam library: ${(steamSo.length / 1024).toFixed(1)} KB`);
     } catch (e) {
-      console.warn('⚠️  Steam library not found, skipping...');
+      console.warn('  Steam library not found, skipping...');
     }
   }
 
-  console.log(`📦 Universal launcher: ${(launcher.length / 1024).toFixed(1)} KB`);
-  console.log(`🔧 x64 binary: ${(x64.length / 1024).toFixed(1)} KB`);
+  console.log(` Universal launcher: ${(launcher.length / 1024).toFixed(1)} KB`);
+  console.log(` x64 binary: ${(x64.length / 1024).toFixed(1)} KB`);
   console.log('');
 
   // Calculate offsets (8-byte aligned)
@@ -160,35 +160,35 @@ async function packSingleExecutable(
   // Write output
   writeFileSync(outputPath, output, { mode: 0o755 });
   
-  // 🔧 Strip debug symbols to reduce size
-  console.log('🔧 Stripping debug symbols...');
+  //  Strip debug symbols to reduce size
+  console.log(' Stripping debug symbols...');
   try {
     Bun.spawnSync(['strip', '--strip-all', outputPath], {
       stdout: 'pipe',
       stderr: 'pipe',
     });
-    console.log('✅ Debug symbols stripped');
+    console.log(' Debug symbols stripped');
   } catch (e) {
-    console.warn('⚠️  Failed to strip (strip command not found)');
+    console.warn('  Failed to strip (strip command not found)');
   }
   
   const finalStats = await Bun.file(outputPath).stat();
   
-  console.log('✅ Packed successfully!');
+  console.log(' Packed successfully!');
   console.log('');
-  console.log(`📊 Final size: ${(finalStats.size / 1024 / 1024).toFixed(2)} MB`);
-  console.log(`📍 Output: ${outputPath}`);
+  console.log(` Final size: ${(finalStats.size / 1024 / 1024).toFixed(2)} MB`);
+  console.log(` Output: ${outputPath}`);
   console.log('');
-  console.log('🔐 Structure:');
-  console.log(`   • Universal Launcher: 0 - ${launcher.length}`);
-  console.log(`   • x64 Binary: ${data.x64Offset} - ${data.x64Offset + data.x64Size}`);
+  console.log(' Structure:');
+  console.log(`   � Universal Launcher: 0 - ${launcher.length}`);
+  console.log(`   � x64 Binary: ${data.x64Offset} - ${data.x64Offset + data.x64Size}`);
   if (assets.length > 0) {
-    console.log(`   • Assets: ${data.assetsOffset} - ${data.assetsOffset + data.assetsSize}`);
+    console.log(`   � Assets: ${data.assetsOffset} - ${data.assetsOffset + data.assetsSize}`);
   }
   if (steamSo.length > 0) {
-    console.log(`   • Steam Library: ${data.steamSoOffset} - ${data.steamSoOffset + data.steamSoSize}`);
+    console.log(`   � Steam Library: ${data.steamSoOffset} - ${data.steamSoOffset + data.steamSoSize}`);
   }
-  console.log(`   • Header: ${output.length - 64} - ${output.length}`);
+  console.log(`   � Header: ${output.length - 64} - ${output.length}`);
   console.log('');
 }
 

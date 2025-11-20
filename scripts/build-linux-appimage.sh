@@ -12,17 +12,17 @@ if [ -z "$PROJECT_DIR" ] || [ -z "$APP_NAME" ]; then
     exit 1
 fi
 
-echo "📦 Building Linux AppImage"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo " Building Linux AppImage"
 echo ""
-echo "⚠️  AppImage requires native Linux build!"
-echo "💡 This script should run on Linux (or via GitHub Actions)"
+echo ""
+echo "  AppImage requires native Linux build!"
+echo " This script should run on Linux (or via GitHub Actions)"
 echo ""
 
 # Check if we're on Linux
 if [[ $(uname) != "Linux" ]]; then
-    echo "❌ AppImage can only be built on Linux!"
-    echo "💡 Options:"
+    echo " AppImage can only be built on Linux!"
+    echo " Options:"
     echo "   1. Build on a Linux machine"
     echo "   2. Use GitHub Actions (recommended)"
     echo "   3. Use Docker with Linux container"
@@ -40,15 +40,15 @@ mkdir -p "$OUTPUT_DIR"
 # ============================================
 # 1. Build launcher with WebKitGTK
 # ============================================
-echo "🔨 Building launcher with WebKitGTK..."
+echo " Building launcher with WebKitGTK..."
 BUILD_DIR="$FRAMEWORK_DIR/launcher/build-linux-appimage"
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
 # Check if WebKitGTK is installed
 if ! pkg-config --exists webkit2gtk-4.1 && ! pkg-config --exists webkit2gtk-4.0; then
-    echo "❌ WebKitGTK not found!"
-    echo "💡 Install: sudo apt-get install libwebkit2gtk-4.1-dev libgtk-3-dev"
+    echo " WebKitGTK not found!"
+    echo " Install: sudo apt-get install libwebkit2gtk-4.1-dev libgtk-3-dev"
     exit 1
 fi
 
@@ -56,17 +56,17 @@ cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_STEAMWORKS=OFF
 make gemcore-launcher-linux -j$(nproc)
 
 if [ ! -f "gemcore-launcher-linux" ]; then
-    echo "❌ Launcher build failed!"
+    echo " Launcher build failed!"
     exit 1
 fi
 
-echo "✅ Launcher built"
+echo " Launcher built"
 echo ""
 
 # ============================================
 # 2. Create AppDir structure
 # ============================================
-echo "📁 Creating AppDir structure..."
+echo " Creating AppDir structure..."
 cd "$FRAMEWORK_DIR"
 
 APPDIR="$BUILD_DIR/${APP_NAME}.AppDir"
@@ -80,11 +80,11 @@ mkdir -p "$APPDIR/usr/share/icons/hicolor/256x256/apps"
 cp "$BUILD_DIR/gemcore-launcher-linux" "$APPDIR/usr/bin/${APP_NAME}"
 
 # Copy assets
-echo "📦 Embedding assets..."
+echo " Embedding assets..."
 bun scripts/embed-assets-shared.ts "$PROJECT_DIR" "$APPDIR/usr/bin/gemcore-assets"
 
 # Copy WebKitGTK and dependencies
-echo "📚 Bundling WebKitGTK dependencies..."
+echo " Bundling WebKitGTK dependencies..."
 # This will be handled by linuxdeploy
 
 # Copy icon if available
@@ -92,7 +92,7 @@ ICON_PATH="$PROJECT_DIR/assets/icon.png"
 if [ -f "$ICON_PATH" ]; then
     cp "$ICON_PATH" "$APPDIR/usr/share/icons/hicolor/256x256/apps/${APP_NAME}.png"
     cp "$ICON_PATH" "$APPDIR/${APP_NAME}.png"
-    echo "🎨 Icon copied"
+    echo " Icon copied"
 fi
 
 # Create .desktop file
@@ -120,17 +120,17 @@ EOF
 
 chmod +x "$APPDIR/AppRun"
 
-echo "✅ AppDir created"
+echo " AppDir created"
 echo ""
 
 # ============================================
 # 3. Download linuxdeploy and create AppImage
 # ============================================
-echo "📦 Creating AppImage with linuxdeploy..."
+echo " Creating AppImage with linuxdeploy..."
 
 LINUXDEPLOY="$BUILD_DIR/linuxdeploy-x86_64.AppImage"
 if [ ! -f "$LINUXDEPLOY" ]; then
-    echo "⬇️  Downloading linuxdeploy..."
+    echo "  Downloading linuxdeploy..."
     wget -q "https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage" -O "$LINUXDEPLOY"
     chmod +x "$LINUXDEPLOY"
 fi
@@ -143,7 +143,7 @@ cd "$BUILD_DIR"
 APPIMAGE=$(ls ${APP_NAME}*.AppImage | head -1)
 
 if [ -z "$APPIMAGE" ]; then
-    echo "❌ AppImage creation failed!"
+    echo " AppImage creation failed!"
     exit 1
 fi
 
@@ -152,18 +152,18 @@ mv "$APPIMAGE" "$OUTPUT_DIR/${APP_NAME}-x86_64.AppImage"
 chmod +x "$OUTPUT_DIR/${APP_NAME}-x86_64.AppImage"
 
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Linux AppImage complete!"
 echo ""
-echo "📦 Output: $OUTPUT_DIR/${APP_NAME}-x86_64.AppImage"
-echo "📊 Size: $(du -h "$OUTPUT_DIR/${APP_NAME}-x86_64.AppImage" | awk '{print $1}')"
+echo " Linux AppImage complete!"
 echo ""
-echo "🎯 User experience:"
-echo "   → Download: ${APP_NAME}-x86_64.AppImage"
-echo "   → chmod +x ${APP_NAME}-x86_64.AppImage"
-echo "   → ./${APP_NAME}-x86_64.AppImage"
-echo "   → Works on ANY Linux distribution!"
+echo " Output: $OUTPUT_DIR/${APP_NAME}-x86_64.AppImage"
+echo " Size: $(du -h "$OUTPUT_DIR/${APP_NAME}-x86_64.AppImage" | awk '{print $1}')"
 echo ""
-echo "✨ All dependencies bundled (including WebKitGTK)"
+echo " User experience:"
+echo "   � Download: ${APP_NAME}-x86_64.AppImage"
+echo "   � chmod +x ${APP_NAME}-x86_64.AppImage"
+echo "   � ./${APP_NAME}-x86_64.AppImage"
+echo "   � Works on ANY Linux distribution!"
+echo ""
+echo " All dependencies bundled (including WebKitGTK)"
 echo ""
 

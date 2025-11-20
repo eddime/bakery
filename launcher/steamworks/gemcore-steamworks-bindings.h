@@ -1,5 +1,5 @@
 /**
- * 🎮 Gemcore Steamworks Bindings
+ *  Gemcore Steamworks Bindings
  * Cross-platform Steamworks bindings for all launchers
  * 
  * Usage:
@@ -72,7 +72,7 @@ inline void createSteamAppIdFile(uint32_t appId) {
         steamAppId.close();
         
         #ifndef NDEBUG
-        std::cout << "🎮 Created steam_appid.txt at: " << steamAppIdPath << std::endl;
+        std::cout << " Created steam_appid.txt at: " << steamAppIdPath << std::endl;
         std::cout << "   App ID: " << appId << std::endl;
         #endif
     }
@@ -109,7 +109,7 @@ inline bool initSteamworks(const ConfigType& config) {
     // Check if Steamworks is enabled in config
     if (!config.steamworks.enabled) {
         #ifndef NDEBUG
-        std::cout << "⚠️  Steamworks: DISABLED (not enabled in config)" << std::endl;
+        std::cout << "  Steamworks: DISABLED (not enabled in config)" << std::endl;
         #endif
         return false;
     }
@@ -122,19 +122,19 @@ inline bool initSteamworks(const ConfigType& config) {
     if (config.steamworks.appId > 0) {
         createSteamAppIdFile(config.steamworks.appId);
     } else {
-        std::cerr << "⚠️  No Steam App ID configured!" << std::endl;
+        std::cerr << "  No Steam App ID configured!" << std::endl;
     }
     
     // Initialize Steamworks
-    std::cout << "🎮 Initializing Steamworks..." << std::endl;
+    std::cout << " Initializing Steamworks..." << std::endl;
     bool success = SteamworksManager::Init();
     
     if (success) {
-        std::cout << "✅ Steamworks: INITIALIZED" << std::endl;
+        std::cout << " Steamworks: INITIALIZED" << std::endl;
     } else {
-        std::cerr << "❌ Steamworks: FAILED" << std::endl;
-        std::cerr << "   → Is Steam client running?" << std::endl;
-        std::cerr << "   → Is App ID valid? (" << config.steamworks.appId << ")" << std::endl;
+        std::cerr << " Steamworks: FAILED" << std::endl;
+        std::cerr << "   � Is Steam client running?" << std::endl;
+        std::cerr << "   � Is App ID valid? (" << config.steamworks.appId << ")" << std::endl;
     }
     
     return success;
@@ -430,7 +430,7 @@ inline void bindSteamworksToWebview(WebviewType& w, bool steamEnabled) {
     });
     
     #ifndef NDEBUG
-    std::cout << "🎮 Steamworks bindings: READY (accessible via window.Gemcore.Steam)" << std::endl;
+    std::cout << " Steamworks bindings: READY (accessible via window.Gemcore.Steam)" << std::endl;
     #endif
 }
 
@@ -453,7 +453,7 @@ inline void shutdownSteamworks() {
     SteamworksManager::Shutdown();
     
     #ifndef NDEBUG
-    std::cout << "🎮 Steamworks: Shut down" << std::endl;
+    std::cout << " Steamworks: Shut down" << std::endl;
     #endif
 }
 

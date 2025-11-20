@@ -1,22 +1,22 @@
-# 🎮 Steamworks Integration
+#  Steamworks Integration
 
 Gemcore includes **native Steamworks integration** for all platforms (macOS, Windows, Linux) with zero Node.js dependencies.
 
 ## Features
 
-- ✅ **User Info**: Steam ID, Persona Name, App ID
-- ✅ **Achievements**: Unlock and check achievement status
-- ✅ **Stats**: Set and get integer stats
-- ✅ **Cloud Storage**: Save/load files to Steam Cloud
-- ✅ **Rich Presence**: Update player status
-- ✅ **Overlay**: Check and activate Steam Overlay
-- ✅ **DLC Management**: Check if user owns DLC
-- ✅ **Friends**: Get friend count and names
-- ✅ **Screenshots**: Trigger Steam screenshot
-- ✅ **Localization**: Get game language
-- ✅ **Steam Deck**: Detect Steam Deck and Big Picture mode
-- ✅ **Cross-Platform**: Same API for macOS, Windows, and Linux
-- ✅ **Automatic Error Logging**: All errors logged to console
+-  **User Info**: Steam ID, Persona Name, App ID
+-  **Achievements**: Unlock and check achievement status
+-  **Stats**: Set and get integer stats
+-  **Cloud Storage**: Save/load files to Steam Cloud
+-  **Rich Presence**: Update player status
+-  **Overlay**: Check and activate Steam Overlay
+-  **DLC Management**: Check if user owns DLC
+-  **Friends**: Get friend count and names
+-  **Screenshots**: Trigger Steam screenshot
+-  **Localization**: Get game language
+-  **Steam Deck**: Detect Steam Deck and Big Picture mode
+-  **Cross-Platform**: Same API for macOS, Windows, and Linux
+-  **Automatic Error Logging**: All errors logged to console
 
 ## Configuration
 
@@ -57,9 +57,9 @@ try {
 ```
 
 **Console Output Examples:**
-- `⚠️ [Gemcore Steam] Steamworks is not available. Make sure Steam is running...`
-- `❌ [Gemcore Steam] unlockAchievement failed: Error: ...`
-- `❌ [Gemcore Steam] fileRead failed: File not found`
+- ` [Gemcore Steam] Steamworks is not available. Make sure Steam is running...`
+- ` [Gemcore Steam] unlockAchievement failed: Error: ...`
+- ` [Gemcore Steam] fileRead failed: File not found`
 
 **No try/catch required** - errors are automatically logged for debugging!
 
@@ -222,12 +222,12 @@ All Steamworks bindings are centralized in **`gemcore-steamworks-bindings.h`**, 
 
 ```
 launcher/
-├── gemcore-steamworks-bindings.h    # 🎮 Cross-platform Steamworks bindings
-├── gemcore-steamworks.h             # Steamworks API wrapper
-├── gemcore-steamworks.cpp           # Steamworks implementation
-├── gemcore-launcher-mac.cpp         # macOS launcher (uses bindings.h)
-├── gemcore-launcher-win.cpp         # Windows launcher (uses bindings.h)
-└── gemcore-launcher-linux.cpp       # Linux launcher (uses bindings.h)
+ gemcore-steamworks-bindings.h    #  Cross-platform Steamworks bindings
+ gemcore-steamworks.h             # Steamworks API wrapper
+ gemcore-steamworks.cpp           # Steamworks implementation
+ gemcore-launcher-mac.cpp         # macOS launcher (uses bindings.h)
+ gemcore-launcher-win.cpp         # Windows launcher (uses bindings.h)
+ gemcore-launcher-linux.cpp       # Linux launcher (uses bindings.h)
 ```
 
 ### Helper Functions

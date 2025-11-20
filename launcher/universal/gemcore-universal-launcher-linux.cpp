@@ -1,5 +1,5 @@
 /**
- * 🥐 Gemcore Universal Launcher - Linux
+ *  Gemcore Universal Launcher - Linux
  * Detects CPU architecture and launches the correct binary
  */
 
@@ -43,9 +43,9 @@ int main(int argc, char* argv[]) {
     std::string arch = detectArchitecture();
     std::string execDir = getExecutableDir();
     
-    std::cout << "🥐 Gemcore Universal Launcher (Linux)" << std::endl;
-    std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
-    std::cout << "🔍 Detected architecture: " << arch << std::endl;
+    std::cout << " Gemcore Universal Launcher (Linux)" << std::endl;
+    std::cout << "" << std::endl;
+    std::cout << " Detected architecture: " << arch << std::endl;
     std::cout << std::endl;
     
     // Determine which binary to launch
@@ -56,14 +56,14 @@ int main(int argc, char* argv[]) {
     } else if (arch == "aarch64") {
         binaryName = "Runner-aarch64";
     } else {
-        std::cerr << "❌ Unsupported architecture: " << arch << std::endl;
-        std::cerr << "💡 Supported: x86_64, aarch64" << std::endl;
+        std::cerr << " Unsupported architecture: " << arch << std::endl;
+        std::cerr << " Supported: x86_64, aarch64" << std::endl;
         return 1;
     }
     
     std::string binaryPath = execDir + "/" + binaryName;
     
-    std::cout << "🚀 Launching: " << binaryName << std::endl;
+    std::cout << " Launching: " << binaryName << std::endl;
     std::cout << std::endl;
     
     // Execute the architecture-specific binary
@@ -77,7 +77,7 @@ int main(int argc, char* argv[]) {
     execv(binaryPath.c_str(), args);
     
     // If we get here, execv failed
-    std::cerr << "❌ Failed to launch " << binaryName << std::endl;
-    std::cerr << "💡 Make sure the binary exists and is executable" << std::endl;
+    std::cerr << " Failed to launch " << binaryName << std::endl;
+    std::cerr << " Make sure the binary exists and is executable" << std::endl;
     return 1;
 }

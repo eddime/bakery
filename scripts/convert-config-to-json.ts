@@ -28,7 +28,7 @@ try {
     config = imported.default || imported;
   }
 } catch (e) {
-  console.error('❌ Failed to load config:', e);
+  console.error(' Failed to load config:', e);
   process.exit(1);
 }
 
@@ -44,4 +44,4 @@ const normalized = {
 
 // Write JSON
 writeFileSync(outputPath, JSON.stringify(normalized, null, 2));
-console.log('✅ Config converted to JSON');
+console.log(' Config converted to JSON');

@@ -44,13 +44,13 @@ static void load_steam_library() {
     for (const char* path : paths) {
         g_steamLib = dlopen(path, RTLD_LAZY | RTLD_GLOBAL);
         if (g_steamLib) {
-            std::cout << "✅ Loaded Steam library from: " << path << std::endl;
+            std::cout << " Loaded Steam library from: " << path << std::endl;
             break;
         }
     }
     
     if (!g_steamLib) {
-        std::cerr << "⚠️  Steam library not found. Steamworks disabled." << std::endl;
+        std::cerr << "  Steam library not found. Steamworks disabled." << std::endl;
         std::cerr << "   Error: " << dlerror() << std::endl;
         return;
     }
@@ -65,9 +65,9 @@ static void load_steam_library() {
     SteamInternal_ContextInit_ptr = (SteamInternal_ContextInit_t)dlsym(g_steamLib, "SteamInternal_ContextInit");
     
     if (SteamAPI_Init_ptr && SteamAPI_Shutdown_ptr && SteamAPI_RunCallbacks_ptr) {
-        std::cout << "✅ Steam API functions loaded successfully!" << std::endl;
+        std::cout << " Steam API functions loaded successfully!" << std::endl;
     } else {
-        std::cerr << "⚠️  Failed to load Steam API functions" << std::endl;
+        std::cerr << "  Failed to load Steam API functions" << std::endl;
     }
 }
 

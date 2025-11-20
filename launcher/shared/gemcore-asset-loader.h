@@ -1,9 +1,9 @@
 /**
- * 🥐 Gemcore Asset Loader - SHARED ACROSS ALL PLATFORMS
+ *  Gemcore Asset Loader - SHARED ACROSS ALL PLATFORMS
  * 
  * Loads assets from:
  * 1. Embedded C++ arrays (embedded-assets.h)
- * 2. External binary file (gemcore-assets) 🔒 WITH XOR DECRYPTION
+ * 2. External binary file (gemcore-assets)  WITH XOR DECRYPTION
  */
 
 #ifndef GEMCORE_ASSET_LOADER_H
@@ -30,7 +30,7 @@ namespace gemcore {
 namespace assets {
 
 /**
- * 🔒 XOR Decryption with multi-key rotation (matches TypeScript version!)
+ *  XOR Decryption with multi-key rotation (matches TypeScript version!)
  */
 inline void xorDecrypt(uint8_t* data, size_t len, const uint8_t* key, size_t keyLen) {
     // Multi-key rotation for better security (same algorithm as TypeScript)
@@ -108,7 +108,7 @@ public:
      */
     template<typename AssetStruct>
     bool load(const AssetStruct* embeddedAssets, size_t count) {
-        std::cout << "📦 Loading " << count << " embedded assets..." << std::endl;
+        std::cout << " Loading " << count << " embedded assets..." << std::endl;
         
         for (size_t i = 0; i < count; i++) {
             const auto& embedded = embeddedAssets[i];
@@ -128,7 +128,7 @@ public:
             assets_[asset.path] = std::move(asset);
         }
         
-        std::cout << "✅ Loaded " << assets_.size() << " embedded assets" << std::endl;
+        std::cout << " Loaded " << assets_.size() << " embedded assets" << std::endl;
         return true;
     }
     
@@ -179,24 +179,24 @@ public:
         
         std::ifstream file(assetsPath, std::ios::binary);
         if (!file) {
-            std::cerr << "❌ Failed to open gemcore-assets at: " << assetsPath << std::endl;
+            std::cerr << " Failed to open gemcore-assets at: " << assetsPath << std::endl;
             return false;
         }
         
-        // 🔒 Read magic header (9 bytes: "GEMCORE1\0")
+        //  Read magic header (9 bytes: "GEMCORE1\0")
         char magicHeader[9];
         file.read(magicHeader, 9);
         
         if (std::memcmp(magicHeader, "GEMCORE1\0", 9) != 0) {
-            std::cerr << "❌ Invalid gemcore-assets file (wrong magic header)" << std::endl;
+            std::cerr << " Invalid gemcore-assets file (wrong magic header)" << std::endl;
             return false;
         }
         
         #ifndef NDEBUG
-        std::cout << "🔐 Encrypted assets detected" << std::endl;
+        std::cout << " Encrypted assets detected" << std::endl;
         #endif
         
-        // 🔑 Read encryption key (32 bytes)
+        //  Read encryption key (32 bytes)
         uint8_t encryptionKey[32];
         file.read((char*)encryptionKey, 32);
         
@@ -205,16 +205,16 @@ public:
         file.read((char*)&fileCount, 4);
         
         #ifndef NDEBUG
-        std::cout << "📦 Loading " << fileCount << " assets from gemcore-assets..." << std::endl;
+        std::cout << " Loading " << fileCount << " assets from gemcore-assets..." << std::endl;
         #endif
         
         uint32_t loaded = 0;
         uint32_t skipped = 0;
         
-        // ⚡ OPTIMIZATION: Pre-allocate assets map
+        //  OPTIMIZATION: Pre-allocate assets map
         assets_.reserve(fileCount);
         
-        // ⚡ OPTIMIZATION: Load all assets first, then decrypt in parallel
+        //  OPTIMIZATION: Load all assets first, then decrypt in parallel
         std::vector<AssetData> tempAssets;
         tempAssets.reserve(fileCount);
         
@@ -225,12 +225,12 @@ public:
             file.read((char*)&pathLen, 4);
             
             if (!file) {
-                std::cerr << "⚠️  File stream error at asset " << i << "/" << fileCount << std::endl;
+                std::cerr << "  File stream error at asset " << i << "/" << fileCount << std::endl;
                 break;
             }
             
             if (pathLen == 0 || pathLen > 4096) {
-                std::cerr << "⚠️  Invalid path length at asset " << i << ": " << pathLen << std::endl;
+                std::cerr << "  Invalid path length at asset " << i << ": " << pathLen << std::endl;
                 break;
             }
             
@@ -243,12 +243,12 @@ public:
             file.read((char*)&size64, 8);
             
             if (!file) {
-                std::cerr << "⚠️  Failed to read size for " << path << std::endl;
+                std::cerr << "  Failed to read size for " << path << std::endl;
                 break;
             }
             
             if (size64 > 100ULL * 1024 * 1024) {  // Max 100MB per file
-                std::cerr << "⚠️  File too large: " << path << " (" << (size64/1024/1024) << " MB, skipping)" << std::endl;
+                std::cerr << "  File too large: " << path << " (" << (size64/1024/1024) << " MB, skipping)" << std::endl;
                 // Skip this file's data
                 file.seekg(size64, std::ios::cur);
                 skipped++;
@@ -262,7 +262,7 @@ public:
             file.read((char*)asset.data.data(), asset.data.size());
             
             if (!file) {
-                std::cerr << "⚠️  Failed to read data for " << asset.path << std::endl;
+                std::cerr << "  Failed to read data for " << asset.path << std::endl;
                 skipped++;
                 continue;
             }
@@ -311,9 +311,9 @@ public:
         
         #ifndef NDEBUG
         if (skipped > 0) {
-            std::cout << "⚠️  Skipped " << skipped << " assets" << std::endl;
+            std::cout << "  Skipped " << skipped << " assets" << std::endl;
         }
-        std::cout << "✅ Loaded " << assets_.size() << " shared assets" << std::endl;
+        std::cout << " Loaded " << assets_.size() << " shared assets" << std::endl;
         #endif
         
         return true;

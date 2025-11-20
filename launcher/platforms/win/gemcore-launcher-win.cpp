@@ -1,5 +1,5 @@
 /**
- * 🥐 Gemcore Launcher - Windows (Shared Assets from gemcore-assets file)
+ *  Gemcore Launcher - Windows (Shared Assets from gemcore-assets file)
  * Clean, shared-code version with zero duplication
  */
 
@@ -29,7 +29,7 @@
 #include "gemcore-asset-loader.h"
 #include "gemcore-cache-buster.h"
 #include "gemcore-window-helper.h"          // Cross-platform window management
-#include "gemcore-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
+#include "gemcore-steamworks-bindings.h"    //  Steamworks integration (cross-platform)
 
 using json = nlohmann::json;
 
@@ -55,7 +55,7 @@ struct GemcoreConfig {
 };
 
 std::atomic<bool> g_running{true};
-// ⚡ OPTIMIZATION: Atomic flag for server ready state
+//  OPTIMIZATION: Atomic flag for server ready state
 std::atomic<bool> g_serverReady{false};
 
 // Multi-threaded request handler (Windows version)
@@ -79,7 +79,7 @@ void runServer(gemcore::http::HTTPServer* server) {
     int wsaResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
     if (wsaResult != 0) {
         #ifndef NDEBUG
-        std::cerr << "❌ WSAStartup failed: " << wsaResult << std::endl;
+        std::cerr << " WSAStartup failed: " << wsaResult << std::endl;
         #endif
         return;
     }
@@ -87,7 +87,7 @@ void runServer(gemcore::http::HTTPServer* server) {
     SOCKET fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (fd == INVALID_SOCKET) {
         #ifndef NDEBUG
-        std::cerr << "❌ Socket creation failed: " << WSAGetLastError() << std::endl;
+        std::cerr << " Socket creation failed: " << WSAGetLastError() << std::endl;
         #endif
         WSACleanup();
         return;
@@ -114,7 +114,7 @@ void runServer(gemcore::http::HTTPServer* server) {
     if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) == SOCKET_ERROR) {
         #ifndef NDEBUG
         int err = WSAGetLastError();
-        std::cerr << "❌ Failed to bind to port " << server->getPort() 
+        std::cerr << " Failed to bind to port " << server->getPort() 
                   << " (error: " << err << ")" << std::endl;
         #endif
         closesocket(fd);
@@ -125,7 +125,7 @@ void runServer(gemcore::http::HTTPServer* server) {
     if (listen(fd, 512) == SOCKET_ERROR) {
         #ifndef NDEBUG
         int err = WSAGetLastError();
-        std::cerr << "❌ Failed to listen on port " << server->getPort() 
+        std::cerr << " Failed to listen on port " << server->getPort() 
                   << " (error: " << err << ")" << std::endl;
         #endif
         closesocket(fd);
@@ -138,11 +138,11 @@ void runServer(gemcore::http::HTTPServer* server) {
     if (threads == 0) threads = 4;
     
     #ifndef NDEBUG
-    std::cout << "⚡ Multi-threaded server (" << threads << " workers) on port " 
+    std::cout << " Multi-threaded server (" << threads << " workers) on port " 
               << server->getPort() << std::endl;
     #endif
     
-    // ⚡ OPTIMIZATION: Signal that server is ready BEFORE launching workers
+    //  OPTIMIZATION: Signal that server is ready BEFORE launching workers
     g_serverReady = true;
     
     std::vector<std::thread> workers;
@@ -158,19 +158,19 @@ void runServer(gemcore::http::HTTPServer* server) {
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int nCmdShow) {
     auto appStart = std::chrono::high_resolution_clock::now();
     
-    // ⚡ OPTIMIZATION: Disable console output in production for faster startup
+    //  OPTIMIZATION: Disable console output in production for faster startup
     #ifdef NDEBUG
     std::ios::sync_with_stdio(false);
     #else
-    std::cout << "🥐 Gemcore Launcher (Windows Shared Assets)" << std::endl;
-    std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
+    std::cout << " Gemcore Launcher (Windows Shared Assets)" << std::endl;
+    std::cout << "" << std::endl;
     std::cout << std::endl;
     #endif
     
     // OPTIMIZATION 1: Process Priority (Windows)
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
     #ifndef NDEBUG
-    std::cout << "⚡ Process priority: HIGH" << std::endl;
+    std::cout << " Process priority: HIGH" << std::endl;
     #endif
     
     // OPTIMIZATION 2: Parallel Asset Loading
@@ -197,7 +197,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         return 1;
     }
     
-    // 🔒 Load config from encrypted assets (not accessible to user!)
+    //  Load config from encrypted assets (not accessible to user!)
     auto configAsset = assetLoader.getAsset(".gemcore-config.json");
     if (configAsset.data && configAsset.size > 0) {
         try {
@@ -260,29 +260,29 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
             
             #ifndef NDEBUG
-            std::cout << "🔒 Config loaded from encrypted assets" << std::endl;
+            std::cout << " Config loaded from encrypted assets" << std::endl;
             #endif
         } catch (const std::exception& e) {
             #ifndef NDEBUG
-            std::cerr << "⚠️ Failed to parse config: " << e.what() << std::endl;
+            std::cerr << " Failed to parse config: " << e.what() << std::endl;
             #endif
         }
     }
     
     #ifndef NDEBUG
-    std::cout << "🎮 " << config.window.title << std::endl;
-    std::cout << "📄 Entrypoint: " << config.entrypoint << std::endl;
+    std::cout << " " << config.window.title << std::endl;
+    std::cout << " Entrypoint: " << config.entrypoint << std::endl;
     std::cout << std::endl;
     #endif
     
     // OPTIMIZATION 4: Parallel Cache Building
-    // 🔒 Use deterministic port based on app.name (NOT window.title!)
+    //  Use deterministic port based on app.name (NOT window.title!)
     std::hash<std::string> hasher;
     size_t hash = hasher(config.appName);
     int port = 8765 + (hash % 1000);  // Port range: 8765-9765
     
     #ifndef NDEBUG
-    std::cout << "🔒 Port: " << port << " (based on app.name: " << config.appName << ")" << std::endl;
+    std::cout << " Port: " << port << " (based on app.name: " << config.appName << ")" << std::endl;
     #endif
     gemcore::http::HTTPServer server(port);
     server.setEntrypoint(config.entrypoint);
@@ -301,16 +301,16 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         #ifndef NDEBUG
         auto cacheEnd = std::chrono::high_resolution_clock::now();
         auto cacheDuration = std::chrono::duration_cast<std::chrono::microseconds>(cacheEnd - cacheStart);
-        std::cout << "⚡ Pre-cached " << server.getCacheSize() << " responses in " 
-                  << cacheDuration.count() << "μs" << std::endl;
+        std::cout << " Pre-cached " << server.getCacheSize() << " responses in " 
+                  << cacheDuration.count() << "�s" << std::endl;
         #endif
         
         cacheReady = true;
     });
     
-    // 🚀 HIGH-PERFORMANCE MODE: Disable Power Throttling
+    //  HIGH-PERFORMANCE MODE: Disable Power Throttling
     #ifndef NDEBUG
-    std::cout << "🚀 Enabling High-Performance Mode..." << std::endl;
+    std::cout << " Enabling High-Performance Mode..." << std::endl;
     #endif
     
     // Disable Windows Power Throttling for maximum FPS
@@ -326,7 +326,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         sizeof(PowerThrottling)
     );
     
-    // 🎮 Windows Game Mode Optimizations
+    //  Windows Game Mode Optimizations
     // Request high-performance GPU (prefer discrete over integrated)
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
     
@@ -340,15 +340,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     timeBeginPeriod(1);  // Request 1ms timer resolution (reduces input latency)
     
     #ifndef NDEBUG
-    std::cout << "🎮 Windows Game Mode optimizations enabled:" << std::endl;
-    std::cout << "   ✅ HIGH_PRIORITY_CLASS" << std::endl;
-    std::cout << "   ✅ Power Throttling disabled" << std::endl;
-    std::cout << "   ✅ Priority Boost enabled" << std::endl;
-    std::cout << "   ✅ Thread Priority: HIGHEST" << std::endl;
-    std::cout << "   ✅ Timer Resolution: 1ms (lower latency)" << std::endl;
+    std::cout << " Windows Game Mode optimizations enabled:" << std::endl;
+    std::cout << "    HIGH_PRIORITY_CLASS" << std::endl;
+    std::cout << "    Power Throttling disabled" << std::endl;
+    std::cout << "    Priority Boost enabled" << std::endl;
+    std::cout << "    Thread Priority: HIGHEST" << std::endl;
+    std::cout << "    Timer Resolution: 1ms (lower latency)" << std::endl;
     #endif
     
-    // 🎮 Initialize Steamworks (cross-platform helper)
+    //  Initialize Steamworks (cross-platform helper)
     bool steamEnabled = gemcore::steamworks::initSteamworks(config);
     
     // While cache builds, create WebView (parallel!)
@@ -357,10 +357,10 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     w.set_title(config.window.title);
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     
-    // 🖥️ Native Windows Fullscreen mode for maximum performance
+    //  Native Windows Fullscreen mode for maximum performance
     if (config.window.fullscreen) {
         #ifndef NDEBUG
-        std::cout << "🖥️  Fullscreen mode: ENABLED (better performance)" << std::endl;
+        std::cout << "  Fullscreen mode: ENABLED (better performance)" << std::endl;
         #endif
         
         // Get window handle and set fullscreen
@@ -371,13 +371,13 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 gemcore::window::enableFullscreen(window_ptr);
                 
                 #ifndef NDEBUG
-                std::cout << "   ✅ Native fullscreen activated!" << std::endl;
+                std::cout << "    Native fullscreen activated!" << std::endl;
                 #endif
             }
         }
     }
     
-    // 🎮 Bind Steamworks to JavaScript (cross-platform helper)
+    //  Bind Steamworks to JavaScript (cross-platform helper)
     gemcore::steamworks::bindSteamworksToWebview(w, steamEnabled);
     
     // Load Steamworks wrapper from assets (if available)
@@ -403,7 +403,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     gemcoreInit += R"JS(
     };
     
-    // 🎮 Inject Steamworks wrapper (from separate file, but executed here for correct order)
+    //  Inject Steamworks wrapper (from separate file, but executed here for correct order)
     )JS";
     if (!steamworksWrapperScript.empty()) {
         gemcoreInit += steamworksWrapperScript;
@@ -413,7 +413,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     
     w.init(gemcoreInit + R"(
         
-        // ⚡ RUNTIME OPTIMIZATION 1: Passive Event Listeners
+        //  RUNTIME OPTIMIZATION 1: Passive Event Listeners
         (function() {
             const passiveEvents = new Set(['scroll', 'wheel', 'touchstart', 'touchmove', 'touchend', 'mousewheel']);
             const originalAddEventListener = EventTarget.prototype.addEventListener;
@@ -428,7 +428,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             };
         })();
         
-        // ⚡ RUNTIME OPTIMIZATION 2: Image Decode Hints
+        //  RUNTIME OPTIMIZATION 2: Image Decode Hints
         if ('decode' in HTMLImageElement.prototype) {
             const observer = new MutationObserver((mutations) => {
                 mutations.forEach((mutation) => {
@@ -445,7 +445,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             });
         }
         
-        // ⚡ RUNTIME OPTIMIZATION 3: Smart GC
+        //  RUNTIME OPTIMIZATION 3: Smart GC
         let gameLoaded = false;
         window.addEventListener('load', () => {
             gameLoaded = true;
@@ -469,7 +469,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         });
         
-        // ⚡ RUNTIME OPTIMIZATION 4: Disable text selection (less repaints)
+        //  RUNTIME OPTIMIZATION 4: Disable text selection (less repaints)
         // Note: Context menu (right-click) is left enabled for debugging
         document.addEventListener('selectstart', (e) => {
             if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
@@ -477,7 +477,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
             }
         });
         
-        // ⚡ RUNTIME OPTIMIZATION 5: CSS Hardware Acceleration
+        //  RUNTIME OPTIMIZATION 5: CSS Hardware Acceleration
         // Only apply to game pages, not splash screen (splash.html has its own animations)
         if (!window.location.pathname.includes('splash.html')) {
             const style = document.createElement('style');
@@ -505,7 +505,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     std::thread serverThread(runServer, &server);
     serverThread.detach();
     
-    // ⚡ OPTIMIZATION: Wait for server ready flag instead of sleep (faster!)
+    //  OPTIMIZATION: Wait for server ready flag instead of sleep (faster!)
     while (!g_serverReady) {
         std::this_thread::yield();  // Cooperative wait, ~1-5ms instead of 50ms
     }
@@ -514,23 +514,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     auto startupDuration = std::chrono::duration_cast<std::chrono::milliseconds>(startupEnd - appStart);
     
     #ifndef NDEBUG
-    std::cout << "⚡ STARTUP TIME: " << startupDuration.count() << "ms (all optimizations active)" << std::endl;
-    std::cout << "🚀 Launching WebView..." << std::endl;
+    std::cout << " STARTUP TIME: " << startupDuration.count() << "ms (all optimizations active)" << std::endl;
+    std::cout << " Launching WebView..." << std::endl;
     std::cout << std::endl;
     #endif
     
-    // 🔥 CACHE BUSTER: Use timestamp to force reload on every build
+    //  CACHE BUSTER: Use timestamp to force reload on every build
     std::string cacheBuster = gemcore::getCacheBuster();
     std::string url = "http://127.0.0.1:" + std::to_string(port) + "/" + config.entrypoint + "?t=" + cacheBuster;
     
-    // 🎬 Splash Screen: Show splash.html first, then navigate to game after 2 seconds
+    //  Splash Screen: Show splash.html first, then navigate to game after 2 seconds
     if (config.app.splash) {
         // Pass target URL as query parameter so splash.html knows where to redirect
         std::string splashUrl = "http://127.0.0.1:" + std::to_string(port) + "/splash.html?redirect=" + config.entrypoint + "&t=" + cacheBuster;
         
         #ifndef NDEBUG
-        std::cout << "🎬 Splash Screen: ENABLED (splash.html)" << std::endl;
-        std::cout << "🌐 Splash URL: " << splashUrl << std::endl;
+        std::cout << " Splash Screen: ENABLED (splash.html)" << std::endl;
+        std::cout << " Splash URL: " << splashUrl << std::endl;
         #endif
         
         w.navigate(splashUrl.c_str());
@@ -543,14 +543,14 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         }).detach();
     } else {
         #ifndef NDEBUG
-        std::cout << "🌐 URL: " << url << std::endl;
-        std::cout << "🔄 Cache Buster: t=" << cacheBuster << std::endl;
+        std::cout << " URL: " << url << std::endl;
+        std::cout << " Cache Buster: t=" << cacheBuster << std::endl;
         #endif
         
         w.navigate(url.c_str());
     }
     
-    // 🎮 Run Steamworks callbacks in background thread (if enabled)
+    //  Run Steamworks callbacks in background thread (if enabled)
     std::thread steamThread;
     if (steamEnabled) {
         steamThread = std::thread([]() {
@@ -567,7 +567,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     // Cleanup
     g_running = false;
     
-    // 🎮 Cleanup Steamworks
+    //  Cleanup Steamworks
     if (steamEnabled) {
         if (steamThread.joinable()) {
             steamThread.join();

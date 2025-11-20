@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
-// 🥐 Gemcore Shared Assets Builder
+//  Gemcore Shared Assets Builder
 // Creates a single "gemcore-assets" file that can be shared across architectures
-// 🔒 With XOR Encryption for asset protection
+//  With XOR Encryption for asset protection
 
 import { readdirSync, statSync, readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
@@ -17,24 +17,24 @@ if (!projectDir || !outputPath) {
 
 const srcDir = join(projectDir, 'src');
 
-console.log('📦 Gemcore Shared Assets Builder');
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log(`📁 Source: ${srcDir}`);
-console.log(`📄 Output: ${outputPath}`);
+console.log(' Gemcore Shared Assets Builder');
+console.log('');
+console.log(` Source: ${srcDir}`);
+console.log(` Output: ${outputPath}`);
 console.log('');
 
-// 🔒 Generate unique encryption key for this project
+//  Generate unique encryption key for this project
 const projectName = projectDir.split('/').pop() || 'gemcore';
 const salt = randomBytes(16).toString('hex');
 const encryptionKey = createHash('sha256')
   .update(`${projectName}-${salt}-gemcore-2024`)
   .digest();
 
-console.log('🔐 Encryption enabled');
-console.log(`🔑 Key hash: ${encryptionKey.slice(0, 8).toString('hex')}...`);
+console.log(' Encryption enabled');
+console.log(` Key hash: ${encryptionKey.slice(0, 8).toString('hex')}...`);
 console.log('');
 
-// 🔒 XOR Encryption with multi-key rotation (Best Practice!)
+//  XOR Encryption with multi-key rotation (Best Practice!)
 function xorEncrypt(data: Buffer, key: Buffer): Buffer {
   const encrypted = Buffer.alloc(data.length);
   const keyLen = key.length;
@@ -71,19 +71,19 @@ function collectFiles(dir: string, baseDir: string = dir): Array<{ path: string;
 
 const files = collectFiles(srcDir);
 
-// 🚀 Add WebGPU helper script (universal, framework-agnostic)
+//  Add WebGPU helper script (universal, framework-agnostic)
 const webgpuHelperPath = join(import.meta.dir, '..', 'launcher', 'assets', 'gemcore-webgpu-helper.js');
 const webgpuHelper = readFileSync(webgpuHelperPath);
 files.push({ path: 'gemcore-webgpu-helper.js', data: webgpuHelper });
 
-// 🎮 Add Steamworks wrapper script (if Steamworks is enabled)
+//  Add Steamworks wrapper script (if Steamworks is enabled)
 const steamworksWrapperPath = join(import.meta.dir, '..', 'launcher', 'steamworks', 'gemcore-steamworks-wrapper.js');
 if (existsSync(steamworksWrapperPath)) {
   const steamworksWrapper = readFileSync(steamworksWrapperPath);
   files.push({ path: 'gemcore-steamworks-wrapper.js', data: steamworksWrapper });
 }
 
-// 🔒 Embed gemcore.config.json (encrypted, not accessible to user)
+//  Embed gemcore.config.json (encrypted, not accessible to user)
 const configJsonPath = join(projectDir, 'gemcore.config.json');
 const configJsPath = join(projectDir, 'gemcore.config.js');
 let config: any = null;
@@ -92,29 +92,29 @@ if (existsSync(configJsonPath)) {
   const configData = readFileSync(configJsonPath);
   files.push({ path: '.gemcore-config.json', data: configData });
   config = JSON.parse(configData.toString());
-  console.log('🔒 Config embedded (JSON)');
+  console.log(' Config embedded (JSON)');
 } else if (existsSync(configJsPath)) {
   // Convert JS config to JSON
   const configModule = await import(`file://${configJsPath}`);
   config = configModule.default;
   const configJson = JSON.stringify(config, null, 2);
   files.push({ path: '.gemcore-config.json', data: Buffer.from(configJson) });
-  console.log('🔒 Config embedded (from JS)');
+  console.log(' Config embedded (from JS)');
 }
 
-// 🎬 Add splash.html from framework assets if splash is enabled
+//  Add splash.html from framework assets if splash is enabled
 if (config?.app?.splash === true) {
   const splashPath = join(import.meta.dir, '..', 'assets', 'splash.html');
   if (existsSync(splashPath)) {
     const splashData = readFileSync(splashPath);
     files.push({ path: 'splash.html', data: splashData });
-    console.log('🎬 Splash screen embedded (from framework assets)');
+    console.log(' Splash screen embedded (from framework assets)');
   } else {
-    console.warn('⚠️  splash.html not found in framework assets!');
+    console.warn('  splash.html not found in framework assets!');
   }
 }
 
-// 🎨 Embed icon from config (for all platforms - macOS, Windows, Linux)
+//  Embed icon from config (for all platforms - macOS, Windows, Linux)
 // Use the icon path from config.app.icon (or iconPng for Linux)
 const iconPath = config?.app?.iconPng || config?.app?.icon;
 if (iconPath) {
@@ -129,15 +129,15 @@ if (iconPath) {
     const iconData = readFileSync(iconFullPath);
     // Always embed as 'icon.png' for consistency across platforms
     files.push({ path: 'icon.png', data: iconData });
-    console.log(`🎨 Icon embedded: ${iconPath} → icon.png`);
+    console.log(` Icon embedded: ${iconPath} � icon.png`);
   } else {
-    console.warn(`⚠️  Icon not found: ${iconPath}`);
+    console.warn(`  Icon not found: ${iconPath}`);
   }
 } else {
-  console.warn('⚠️  No icon specified in config');
+  console.warn('  No icon specified in config');
 }
 
-console.log(`✅ Collected ${files.length} files (+ WebGPU helper + config + icon)`);
+console.log(` Collected ${files.length} files (+ WebGPU helper + config + icon)`);
 console.log('');
 
 // Build binary format:
@@ -148,7 +148,7 @@ console.log('');
 //   [uint32: filename length]
 //   [bytes: filename]
 //   [uint64: file size]
-//   [bytes: ENCRYPTED file data] 🔒
+//   [bytes: ENCRYPTED file data] 
 //
 
 const buffers: Buffer[] = [];
@@ -186,23 +186,23 @@ for (const file of files) {
   buffers.push(sizeBuf);
   totalSize += 8;
   
-  // 🔒 Encrypt file data before storing!
+  //  Encrypt file data before storing!
   const encryptedData = xorEncrypt(file.data, encryptionKey);
   buffers.push(encryptedData);
   totalSize += encryptedData.length;
   
-  console.log(`  ✓ ${file.path.padEnd(40)} ${(file.data.length / 1024).toFixed(1)} KB 🔒`);
+  console.log(`   ${file.path.padEnd(40)} ${(file.data.length / 1024).toFixed(1)} KB `);
 }
 
 const finalBuffer = Buffer.concat(buffers);
 writeFileSync(outputPath, finalBuffer);
 
 console.log('');
-console.log('✅ Shared assets file created!');
-console.log(`📊 Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
-console.log('🔐 All assets encrypted with XOR + multi-key rotation');
-console.log(`🔑 Encryption key embedded in file (32 bytes)`);
+console.log(' Shared assets file created!');
+console.log(` Total size: ${(totalSize / 1024 / 1024).toFixed(2)} MB`);
+console.log(' All assets encrypted with XOR + multi-key rotation');
+console.log(` Encryption key embedded in file (32 bytes)`);
 console.log('');
-console.log('💡 This file can be shared across ARM64 and x64 launchers!');
+console.log(' This file can be shared across ARM64 and x64 launchers!');
 
 

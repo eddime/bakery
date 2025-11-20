@@ -21,30 +21,30 @@ function packSingleEXE(
   outputPath: string,
   steamDllPath?: string
 ) {
-  console.log('📦 Packing Windows Single EXE...');
+  console.log(' Packing Windows Single EXE...');
   console.log('');
 
   // Read launcher stub
   const launcher = readFileSync(launcherPath);
-  console.log(`✅ Launcher: ${(launcher.length / 1024).toFixed(1)}KB`);
+  console.log(` Launcher: ${(launcher.length / 1024).toFixed(1)}KB`);
 
   // Read x64 binary
   const x64Binary = readFileSync(x64BinaryPath);
-  console.log(`✅ x64 Binary: ${(x64Binary.length / 1024 / 1024).toFixed(1)}MB`);
+  console.log(` x64 Binary: ${(x64Binary.length / 1024 / 1024).toFixed(1)}MB`);
 
   // Read gemcore-assets
   const assetsPath = join(dirname(x64BinaryPath), '..', 'gemcore-assets');
   const assets = readFileSync(assetsPath);
-  console.log(`✅ Assets: ${(assets.length / 1024 / 1024).toFixed(1)}MB`);
+  console.log(` Assets: ${(assets.length / 1024 / 1024).toFixed(1)}MB`);
   
   // Read Steam DLL if provided
   let steamDll: Buffer | null = null;
   if (steamDllPath) {
     try {
       steamDll = readFileSync(steamDllPath);
-      console.log(`✅ Steam DLL: ${(steamDll.length / 1024).toFixed(1)}KB`);
+      console.log(` Steam DLL: ${(steamDll.length / 1024).toFixed(1)}KB`);
     } catch (e) {
-      console.warn(`⚠️  Steam DLL not found at: ${steamDllPath}`);
+      console.warn(`  Steam DLL not found at: ${steamDllPath}`);
     }
   }
 
@@ -95,7 +95,7 @@ function packSingleEXE(
   header.writeBigUInt64LE(steamDllSize, 56);
 
   console.log('');
-  console.log('📋 Structure:');
+  console.log(' Structure:');
   console.log(`   Launcher:   0 - ${launcher.length} (${(launcher.length / 1024).toFixed(1)}KB)`);
   console.log(`   x64 Binary: ${x64Offset} - ${x64Offset + x64Size} (${(Number(x64Size) / 1024 / 1024).toFixed(1)}MB)`);
   console.log(`   Assets:     ${assetsOffset} - ${assetsOffset + assetsSize} (${(Number(assetsSize) / 1024 / 1024).toFixed(1)}MB)`);
@@ -132,12 +132,12 @@ function packSingleEXE(
 
   const totalSize = statSync(outputPath).size;
   console.log('');
-  console.log(`✅ Single EXE created: ${(totalSize / 1024 / 1024).toFixed(1)}MB`);
+  console.log(` Single EXE created: ${(totalSize / 1024 / 1024).toFixed(1)}MB`);
   console.log(`   Output: ${outputPath}`);
   console.log('');
-  console.log('🎯 User only sees ONE file!');
-  console.log('   → Detects CPU architecture');
-  console.log('   → Extracts & launches optimized binary');
+  console.log(' User only sees ONE file!');
+  console.log('   � Detects CPU architecture');
+  console.log('   � Extracts & launches optimized binary');
 }
 
 // CLI

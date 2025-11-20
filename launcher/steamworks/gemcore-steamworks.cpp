@@ -1,5 +1,5 @@
 /**
- * 🎮 Gemcore Steamworks Implementation
+ *  Gemcore Steamworks Implementation
  * Native Steamworks SDK wrapper implementation
  */
 
@@ -24,9 +24,9 @@ namespace steamworks {
 // Static initialization
 bool SteamworksManager::s_initialized = false;
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 // Core API
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 
 bool SteamworksManager::Init() {
     if (s_initialized) {
@@ -40,7 +40,7 @@ bool SteamworksManager::Init() {
         s_initialized = true;
         
         #ifndef NDEBUG
-        std::cout << "🎮 Steamworks initialized successfully!" << std::endl;
+        std::cout << " Steamworks initialized successfully!" << std::endl;
         std::cout << "   Steam ID: " << GetSteamID() << std::endl;
         std::cout << "   User: " << GetPersonaName() << std::endl;
         std::cout << "   App ID: " << GetAppID() << std::endl;
@@ -60,7 +60,7 @@ bool SteamworksManager::Init() {
     }
     
     #ifndef NDEBUG
-    std::cerr << "❌ Failed to initialize Steamworks!" << std::endl;
+    std::cerr << " Failed to initialize Steamworks!" << std::endl;
     std::cerr << "   Make sure Steam is running and steam_appid.txt exists" << std::endl;
     #endif
     
@@ -74,7 +74,7 @@ void SteamworksManager::Shutdown() {
     s_initialized = false;
     
     #ifndef NDEBUG
-    std::cout << "🎮 Steamworks shut down" << std::endl;
+    std::cout << " Steamworks shut down" << std::endl;
     #endif
 }
 
@@ -87,9 +87,9 @@ bool SteamworksManager::IsInitialized() {
     return s_initialized;
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 // User Info
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 
 uint64_t SteamworksManager::GetSteamID() {
     if (!s_initialized) return 0;
@@ -119,9 +119,9 @@ uint32_t SteamworksManager::GetAppID() {
     return steamUtils->GetAppID();
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 // Achievements
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 
 bool SteamworksManager::UnlockAchievement(const std::string& achievementId) {
     if (!s_initialized) return false;
@@ -133,7 +133,7 @@ bool SteamworksManager::UnlockAchievement(const std::string& achievementId) {
     
     #ifndef NDEBUG
     if (success) {
-        std::cout << "🏆 Achievement unlocked: " << achievementId << std::endl;
+        std::cout << "� Achievement unlocked: " << achievementId << std::endl;
     }
     #endif
     
@@ -167,9 +167,9 @@ bool SteamworksManager::StoreStats() {
     return steamUserStats->StoreStats();
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 // Stats
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 
 bool SteamworksManager::SetStatInt(const std::string& statName, int32_t value) {
     if (!s_initialized) return false;
@@ -207,9 +207,9 @@ bool SteamworksManager::GetStatFloat(const std::string& statName, float& value) 
     return steamUserStats->GetStat(statName.c_str(), &value);
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 // Cloud Storage
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 
 bool SteamworksManager::FileWrite(const std::string& fileName, const std::vector<uint8_t>& data) {
     if (!s_initialized) return false;
@@ -283,9 +283,9 @@ int32_t SteamworksManager::FileGetSize(const std::string& fileName) {
     return steamRemoteStorage->GetFileSize(fileName.c_str());
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 // Rich Presence
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 
 bool SteamworksManager::SetRichPresence(const std::string& key, const std::string& value) {
     if (!s_initialized) return false;
@@ -306,9 +306,9 @@ bool SteamworksManager::ClearRichPresence() {
     return true;
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 // Overlay
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 
 bool SteamworksManager::IsOverlayEnabled() {
     if (!s_initialized) return false;
@@ -337,9 +337,9 @@ void SteamworksManager::ActivateOverlayToWebPage(const std::string& url) {
     steamFriends->ActivateGameOverlayToWebPage(url.c_str());
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 // DLC (Downloadable Content)
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 
 bool SteamworksManager::IsDlcInstalled(uint32_t appId) {
     if (!s_initialized) return false;
@@ -359,9 +359,9 @@ int32_t SteamworksManager::GetDLCCount() {
     return steamApps->GetDLCCount();
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 // Friends
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 
 int32_t SteamworksManager::GetFriendCount() {
     if (!s_initialized) return 0;
@@ -402,9 +402,9 @@ std::string SteamworksManager::GetFriendPersonaName(int32_t friendIndex) {
     return name;
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 // Screenshots
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 
 void SteamworksManager::TriggerScreenshot() {
     if (!s_initialized) return;
@@ -415,9 +415,9 @@ void SteamworksManager::TriggerScreenshot() {
     steamScreenshots->TriggerScreenshot();
 }
 
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 // App Info
-// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// 
 
 std::string SteamworksManager::GetCurrentGameLanguage() {
     if (!s_initialized) return "english";

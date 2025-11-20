@@ -1,5 +1,5 @@
 /**
- * 🥐 Gemcore Launcher - Linux (WebKitGTK WebView - like Neutralino)
+ *  Gemcore Launcher - Linux (WebKitGTK WebView - like Neutralino)
  * Uses system WebKitGTK via pkg-config (no bundling needed)
  */
 
@@ -28,7 +28,7 @@
 #include "gemcore-asset-loader.h"
 #include "gemcore-cache-buster.h"
 #include "gemcore-window-helper.h"          // Cross-platform window management
-#include "gemcore-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
+#include "gemcore-steamworks-bindings.h"    //  Steamworks integration (cross-platform)
 
 using json = nlohmann::json;
 
@@ -55,7 +55,7 @@ struct GemcoreConfig {
 };
 
 std::atomic<bool> g_running{true};
-// ⚡ OPTIMIZATION: Atomic flag for server ready state
+//  OPTIMIZATION: Atomic flag for server ready state
 std::atomic<bool> g_serverReady{false};
 
 // Multi-threaded request handler
@@ -102,11 +102,11 @@ void runServer(gemcore::http::HTTPServer* server) {
     if (threads == 0) threads = 4;
     
     #ifndef NDEBUG
-    std::cout << "⚡ Multi-threaded server (" << threads << " workers) on port " 
+    std::cout << " Multi-threaded server (" << threads << " workers) on port " 
               << server->getPort() << std::endl;
     #endif
     
-    // ⚡ OPTIMIZATION: Signal that server is ready BEFORE launching workers
+    //  OPTIMIZATION: Signal that server is ready BEFORE launching workers
     g_serverReady = true;
     
     std::vector<std::thread> workers;
@@ -122,19 +122,19 @@ void runServer(gemcore::http::HTTPServer* server) {
 int main(int argc, char* argv[]) {
     auto appStart = std::chrono::high_resolution_clock::now();
     
-    // ⚡ OPTIMIZATION: Disable console output in production for faster startup
+    //  OPTIMIZATION: Disable console output in production for faster startup
     #ifdef NDEBUG
     std::ios::sync_with_stdio(false);
     #else
-    std::cout << "🥐 Gemcore Launcher (Linux WebKitGTK)" << std::endl;
-    std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
+    std::cout << " Gemcore Launcher (Linux WebKitGTK)" << std::endl;
+    std::cout << "" << std::endl;
     std::cout << std::endl;
     #endif
     
     // OPTIMIZATION 1: Process Priority (Linux)
     setpriority(PRIO_PROCESS, 0, -10);
     #ifndef NDEBUG
-    std::cout << "⚡ Process priority: HIGH" << std::endl;
+    std::cout << " Process priority: HIGH" << std::endl;
     #endif
     
     // OPTIMIZATION 2: Parallel Asset Loading
@@ -157,11 +157,11 @@ int main(int argc, char* argv[]) {
     assetLoadThread.join();
     
     if (!assetsLoaded) {
-        std::cerr << "❌ Failed to load assets!" << std::endl;
+        std::cerr << " Failed to load assets!" << std::endl;
         return 1;
     }
     
-    // 🔒 Load config from encrypted assets (not accessible to user!)
+    //  Load config from encrypted assets (not accessible to user!)
     auto configAsset = assetLoader.getAsset(".gemcore-config.json");
     if (configAsset.data && configAsset.size > 0) {
         try {
@@ -221,29 +221,29 @@ int main(int argc, char* argv[]) {
             }
             
             #ifndef NDEBUG
-            std::cout << "🔒 Config loaded from encrypted assets" << std::endl;
+            std::cout << " Config loaded from encrypted assets" << std::endl;
             #endif
         } catch (const std::exception& e) {
             #ifndef NDEBUG
-            std::cerr << "⚠️ Failed to parse config: " << e.what() << std::endl;
+            std::cerr << " Failed to parse config: " << e.what() << std::endl;
             #endif
         }
     }
     
     #ifndef NDEBUG
-    std::cout << "🎮 " << config.window.title << std::endl;
-    std::cout << "📄 Entrypoint: " << config.entrypoint << std::endl;
+    std::cout << " " << config.window.title << std::endl;
+    std::cout << " Entrypoint: " << config.entrypoint << std::endl;
     std::cout << std::endl;
     #endif
     
     // OPTIMIZATION 4: Parallel Cache Building
-    // 🔒 Use deterministic port based on app.name (NOT window.title!)
+    //  Use deterministic port based on app.name (NOT window.title!)
     std::hash<std::string> hasher;
     size_t hash = hasher(config.appName);
     int port = 8765 + (hash % 1000);  // Port range: 8765-9765
     
     #ifndef NDEBUG
-    std::cout << "🔒 Port: " << port << " (based on app.name: " << config.appName << ")" << std::endl;
+    std::cout << " Port: " << port << " (based on app.name: " << config.appName << ")" << std::endl;
     #endif
     gemcore::http::HTTPServer server(port);
     server.setEntrypoint(config.entrypoint);
@@ -262,8 +262,8 @@ int main(int argc, char* argv[]) {
         #ifndef NDEBUG
         auto cacheEnd = std::chrono::high_resolution_clock::now();
         auto cacheDuration = std::chrono::duration_cast<std::chrono::microseconds>(cacheEnd - cacheStart);
-        std::cout << "⚡ Pre-cached " << server.getCacheSize() << " responses in " 
-                  << cacheDuration.count() << "μs" << std::endl;
+        std::cout << " Pre-cached " << server.getCacheSize() << " responses in " 
+                  << cacheDuration.count() << "�s" << std::endl;
         #endif
         
         cacheReady = true;
@@ -271,16 +271,16 @@ int main(int argc, char* argv[]) {
     
     cacheThread.join();
     
-    // 🎮 Initialize Steamworks (cross-platform helper)
+    //  Initialize Steamworks (cross-platform helper)
     #ifdef ENABLE_STEAMWORKS
     bool steamEnabled = gemcore::steamworks::initSteamworks(config);
     #else
     bool steamEnabled = false;
     #endif
     
-    // 🚀 HIGH-PERFORMANCE MODE: Set high process priority
+    //  HIGH-PERFORMANCE MODE: Set high process priority
     #ifndef NDEBUG
-    std::cout << "🚀 Enabling High-Performance Mode..." << std::endl;
+    std::cout << " Enabling High-Performance Mode..." << std::endl;
     #endif
     
     // Set high priority for better scheduling
@@ -292,7 +292,7 @@ int main(int argc, char* argv[]) {
     std::thread serverThread(runServer, &server);
     serverThread.detach();
     
-    // ⚡ OPTIMIZATION: Wait for server ready flag instead of sleep (faster!)
+    //  OPTIMIZATION: Wait for server ready flag instead of sleep (faster!)
     while (!g_serverReady) {
         std::this_thread::yield();  // Cooperative wait, ~1-5ms instead of 50ms
     }
@@ -301,21 +301,21 @@ int main(int argc, char* argv[]) {
     auto startupDuration = std::chrono::duration_cast<std::chrono::milliseconds>(startupEnd - appStart);
     
     #ifndef NDEBUG
-    std::cout << "⚡ STARTUP TIME: " << startupDuration.count() << "ms (all optimizations active)" << std::endl;
+    std::cout << " STARTUP TIME: " << startupDuration.count() << "ms (all optimizations active)" << std::endl;
     #endif
     
-    // 🔥 CACHE BUSTER: Use timestamp to force reload on every build
+    //  CACHE BUSTER: Use timestamp to force reload on every build
     std::string cacheBuster = gemcore::getCacheBuster();
     std::string url = "http://127.0.0.1:" + std::to_string(port) + "/" + config.entrypoint + "?t=" + cacheBuster;
     
     #if USE_WEBVIEW
     // WebView mode (requires WebKitGTK)
     #ifndef NDEBUG
-    std::cout << "🚀 Launching WebView..." << std::endl;
+    std::cout << " Launching WebView..." << std::endl;
     std::cout << std::endl;
     #endif
     
-    // 🎨 Extract icon from embedded assets BEFORE creating window
+    //  Extract icon from embedded assets BEFORE creating window
     #ifdef WEBVIEW_GTK
     std::string iconPathForWindow;
     auto iconAsset = assetLoader.getAsset("icon.png");
@@ -327,12 +327,12 @@ int main(int argc, char* argv[]) {
             iconFile.close();
             iconPathForWindow = tmpIconPath;
             // Always log icon extraction (even in release mode)
-            std::cout << "🎨 Icon extracted: " << tmpIconPath << " (" << iconAsset.size << " bytes)" << std::endl;
+            std::cout << " Icon extracted: " << tmpIconPath << " (" << iconAsset.size << " bytes)" << std::endl;
         } else {
-            std::cout << "⚠️  Failed to write icon to: " << tmpIconPath << std::endl;
+            std::cout << "  Failed to write icon to: " << tmpIconPath << std::endl;
         }
     } else {
-        std::cout << "⚠️  Icon not found in assets" << std::endl;
+        std::cout << "  Icon not found in assets" << std::endl;
         if (!config.app.iconPng.empty() && access(config.app.iconPng.c_str(), F_OK) == 0) {
             iconPathForWindow = config.app.iconPng;
         }
@@ -343,7 +343,7 @@ int main(int argc, char* argv[]) {
     webview::webview w(config.app.debug, nullptr);
     w.set_title(config.window.title.c_str());
     
-    // 🎨 Set window icon immediately after window creation (Linux/GTK)
+    //  Set window icon immediately after window creation (Linux/GTK)
     #ifdef WEBVIEW_GTK
     if (!iconPathForWindow.empty()) {
         auto window_result = w.window();
@@ -355,27 +355,27 @@ int main(int argc, char* argv[]) {
                 gtk_window_set_icon_from_file(gtk_window, iconPathForWindow.c_str(), &error);
                 if (!error) {
                     // Always log success (even in release mode)
-                    std::cout << "✅ Window icon set: " << iconPathForWindow << std::endl;
+                    std::cout << " Window icon set: " << iconPathForWindow << std::endl;
                 } else {
                     // Always log errors (even in release mode)
-                    std::cout << "❌ Failed to set window icon: " << error->message << std::endl;
+                    std::cout << " Failed to set window icon: " << error->message << std::endl;
                     g_error_free(error);
                 }
             } else {
-                std::cout << "❌ GTK window pointer is null" << std::endl;
+                std::cout << " GTK window pointer is null" << std::endl;
             }
         } else {
-            std::cout << "❌ Failed to get GTK window" << std::endl;
+            std::cout << " Failed to get GTK window" << std::endl;
         }
     } else {
-        std::cout << "❌ No icon path available" << std::endl;
+        std::cout << " No icon path available" << std::endl;
     }
     #endif
     
     // Apply window config
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     
-    // 🎮 Bind Steamworks to JavaScript (if enabled)
+    //  Bind Steamworks to JavaScript (if enabled)
     #ifdef ENABLE_STEAMWORKS
     gemcore::steamworks::bindSteamworksToWebview(w, steamEnabled);
     #endif
@@ -402,7 +402,7 @@ int main(int argc, char* argv[]) {
     jsInit += R"JS(
     };
     
-    // 🎮 Inject Steamworks wrapper (from separate file, but executed here for correct order)
+    //  Inject Steamworks wrapper (from separate file, but executed here for correct order)
     )JS";
     if (!steamworksWrapperScript.empty()) {
         jsInit += steamworksWrapperScript;
@@ -412,14 +412,14 @@ int main(int argc, char* argv[]) {
     
     w.init(jsInit.c_str());
     
-    // 🎬 Splash Screen: Show splash.html first, then navigate to game after 2 seconds
+    //  Splash Screen: Show splash.html first, then navigate to game after 2 seconds
     if (config.app.splash) {
         // Pass target URL as query parameter so splash.html knows where to redirect
         std::string splashUrl = "http://127.0.0.1:" + std::to_string(port) + "/splash.html?redirect=" + config.entrypoint + "&t=" + cacheBuster;
         
         #ifndef NDEBUG
-        std::cout << "🎬 Splash Screen: ENABLED (splash.html)" << std::endl;
-        std::cout << "🌐 Splash URL: " << splashUrl << std::endl;
+        std::cout << " Splash Screen: ENABLED (splash.html)" << std::endl;
+        std::cout << " Splash URL: " << splashUrl << std::endl;
         #endif
         
         w.navigate(splashUrl.c_str());
@@ -431,14 +431,14 @@ int main(int argc, char* argv[]) {
         }).detach();
     } else {
         #ifndef NDEBUG
-        std::cout << "🌐 URL: " << url << std::endl;
-        std::cout << "🔄 Cache Buster: t=" << cacheBuster << std::endl;
+        std::cout << " URL: " << url << std::endl;
+        std::cout << " Cache Buster: t=" << cacheBuster << std::endl;
         #endif
         
         w.navigate(url.c_str());
     }
     
-    // 🎮 Start Steamworks callback thread (if enabled)
+    //  Start Steamworks callback thread (if enabled)
     #ifdef ENABLE_STEAMWORKS
     std::thread steamThread;
     if (steamEnabled) {
@@ -456,7 +456,7 @@ int main(int argc, char* argv[]) {
     
     g_running = false;
     
-    // 🎮 Cleanup Steamworks
+    //  Cleanup Steamworks
     #ifdef ENABLE_STEAMWORKS
     if (steamEnabled) {
         if (steamThread.joinable()) {
@@ -468,30 +468,30 @@ int main(int argc, char* argv[]) {
     #else
     // System browser mode (fallback for cross-compilation)
     #ifndef NDEBUG
-    std::cout << "🌐 Opening system browser..." << std::endl;
+    std::cout << " Opening system browser..." << std::endl;
     std::cout << std::endl;
     #endif
     
-    // 🎬 Splash Screen: Show splash.html first (splash.html handles redirect itself)
+    //  Splash Screen: Show splash.html first (splash.html handles redirect itself)
     std::string finalUrl = url;
     if (config.app.splash) {
         // Pass target URL as query parameter so splash.html knows where to redirect
         finalUrl = "http://127.0.0.1:" + std::to_string(port) + "/splash.html?redirect=" + config.entrypoint + "&t=" + cacheBuster;
         
         #ifndef NDEBUG
-        std::cout << "🎬 Splash Screen: ENABLED (splash.html)" << std::endl;
-        std::cout << "🌐 Splash URL: " << finalUrl << std::endl;
-        std::cout << "💡 splash.html will redirect to game after 2 seconds" << std::endl;
+        std::cout << " Splash Screen: ENABLED (splash.html)" << std::endl;
+        std::cout << " Splash URL: " << finalUrl << std::endl;
+        std::cout << " splash.html will redirect to game after 2 seconds" << std::endl;
         #endif
     } else {
         #ifndef NDEBUG
-        std::cout << "🌐 URL: " << url << std::endl;
-        std::cout << "🔄 Cache Buster: t=" << cacheBuster << std::endl;
+        std::cout << " URL: " << url << std::endl;
+        std::cout << " Cache Buster: t=" << cacheBuster << std::endl;
         #endif
     }
     
     #ifndef NDEBUG
-    std::cout << "🚀 Opening browser: " << finalUrl << std::endl;
+    std::cout << " Opening browser: " << finalUrl << std::endl;
     std::cout << std::endl;
     #endif
     
@@ -500,11 +500,11 @@ int main(int argc, char* argv[]) {
     (void)result;  // Suppress unused result warning
     
     #ifndef NDEBUG
-    std::cout << "✅ Server running! Press Ctrl+C to stop." << std::endl;
+    std::cout << " Server running! Press Ctrl+C to stop." << std::endl;
     #endif
-    std::cout << "💡 Close browser tab to exit." << std::endl;
+    std::cout << " Close browser tab to exit." << std::endl;
     
-    // 🎮 Run Steamworks callbacks in background thread (if enabled)
+    //  Run Steamworks callbacks in background thread (if enabled)
     #ifdef ENABLE_STEAMWORKS
     std::thread steamThread;
     if (steamEnabled) {
@@ -522,7 +522,7 @@ int main(int argc, char* argv[]) {
     
     g_running = false;
     
-    // 🎮 Cleanup Steamworks
+    //  Cleanup Steamworks
     #ifdef ENABLE_STEAMWORKS
     if (steamEnabled) {
         if (steamThread.joinable()) {

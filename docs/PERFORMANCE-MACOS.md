@@ -1,86 +1,86 @@
-# 🍎 macOS Performance: Fenster vs Fullscreen
+#  macOS Performance: Fenster vs Fullscreen
 
-## ⚠️ **Das Problem**
+##  **Das Problem**
 
-**Fullscreen läuft IMMER besser als Fenster-Modus auf macOS!**
+**Fullscreen l�uft IMMER besser als Fenster-Modus auf macOS!**
 
-Das ist ein **fundamentales macOS Problem** und kann NICHT vollständig gelöst werden.
+Das ist ein **fundamentales macOS Problem** und kann NICHT vollst�ndig gelöst werden.
 
-## 🔍 **Warum ist Fullscreen schneller?**
+##  **Warum ist Fullscreen schneller?**
 
 ### **Fenster-Modus:**
 ```
-Game → WebView → WindowServer (Compositor) → GPU → Display
-         ↑
+Game � WebView � WindowServer (Compositor) � GPU � Display
+         �
     Overhead!
 ```
 
-- ❌ **WindowServer Overhead**: Desktop Window Manager fügt Latenz hinzu
-- ❌ **Compositor-Schichten**: Mehrere Rendering-Pässe
-- ❌ **Ressourcen-Sharing**: GPU wird zwischen allen Fenstern geteilt
-- ❌ **VSync Probleme**: Adaptive Sync funktioniert nicht richtig
-- ❌ **Kein Direct Access**: Keine direkte GPU-Kommunikation
-- ❌ **Kein Game Mode**: Voller Game Mode nur in nativem Fullscreen
+-  **WindowServer Overhead**: Desktop Window Manager f�gt Latenz hinzu
+-  **Compositor-Schichten**: Mehrere Rendering-P�sse
+-  **Ressourcen-Sharing**: GPU wird zwischen allen Fenstern geteilt
+-  **VSync Probleme**: Adaptive Sync funktioniert nicht richtig
+-  **Kein Direct Access**: Keine direkte GPU-Kommunikation
+-  **Kein Game Mode**: Voller Game Mode nur in nativem Fullscreen
 
 ### **Fullscreen-Modus:**
 ```
-Game → WebView → GPU → Display
-         ↑
+Game � WebView � GPU � Display
+         �
     Direct!
 ```
 
-- ✅ **Direkter GPU-Zugriff**: Bypassed WindowServer
-- ✅ **Exklusive Ressourcen**: Volle GPU-Power
-- ✅ **Keine Compositor-Latenz**: Direkt zum Display
-- ✅ **VSync funktioniert**: Korrekte Frame-Synchronisation
-- ✅ **Lower Latency**: Weniger Overhead
-- ✅ **Game Mode aktiv**: Höchste CPU/GPU Priorität (macOS Sonoma 14+)
-  - Doppelte Bluetooth-Abtastrate für Controller/AirPods
+-  **Direkter GPU-Zugriff**: Bypassed WindowServer
+-  **Exklusive Ressourcen**: Volle GPU-Power
+-  **Keine Compositor-Latenz**: Direkt zum Display
+-  **VSync funktioniert**: Korrekte Frame-Synchronisation
+-  **Lower Latency**: Weniger Overhead
+-  **Game Mode aktiv**: Höchste CPU/GPU Priorit�t (macOS Sonoma 14+)
+  - Doppelte Bluetooth-Abtastrate f�r Controller/AirPods
   - Hintergrund-Tasks werden gedrosselt
   - [Mehr Info](https://support.apple.com/en-us/105118)
 
-## 📊 **Typische Performance-Unterschiede:**
+##  **Typische Performance-Unterschiede:**
 
 | Modus | FPS | Frame-Time | Micro-Stuttering |
 |-------|-----|------------|------------------|
-| **Fenster** | 55-60 | 16-20ms | ⚠️ Ja |
-| **Fullscreen** | 60 | 16.6ms | ✅ Nein |
+| **Fenster** | 55-60 | 16-20ms |  Ja |
+| **Fullscreen** | 60 | 16.6ms |  Nein |
 
-## ✅ **Was Gemcore macht (automatisch):**
+##  **Was Gemcore macht (automatisch):**
 
 ### **System-Level:**
-1. ✅ REALTIME Process Priority (`-20`)
-2. ✅ App Nap deaktiviert
-3. ✅ Game Mode Optimierungen (macOS Sonoma 14+)
-   - Core Animation optimiert für Games
+1.  REALTIME Process Priority (`-20`)
+2.  App Nap deaktiviert
+3.  Game Mode Optimierungen (macOS Sonoma 14+)
+   - Core Animation optimiert f�r Games
    - Metal Shader Validation deaktiviert
    - **Hinweis:** Voller Game Mode nur in nativem Fullscreen
-4. ✅ Metal Rendering erzwungen
-5. ✅ Discrete GPU angefordert
+4.  Metal Rendering erzwungen
+5.  Discrete GPU angefordert
 
 ### **JavaScript-Level:**
-1. ✅ GPU Acceleration auf ALLEM
-2. ✅ Aggressives Frame-Pacing
-3. ✅ Compositor Keep-Alive
-4. ✅ CSS Animations deaktiviert
-5. ✅ Frame-Drop Detection
+1.  GPU Acceleration auf ALLEM
+2.  Aggressives Frame-Pacing
+3.  Compositor Keep-Alive
+4.  CSS Animations deaktiviert
+5.  Frame-Drop Detection
 
-## 🎯 **Empfehlungen für Game-Devs:**
+##  **Empfehlungen f�r Game-Devs:**
 
 ### **1. Fullscreen-Option anbieten:**
 ```javascript
 export default {
   window: {
-    startFullscreen: true,  // ⚡ BESTE Performance!
+    startFullscreen: true,  //  BESTE Performance!
   }
 }
 ```
 
-### **2. Hinweis für Spieler:**
+### **2. Hinweis f�r Spieler:**
 ```javascript
 // In deinem Game:
 if (window.Gemcore.platform === 'macos') {
-  console.log('💡 Tipp: Drücke F11 für Fullscreen (bessere Performance!)');
+  console.log(' Tipp: Dr�cke F11 f�r Fullscreen (bessere Performance!)');
 }
 ```
 
@@ -88,46 +88,46 @@ if (window.Gemcore.platform === 'macos') {
 ```javascript
 // Wenn FPS zu niedrig:
 if (avgFPS < 50 && !document.fullscreenElement) {
-  showNotification('⚠️ Niedrige FPS! Versuche Fullscreen-Modus (F11)');
+  showNotification(' Niedrige FPS! Versuche Fullscreen-Modus (F11)');
 }
 ```
 
-## 🧪 **Vergleich selbst testen:**
+##  **Vergleich selbst testen:**
 
 1. Starte dein Game im **Fenster-Modus**
-2. Achte auf FPS und Flüssigkeit
-3. Drücke **F11** für Fullscreen
-4. Spüre den Unterschied! 🚀
+2. Achte auf FPS und Fl�ssigkeit
+3. Dr�cke **F11** f�r Fullscreen
+4. Sp�re den Unterschied! 
 
-## 📈 **Was du erwarten kannst:**
+## � **Was du erwarten kannst:**
 
 ### **Fenster-Modus:**
-- ✅ Alle Gemcore-Optimierungen aktiv
-- ✅ Smooth 60 FPS (meistens)
-- ⚠️ Gelegentliches Micro-Stuttering (WindowServer Overhead)
-- ⚠️ Höhere Latenz (~1-2ms)
+-  Alle Gemcore-Optimierungen aktiv
+-  Smooth 60 FPS (meistens)
+-  Gelegentliches Micro-Stuttering (WindowServer Overhead)
+-  Höhere Latenz (~1-2ms)
 
 ### **Fullscreen-Modus:**
-- ✅ Alle Gemcore-Optimierungen aktiv
-- ✅ Perfekt smooth 60 FPS
-- ✅ Kein Micro-Stuttering
-- ✅ Minimale Latenz
+-  Alle Gemcore-Optimierungen aktiv
+-  Perfekt smooth 60 FPS
+-  Kein Micro-Stuttering
+-  Minimale Latenz
 
-## 🔧 **Weitere Tipps:**
+##  **Weitere Tipps:**
 
-### **Für Spieler:**
-1. **Schließe andere Apps**: Weniger WindowServer Overhead
+### **F�r Spieler:**
+1. **Schlie�e andere Apps**: Weniger WindowServer Overhead
 2. **Nutze Fullscreen**: Beste Performance
-3. **Aktiviere "Reduce Motion"**: System Settings → Accessibility
-4. **Deaktiviere Transparenz**: System Settings → Accessibility
+3. **Aktiviere "Reduce Motion"**: System Settings � Accessibility
+4. **Deaktiviere Transparenz**: System Settings � Accessibility
 
-### **Für Devs:**
+### **F�r Devs:**
 1. **Teste beide Modi**: Fenster UND Fullscreen
-2. **Optimiere für 60 FPS**: Nicht höher (VSync!)
+2. **Optimiere f�r 60 FPS**: Nicht höher (VSync!)
 3. **Nutze `requestAnimationFrame`**: Kein `setTimeout`
 4. **Vermeide CSS Animations**: Nutze Canvas/WebGL
 
-## 🎮 **Andere Engines:**
+##  **Andere Engines:**
 
 Dieses Problem betrifft **ALLE** macOS Apps:
 - Unity Games
@@ -138,7 +138,7 @@ Dieses Problem betrifft **ALLE** macOS Apps:
 
 **Fullscreen ist IMMER schneller!** Das ist macOS-Architektur, nicht Gemcore.
 
-## 📚 **Quellen:**
+##  **Quellen:**
 
 - [Apple Developer Forums](https://developer.apple.com/forums/)
 - [Blizzard Forums - macOS Performance](https://us.forums.blizzard.com/en/wow/t/catalina-windowed-non-fullscreen-performance/326373)
@@ -146,5 +146,5 @@ Dieses Problem betrifft **ALLE** macOS Apps:
 
 ---
 
-**TL;DR**: Fullscreen ist schneller weil WindowServer umgangen wird. Das ist normal und kann nicht gefixt werden. Gemcore optimiert beide Modi, aber Fullscreen wird IMMER besser sein. 🎯
+**TL;DR**: Fullscreen ist schneller weil WindowServer umgangen wird. Das ist normal und kann nicht gefixt werden. Gemcore optimiert beide Modi, aber Fullscreen wird IMMER besser sein. 
 

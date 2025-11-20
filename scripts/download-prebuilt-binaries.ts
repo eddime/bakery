@@ -32,7 +32,7 @@ async function getLatestRelease(): Promise<string> {
 }
 
 async function downloadBinary(url: string, outputPath: string): Promise<void> {
-  console.log(`   ⬇️  Downloading: ${url}`);
+  console.log(`     Downloading: ${url}`);
   
   const response = await fetch(url);
   if (!response.ok) {
@@ -47,7 +47,7 @@ async function downloadBinary(url: string, outputPath: string): Promise<void> {
     await Bun.$`chmod +x ${outputPath}`;
   }
   
-  console.log(`   ✅ Downloaded: ${outputPath}`);
+  console.log(`    Downloaded: ${outputPath}`);
 }
 
 function getCachedVersion(): string | null {
@@ -89,8 +89,8 @@ function areBinariesCached(): boolean {
 }
 
 async function downloadAllBinaries(version: string = 'latest', force: boolean = false): Promise<void> {
-  console.log('📦 Gemcore Pre-built Binaries');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(' Gemcore Pre-built Binaries');
+  console.log('');
   console.log('');
   
   // Create prebuilt directory
@@ -101,25 +101,25 @@ async function downloadAllBinaries(version: string = 'latest', force: boolean = 
   // Check if binaries are already cached
   const cachedVersion = await getCachedVersion();
   if (!force && areBinariesCached()) {
-    console.log('✅ Pre-built binaries already cached!');
+    console.log(' Pre-built binaries already cached!');
     console.log(`   Version: ${cachedVersion || 'unknown'}`);
     console.log('');
-    console.log('💡 Gemcore can now be used offline');
+    console.log(' Gemcore can now be used offline');
     console.log('');
-    console.log('🔄 To update binaries:');
+    console.log(' To update binaries:');
     console.log('   bun scripts/download-prebuilt-binaries.ts --force');
     console.log('');
     return;
   }
   
-  console.log('⬇️  Downloading pre-built binaries from GitHub...');
+  console.log('  Downloading pre-built binaries from GitHub...');
   console.log('');
   
   // Get latest version if not specified
   if (version === 'latest') {
-    console.log('🔍 Fetching latest release version...');
+    console.log(' Fetching latest release version...');
     version = await getLatestRelease();
-    console.log(`   ✅ Latest version: ${version}`);
+    console.log(`    Latest version: ${version}`);
     console.log('');
   }
   
@@ -151,7 +151,7 @@ async function downloadAllBinaries(version: string = 'latest', force: boolean = 
     },
   ];
   
-  console.log(`📥 Downloading ${binaries.length} binaries...`);
+  console.log(` Downloading ${binaries.length} binaries...`);
   console.log('');
   
   let successCount = 0;
@@ -162,33 +162,33 @@ async function downloadAllBinaries(version: string = 'latest', force: boolean = 
       await downloadBinary(binary.url, binary.path);
       successCount++;
     } catch (error) {
-      console.error(`   ❌ Failed to download ${binary.name}: ${error}`);
+      console.error(`    Failed to download ${binary.name}: ${error}`);
       failCount++;
     }
   }
   
   console.log('');
-  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-  console.log(`✅ Downloaded: ${successCount}/${binaries.length} binaries`);
+  console.log('');
+  console.log(` Downloaded: ${successCount}/${binaries.length} binaries`);
   
   if (failCount > 0) {
-    console.log(`⚠️  Failed: ${failCount} binaries`);
+    console.log(`  Failed: ${failCount} binaries`);
     console.log('');
-    console.log('💡 Missing binaries will be built locally (if possible)');
+    console.log(' Missing binaries will be built locally (if possible)');
   }
   
   // Save version to cache
   setCachedVersion(version);
   
   console.log('');
-  console.log('💾 Binaries cached locally');
-  console.log('💡 Gemcore can now be used offline!');
+  console.log(' Binaries cached locally');
+  console.log(' Gemcore can now be used offline!');
   console.log('');
-  console.log('🎯 You can now build games for all platforms from any OS:');
-  console.log('   → bun bake build --platform=all');
-  console.log('   → bun bake build --platform=mac');
-  console.log('   → bun bake build --platform=win');
-  console.log('   → bun bake build --platform=linux');
+  console.log(' You can now build games for all platforms from any OS:');
+  console.log('   � bun bake build --platform=all');
+  console.log('   � bun bake build --platform=mac');
+  console.log('   � bun bake build --platform=win');
+  console.log('   � bun bake build --platform=linux');
   console.log('');
 }
 
@@ -201,7 +201,7 @@ if (import.meta.main) {
   try {
     await downloadAllBinaries(version, force);
   } catch (error) {
-    console.error('❌ Error:', error);
+    console.error(' Error:', error);
     process.exit(1);
   }
 }

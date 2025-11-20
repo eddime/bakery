@@ -1,17 +1,17 @@
-# üöÄ Gemcore Performance Optimizations
+#  Gemcore Performance Optimizations
 
 ## High-Performance Mode (Alle Plattformen)
 
-### ‚úÖ Implementiert
+###  Implementiert
 
 #### Windows (WebView2)
-- **Power Throttling**: `PROCESS_POWER_THROTTLING_STATE` ‚Üí OFF
-- **Process Priority**: `HIGH_PRIORITY_CLASS` f√ºr besseres Scheduling
-- **GPU Preference**: Bevorzugt diskrete GPU √ºber integrierte
+- **Power Throttling**: `PROCESS_POWER_THROTTLING_STATE` Ü OFF
+- **Process Priority**: `HIGH_PRIORITY_CLASS` f√r besseres Scheduling
+- **GPU Preference**: Bevorzugt diskrete GPU √ber integrierte
 - **Erwartung**: >60 FPS auf 120/144 Hz Displays m√∂glich
 
 #### macOS (WKWebView)
-- **Process Priority**: `setpriority(PRIO_PROCESS, 0, -10)` f√ºr h√∂here Priorit√§t
+- **Process Priority**: `setpriority(PRIO_PROCESS, 0, -10)` f√r h√∂here Priorit√t
 - **Metal Rendering**: Automatisch durch WKWebView aktiviert
 - **VSync**: An Display-Hz gekoppelt (60 Hz / 120 Hz ProMotion)
 - **Erwartung**: Volle Display-Hz auf ProMotion Displays
@@ -19,22 +19,22 @@
 #### Linux (WebKitGTK)
 - **Process Priority**: `setpriority(PRIO_PROCESS, 0, -10)` 
 - **GPU/EGL**: Aktiviert durch WebKitGTK Build
-- **Erwartung**: Meist 60 FPS Cap (Compositor-abh√§ngig)
+- **Erwartung**: Meist 60 FPS Cap (Compositor-abh√ngig)
 
-### üéØ localStorage Persistenz
+###  localStorage Persistenz
 
 **Problem gel√∂st**: Port basiert auf `app.name` statt `window.title`
 
 ```javascript
 export default {
   app: {
-    // ‚ö†Ô∏è WICHTIG: Bestimmt den Port f√ºr localStorage!
-    // NICHT √§ndern, sonst gehen Spielst√§nde verloren!
+    //  WICHTIG: Bestimmt den Port f√r localStorage!
+    // NICHT √ndern, sonst gehen Spielst√nde verloren!
     name: "my-game",  // Konstant halten!
     entrypoint: "index.html"
   },
   window: {
-    // Kann frei ge√§ndert werden (z.B. Versionsnummer)
+    // Kann frei ge√ndert werden (z.B. Versionsnummer)
     title: "My Game v1.2.3",
     width: 1280,
     height: 720
@@ -46,18 +46,18 @@ export default {
 
 **Vorteil**: 
 - Gleicher Port = Gleiche Origin = localStorage bleibt erhalten
-- Titel kann sich √§ndern (z.B. "My Game v1.0" ‚Üí "My Game v2.0")
-- Spielst√§nde bleiben erhalten!
+- Titel kann sich √ndern (z.B. "My Game v1.0" Ü "My Game v2.0")
+- Spielst√nde bleiben erhalten!
 
-### üéÆ WebGPU Support (Universal)
+###  WebGPU Support (Universal)
 
 **Framework-agnostisch**: Funktioniert mit ALLEN Engines (Phaser, Three.js, PixiJS, Kaplay, etc.)
 
 #### Features:
-- **Automatische Detection**: WebGPU ‚Üí WebGL2 ‚Üí WebGL Fallback
-- **Canvas API Patching**: Optimiert `getContext()` f√ºr alle Frameworks
-- **Synchrone Init**: GPU Info sofort verf√ºgbar (kein async wait)
-- **Performance Hints**: Logged Empfehlungen f√ºr Devs
+- **Automatische Detection**: WebGPU Ü WebGL2 Ü WebGL Fallback
+- **Canvas API Patching**: Optimiert `getContext()` f√r alle Frameworks
+- **Synchrone Init**: GPU Info sofort verf√gbar (kein async wait)
+- **Performance Hints**: Logged Empfehlungen f√r Devs
 
 #### API:
 ```javascript
@@ -70,29 +70,29 @@ window.GemcoreGPU.info = {
 }
 ```
 
-### ‚ö° Runtime Optimizations (Alle Plattformen)
+###  Runtime Optimizations (Alle Plattformen)
 
-1. **Passive Event Listeners**: `scroll`, `wheel`, `touch*` ‚Üí passive
-2. **Async Image Decoding**: `img.decode()` f√ºr non-blocking loads
+1. **Passive Event Listeners**: `scroll`, `wheel`, `touch*` Ü passive
+2. **Async Image Decoding**: `img.decode()` f√r non-blocking loads
 3. **Smart GC**: Nur bei Memory-Wachstum >50 MB
 4. **Disabled Features**: Context Menu, Text Selection (weniger Overhead)
 5. **CSS Hardware Acceleration**: `will-change`, `transform: translateZ(0)`
 
-### üìä Startup Optimizations
+###  Startup Optimizations
 
 1. **Parallel Asset Loading**: Assets + WebView gleichzeitig
 2. **Atomic Server Ready**: Kein `sleep()`, nur `yield()` (~1-5ms statt 50ms)
 3. **Silent Production Mode**: Kein Console Output (schneller)
 4. **Pre-cached Responses**: HTTP Cache vorgebaut
 
-### üî• Was NICHT gemacht wird
+###  Was NICHT gemacht wird
 
-‚ùå **VSync Entkopplung**: Erzeugt Tearing + instabile Frame-Times  
-‚ùå **Binary Patches**: Wartungsintensiv + rechtlich bedenklich  
-‚ùå **setTimeout Loops**: Wird von Engine gedrosselt  
-‚ùå **Framework-spezifische Hacks**: Nicht universal
+ **VSync Entkopplung**: Erzeugt Tearing + instabile Frame-Times  
+ **Binary Patches**: Wartungsintensiv + rechtlich bedenklich  
+ **setTimeout Loops**: Wird von Engine gedrosselt  
+ **Framework-spezifische Hacks**: Nicht universal
 
-### üìà Erwartete Performance
+### à Erwartete Performance
 
 | Platform | Display | Expected FPS | Notes |
 |----------|---------|--------------|-------|
@@ -100,25 +100,25 @@ window.GemcoreGPU.info = {
 | Windows  | 144 Hz  | 120+ FPS     | Mit High-Perf GPU |
 | macOS    | 60 Hz   | 60 FPS       | Stabil |
 | macOS    | 120 Hz  | 120 FPS      | ProMotion |
-| Linux    | 60 Hz   | 60 FPS       | Compositor-abh√§ngig |
+| Linux    | 60 Hz   | 60 FPS       | Compositor-abh√ngig |
 | Linux    | 144 Hz  | 60-144 FPS   | Variabel |
 
-### üõ†Ô∏è F√ºr Devs
+###  F√r Devs
 
 **Wichtig**:
-1. `app.name` konstant halten f√ºr localStorage
-2. `window.title` kann sich frei √§ndern
+1. `app.name` konstant halten f√r localStorage
+2. `window.title` kann sich frei √ndern
 3. `requestAnimationFrame()` verwenden (kein `setTimeout`)
-4. Dynamische Aufl√∂sung f√ºr schwache Hardware
-5. Fixed Timestep f√ºr Physik
+4. Dynamische Aufl√∂sung f√r schwache Hardware
+5. Fixed Timestep f√r Physik
 
 **Best Practices**:
-- Nutze `window.GemcoreGPU.info.preferredAPI` f√ºr Renderer-Wahl
+- Nutze `window.GemcoreGPU.info.preferredAPI` f√r Renderer-Wahl
 - Messe Frame-Times mit `performance.now()`
-- Implementiere FPS Cap f√ºr Konsistenz
+- Implementiere FPS Cap f√r Konsistenz
 - Teste auf verschiedenen Display-Hz
 
-### üîç Debug
+###  Debug
 
 ```javascript
 // Check GPU Support
@@ -135,5 +135,5 @@ console.log(window.Gemcore.platform);  // 'windows' | 'macos' | 'linux'
 
 **Stand**: November 2025  
 **Version**: Gemcore 1.0.0  
-**Optimierungen**: Universal f√ºr alle Plattformen ‚úÖ
+**Optimierungen**: Universal f√r alle Plattformen 
 

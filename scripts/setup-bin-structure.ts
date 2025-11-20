@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// 🥐 Setup bin/ structure with shared Steamworks DLLs
+//  Setup bin/ structure with shared Steamworks DLLs
 
 import { existsSync, mkdirSync, copyFileSync } from "fs";
 import { join } from "path";
@@ -8,7 +8,7 @@ const FRAMEWORK_DIR = join(import.meta.dir, "..");
 const BIN_DIR = join(FRAMEWORK_DIR, "bin");
 const STEAMWORKS_SRC = join(FRAMEWORK_DIR, "deps", "steamworks", "sdk", "redistributable_bin");
 
-console.log("🥐 Setting up bin/ structure with shared Steamworks DLLs\n");
+console.log(" Setting up bin/ structure with shared Steamworks DLLs\n");
 
 // Create directories
 const dirs = [
@@ -26,7 +26,7 @@ for (const dir of dirs) {
   const fullPath = join(BIN_DIR, dir);
   if (!existsSync(fullPath)) {
     mkdirSync(fullPath, { recursive: true });
-    console.log(`✅ Created: ${dir}/`);
+    console.log(` Created: ${dir}/`);
   }
 }
 
@@ -56,30 +56,30 @@ const steamworksCopies = [
   },
 ];
 
-console.log("📦 Copying Steamworks DLLs to shared location:\n");
+console.log(" Copying Steamworks DLLs to shared location:\n");
 
 for (const { src, dest, name } of steamworksCopies) {
   if (existsSync(src)) {
     copyFileSync(src, dest);
     const stats = await Bun.file(dest).stat();
     const sizeMB = (stats.size / 1024).toFixed(0);
-    console.log(`   ✅ ${name.padEnd(35)} ${sizeMB} KB`);
+    console.log(`    ${name.padEnd(35)} ${sizeMB} KB`);
   } else {
-    console.log(`   ⚠️  ${name.padEnd(35)} NOT FOUND`);
+    console.log(`     ${name.padEnd(35)} NOT FOUND`);
   }
 }
 
-console.log("\n✅ bin/ structure ready!");
-console.log("\n📊 Structure:");
+console.log("\n bin/ structure ready!");
+console.log("\n Structure:");
 console.log("   bin/");
-console.log("   ├── steamworks/          # Shared Steamworks DLLs (~1.3 MB)");
-console.log("   │   ├── macos/");
-console.log("   │   ├── windows/");
-console.log("   │   └── linux/");
-console.log("   ├── mac-arm64/           # Launcher binaries");
-console.log("   ├── mac-x64/");
-console.log("   ├── win-x64/");
-console.log("   ├── linux-x64/");
-console.log("   └── linux-arm64/");
-console.log("\n💡 Build scripts will copy from steamworks/ to output bundles");
+console.log("    steamworks/          # Shared Steamworks DLLs (~1.3 MB)");
+console.log("       macos/");
+console.log("       windows/");
+console.log("       linux/");
+console.log("    mac-arm64/           # Launcher binaries");
+console.log("    mac-x64/");
+console.log("    win-x64/");
+console.log("    linux-x64/");
+console.log("    linux-arm64/");
+console.log("\n Build scripts will copy from steamworks/ to output bundles");
 

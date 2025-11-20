@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * 🥐 Gemcore Binary Downloader
+ *  Gemcore Binary Downloader
  * 
  * Downloads pre-built launcher binaries from GitHub Releases.
  * This is used by end-users who don't want to compile from source.
@@ -17,9 +17,9 @@ const BIN_DIR = join(FRAMEWORK_DIR, 'bin');
 const GITHUB_REPO = 'eddime/gemcore'; // TODO: Update with actual repo
 const VERSION = 'latest'; // or specific version like 'v1.0.0'
 
-console.log('🥐 Gemcore Binary Downloader');
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
-console.log('📦 Downloading pre-built launcher binaries...\n');
+console.log(' Gemcore Binary Downloader');
+console.log('\n');
+console.log(' Downloading pre-built launcher binaries...\n');
 
 // Ensure bin directories exist
 for (const dir of ['mac-arm64', 'mac-x64', 'win-x64', 'linux-x64', 'linux-arm64']) {
@@ -39,26 +39,26 @@ for (const binary of binaries) {
   
   // Skip if already exists
   if (existsSync(outputPath)) {
-    console.log(`✅ ${binary.platform} already exists`);
+    console.log(` ${binary.platform} already exists`);
     continue;
   }
   
-  console.log(`📥 Downloading ${binary.platform}...`);
+  console.log(` Downloading ${binary.platform}...`);
   
   try {
     const url = `https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/${binary.filename}`;
     await $`curl -L -o ${outputPath} ${url}`;
     await $`chmod +x ${outputPath}`;
-    console.log(`✅ ${binary.platform} downloaded\n`);
+    console.log(` ${binary.platform} downloaded\n`);
   } catch (e) {
-    console.log(`⚠️  ${binary.platform} download failed: ${e.message}`);
-    console.log(`💡 You can build it manually with: bun scripts/build-launchers.ts\n`);
+    console.log(`  ${binary.platform} download failed: ${e.message}`);
+    console.log(` You can build it manually with: bun scripts/build-launchers.ts\n`);
   }
 }
 
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('✅ Binary download complete!\n');
-console.log('📦 Binaries saved to bin/');
-console.log('💡 If downloads failed, you can build from source with:');
+console.log('');
+console.log(' Binary download complete!\n');
+console.log(' Binaries saved to bin/');
+console.log(' If downloads failed, you can build from source with:');
 console.log('   bun scripts/build-launchers.ts');
 

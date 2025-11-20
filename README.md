@@ -1,4 +1,4 @@
-# 🥐 Gemcore
+#  Gemcore
 
 **The fastest way to package HTML5 games as native desktop apps.**
 
@@ -6,18 +6,18 @@ Cross-platform game launcher with WebView - like Neutralino, but optimized for g
 
 ---
 
-## ✨ Features
+##  Features
 
-- 🚀 **Fast startup** - Optimized HTTP server & asset loading
-- 🔐 **Asset encryption** - XOR encryption with unique keys
-- 📦 **Single executable** - No dependencies needed
-- 🎯 **Universal** - Works with any HTML5 game engine
-- 🪶 **Lightweight** - ~200 KB launcher + your game assets
-- 🔧 **No compiler needed** - Pre-built binaries for all platforms
+-  **Fast startup** - Optimized HTTP server & asset loading
+-  **Asset encryption** - XOR encryption with unique keys
+-  **Single executable** - No dependencies needed
+-  **Universal** - Works with any HTML5 game engine
+- � **Lightweight** - ~200 KB launcher + your game assets
+-  **No compiler needed** - Pre-built binaries for all platforms
 
 ---
 
-## 🎮 Quick Start
+##  Quick Start
 
 ### For Game Developers (End-Users)
 
@@ -42,33 +42,33 @@ After initial setup, Gemcore works **100% offline**!
 
 ---
 
-## 📦 Supported Platforms
+##  Supported Platforms
 
 | Platform | Architecture | Status |
 |----------|-------------|--------|
-| **macOS** | ARM64 (Apple Silicon) | ✅ |
-| **macOS** | x64 (Intel) | ✅ |
-| **Linux** | x64 | ✅ |
-| **Linux** | ARM64 | ✅ |
-| **Windows** | x64 | ⚠️ CI only |
+| **macOS** | ARM64 (Apple Silicon) |  |
+| **macOS** | x64 (Intel) |  |
+| **Linux** | x64 |  |
+| **Linux** | ARM64 |  |
+| **Windows** | x64 |  CI only |
 
 ---
 
-## 🏗️ How It Works (Like Neutralino)
+##  How It Works (Like Neutralino)
 
 ### For End-Users
 Gemcore uses **pre-built binaries** downloaded from GitHub Releases:
 
 ```
 bake all
-  ↓
+  �
 Downloads pre-built launchers (if needed)
-  ↓
+  �
 Packs your game assets
-  ↓
+  �
 Combines launcher + assets
-  ↓
-Done! ✅
+  �
+Done! 
 ```
 
 **No compiler needed!** Just like Neutralino.
@@ -87,38 +87,38 @@ git commit -m "Update launcher binaries"
 
 ---
 
-## 📁 Project Structure
+##  Project Structure
 
 ```
 gemcore/
-├── bin/                          ← Pre-built binaries (committed!)
-│   ├── mac-arm64/gemcore-launcher    (173 KB)
-│   ├── mac-x64/gemcore-launcher      (188 KB)
-│   ├── linux-x64/gemcore-launcher    (9.7 MB)
-│   ├── linux-arm64/gemcore-launcher  (10 MB)
-│   └── win-x64/                     (built on CI)
-│
-├── launcher/                     ← C++ source (for developers)
-│   ├── gemcore-launcher-mac.cpp
-│   ├── gemcore-launcher-win.cpp
-│   ├── gemcore-launcher-linux.cpp
-│   ├── gemcore-http-server.h
-│   └── gemcore-asset-loader.h
-│
-├── scripts/
-│   ├── build-launchers.ts        ← Rebuild C++ binaries
-│   ├── download-binaries.ts      ← Download from GitHub
-│   └── embed-assets-shared.ts    ← Pack & encrypt assets
-│
-├── .github/workflows/
-│   └── build-binaries.yml        ← Auto-build on release
-│
-└── bake                          ← CLI entry point
+ bin/                          � Pre-built binaries (committed!)
+    mac-arm64/gemcore-launcher    (173 KB)
+    mac-x64/gemcore-launcher      (188 KB)
+    linux-x64/gemcore-launcher    (9.7 MB)
+    linux-arm64/gemcore-launcher  (10 MB)
+    win-x64/                     (built on CI)
+
+ launcher/                     � C++ source (for developers)
+    gemcore-launcher-mac.cpp
+    gemcore-launcher-win.cpp
+    gemcore-launcher-linux.cpp
+    gemcore-http-server.h
+    gemcore-asset-loader.h
+
+ scripts/
+    build-launchers.ts        � Rebuild C++ binaries
+    download-binaries.ts      � Download from GitHub
+    embed-assets-shared.ts    � Pack & encrypt assets
+
+ .github/workflows/
+    build-binaries.yml        � Auto-build on release
+
+ bake                          � CLI entry point
 ```
 
 ---
 
-## 🔧 Configuration
+##  Configuration
 
 Create `gemcore.config.js` in your game directory:
 
@@ -140,7 +140,7 @@ export default {
 
 ---
 
-## 🚀 Commands
+##  Commands
 
 ```bash
 # Development
@@ -160,21 +160,21 @@ bun run download:binaries   # Download pre-built binaries
 
 ---
 
-## 🎯 Comparison with Neutralino
+##  Comparison with Neutralino
 
 | Feature | Gemcore | Neutralino |
 |---------|--------|------------|
 | **Target** | HTML5 Games | General Apps |
 | **Startup** | ~50ms | ~100ms |
 | **Size** | ~200 KB | ~3 MB |
-| **Asset Encryption** | ✅ Built-in | ❌ Manual |
+| **Asset Encryption** |  Built-in |  Manual |
 | **HTTP Server** | Optimized for games | General purpose |
-| **Pre-built Binaries** | ✅ | ✅ |
-| **No Compiler Needed** | ✅ | ✅ |
+| **Pre-built Binaries** |  |  |
+| **No Compiler Needed** |  |  |
 
 ---
 
-## 🛠️ Building from Source
+##  Building from Source
 
 ### Prerequisites
 
@@ -202,7 +202,7 @@ This will create binaries in `bin/` for all platforms.
 
 ---
 
-## 📦 GitHub Releases
+##  GitHub Releases
 
 Binaries are automatically built on GitHub Actions when you create a release tag:
 
@@ -220,7 +220,7 @@ End-users will automatically download these binaries when they run `bake`.
 
 ---
 
-## 🎨 Bunery GUI (Coming Soon)
+##  Bunery GUI (Coming Soon)
 
 Visual interface for Gemcore - like GemShell but better:
 
@@ -232,13 +232,13 @@ Visual interface for Gemcore - like GemShell but better:
 
 ---
 
-## 📄 License
+##  License
 
 MIT License - See LICENSE file
 
 ---
 
-## 🙏 Credits
+##  Credits
 
 Inspired by:
 - **Neutralino** - For the pre-built binaries approach
@@ -247,7 +247,7 @@ Inspired by:
 
 ---
 
-## 🔗 Links
+##  Links
 
 - [Documentation](https://github.com/eddime/gemcore/wiki)
 - [Examples](./examples/)
@@ -256,5 +256,5 @@ Inspired by:
 
 ---
 
-**Made with ❤️ for game developers**
+**Made with  for game developers**
 

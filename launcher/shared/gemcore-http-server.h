@@ -1,5 +1,5 @@
 /**
- * 🥐 Gemcore HTTP Server - SHARED ACROSS ALL PLATFORMS
+ *  Gemcore HTTP Server - SHARED ACROSS ALL PLATFORMS
  * 
  * Universal, high-performance HTTP server for serving embedded assets
  * with all optimizations:
@@ -157,17 +157,17 @@ public:
     
     /**
      * Pre-cache all responses with optimized headers and iovec
-     * ⚡ OPTIMIZATION: Critical assets (entrypoint, main.js, etc.) are cached FIRST
+     *  OPTIMIZATION: Critical assets (entrypoint, main.js, etc.) are cached FIRST
      */
     void buildCache(const std::vector<std::string>& assetPaths) {
-        // 🔥 CLEAR OLD CACHE (prevent stale content!)
+        //  CLEAR OLD CACHE (prevent stale content!)
         cache_.clear();
         modifiedHTMLs_.clear();
         
-        // ⚡ OPTIMIZATION: Pre-allocate cache to avoid rehashing
+        //  OPTIMIZATION: Pre-allocate cache to avoid rehashing
         cache_.reserve(assetPaths.size() + 10);
         
-        // ⚡ PHASE 1: Cache critical assets FIRST (faster first render!)
+        //  PHASE 1: Cache critical assets FIRST (faster first render!)
         std::vector<std::string> criticalAssets = {
             entrypoint_,
             "main.js", "app.js", "game.js", "index.js",
@@ -183,7 +183,7 @@ public:
                 
                 Response resp;
                 
-                // 🚀 INJECT WebGPU helper into HTML files (PHASE 1 TOO!)
+                //  INJECT WebGPU helper into HTML files (PHASE 1 TOO!)
                 // Note: Steamworks wrapper is injected directly in launcher (after window.Gemcore)
                 bool isHTML = asset.mimeType.find("html") != std::string::npos;
                 
@@ -221,7 +221,7 @@ public:
                     resp.bodySize = asset.size;
                 }
                 
-                // 🔥 CRITICAL: NO-CACHE for HTML/JS/CSS to prevent stale content!
+                //  CRITICAL: NO-CACHE for HTML/JS/CSS to prevent stale content!
                 bool isCode = (isHTML ||
                               asset.mimeType.find("javascript") != std::string::npos ||
                               asset.mimeType.find("css") != std::string::npos ||
@@ -253,7 +253,7 @@ public:
             }
         }
         
-        // ⚡ PHASE 2: Cache remaining assets
+        //  PHASE 2: Cache remaining assets
         for (const auto& path : assetPaths) {
             // Skip if already cached in Phase 1
             std::string checkUri = "/" + path;
@@ -264,7 +264,7 @@ public:
             
             Response resp;
             
-            // 🚀 INJECT WebGPU helper into HTML files (universal, framework-agnostic)
+            //  INJECT WebGPU helper into HTML files (universal, framework-agnostic)
             // Note: Steamworks wrapper is injected directly in launcher (after window.Gemcore)
             bool isHTML = asset.mimeType.find("html") != std::string::npos;
             
@@ -275,11 +275,11 @@ public:
                 if (webgpuAsset.data && webgpuAsset.size > 0) {
                     webgpuScript = std::string(reinterpret_cast<const char*>(webgpuAsset.data), webgpuAsset.size);
                     #ifndef NDEBUG
-                    std::cout << "✅ WebGPU script loaded: " << webgpuScript.size() << " bytes" << std::endl;
+                    std::cout << " WebGPU script loaded: " << webgpuScript.size() << " bytes" << std::endl;
                     #endif
                 } else {
                     #ifndef NDEBUG
-                    std::cerr << "❌ WARNING: gemcore-webgpu-helper.js NOT FOUND!" << std::endl;
+                    std::cerr << " WARNING: gemcore-webgpu-helper.js NOT FOUND!" << std::endl;
                     #endif
                 }
                 
@@ -291,7 +291,7 @@ public:
                 if (headPos != std::string::npos) {
                     htmlContent.insert(headPos, injection);
                     #ifndef NDEBUG
-                    std::cout << "✅ Injected WebGPU script before </head>" << std::endl;
+                    std::cout << " Injected WebGPU script before </head>" << std::endl;
                     #endif
                 } else {
                     size_t bodyPos = htmlContent.find("<body");
@@ -300,7 +300,7 @@ public:
                         if (bodyEnd != std::string::npos) {
                             htmlContent.insert(bodyEnd + 1, injection);
                             #ifndef NDEBUG
-                            std::cout << "✅ Injected WebGPU script after <body>" << std::endl;
+                            std::cout << " Injected WebGPU script after <body>" << std::endl;
                             #endif
                         }
                     }
@@ -315,7 +315,7 @@ public:
                 resp.bodySize = asset.size;
             }
             
-            // 🔥 CRITICAL: NO-CACHE for HTML/JS/CSS to prevent stale content!
+            //  CRITICAL: NO-CACHE for HTML/JS/CSS to prevent stale content!
             // Images/fonts can be cached aggressively
             bool isCode = (isHTML ||
                           asset.mimeType.find("javascript") != std::string::npos ||
@@ -348,7 +348,7 @@ public:
             // Cache with leading slash
             std::string uri = "/" + path;
             
-            // ⚡ OPTIMIZATION: Use emplace to avoid copy
+            //  OPTIMIZATION: Use emplace to avoid copy
             auto [it, inserted] = cache_.emplace(std::move(uri), std::move(resp));
             
 #ifndef _WIN32

@@ -1,6 +1,6 @@
 # Windows Binary
 
-⚠️ **Windows binary requires WebView2 SDK**
+ **Windows binary requires WebView2 SDK**
 
 To build the Windows binary, you need:
 1. Install WebView2 SDK: https://developer.microsoft.com/en-us/microsoft-edge/webview2/

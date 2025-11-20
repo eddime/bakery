@@ -4,15 +4,15 @@
 
 set -e
 
-echo "🔨 Building Linux binaries natively..."
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo " Building Linux binaries natively..."
+echo ""
 echo ""
 
 # Check if we're on Linux
 if [[ $(uname) != "Linux" ]]; then
-    echo "❌ This script must be run on a Linux machine!"
+    echo " This script must be run on a Linux machine!"
     echo ""
-    echo "📥 Options:"
+    echo " Options:"
     echo "   1. Run on Ubuntu/Debian VM"
     echo "   2. Use GitHub Codespaces (free for public repos)"
     echo "   3. Use a cloud Linux instance"
@@ -21,7 +21,7 @@ if [[ $(uname) != "Linux" ]]; then
 fi
 
 # Install dependencies
-echo "📦 Installing dependencies..."
+echo " Installing dependencies..."
 sudo apt-get update
 sudo apt-get install -y \
     build-essential \
@@ -34,7 +34,7 @@ sudo apt-get install -y \
 
 # Build universal launcher
 echo ""
-echo "🔨 Building universal launcher..."
+echo " Building universal launcher..."
 cd launcher
 mkdir -p build-linux-universal-embedded
 cd build-linux-universal-embedded
@@ -45,11 +45,11 @@ strip gemcore-universal-launcher-linux-embedded
 # Copy to bin/
 mkdir -p ../../bin/linux-universal
 cp gemcore-universal-launcher-linux-embedded ../../bin/linux-universal/
-echo "✅ Universal launcher built and copied to bin/"
+echo " Universal launcher built and copied to bin/"
 
 # Build x64 launcher
 echo ""
-echo "🔨 Building x64 launcher..."
+echo " Building x64 launcher..."
 cd ..
 mkdir -p build-linux-x64
 cd build-linux-x64
@@ -60,27 +60,27 @@ strip gemcore-launcher-linux
 # Copy to bin/
 mkdir -p ../../bin/linux-x64
 cp gemcore-launcher-linux ../../bin/linux-x64/
-echo "✅ x64 launcher built and copied to bin/"
+echo " x64 launcher built and copied to bin/"
 
 # Go back to root
 cd ../..
 
 echo ""
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Linux binaries built successfully!"
 echo ""
-echo "📁 Binaries:"
+echo " Linux binaries built successfully!"
+echo ""
+echo " Binaries:"
 echo "   bin/linux-x64/gemcore-launcher-linux"
 echo "   bin/linux-universal/gemcore-universal-launcher-linux-embedded"
 echo ""
-echo "📊 Sizes:"
+echo " Sizes:"
 ls -lh bin/linux-x64/gemcore-launcher-linux
 ls -lh bin/linux-universal/gemcore-universal-launcher-linux-embedded
 echo ""
-echo "💡 Commit these binaries to the repository:"
+echo " Commit these binaries to the repository:"
 echo "   git add bin/"
-echo "   git commit -m '🐧 Add pre-built Linux binaries (glibc-based)'"
+echo "   git commit -m ' Add pre-built Linux binaries (glibc-based)'"
 echo "   git push origin main"
 echo ""
-echo "🎉 Now you can build Linux games from macOS/Windows!"
+echo " Now you can build Linux games from macOS/Windows!"
 

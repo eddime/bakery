@@ -1,7 +1,7 @@
 /**
- * 🚀 Gemcore WebGPU Helper - Universal GPU Acceleration
+ *  Gemcore WebGPU Helper - Universal GPU Acceleration
  * Framework-agnostic helper that enables WebGPU for any game engine
- * Automatic fallback: WebGPU → WebGL2 → WebGL
+ * Automatic fallback: WebGPU � WebGL2 � WebGL
  */
 
 (function() {
@@ -72,20 +72,20 @@
                 }).then(device => {
                     if (device) {
                         this.info.device = device;
-                        console.log('🚀 Gemcore: WebGPU ready!', this.info.adapter);
+                        console.log(' Gemcore: WebGPU ready!', this.info.adapter);
                     }
                 }).catch(e => {
-                    console.warn('⚠️ Gemcore: WebGPU init failed:', e.message);
+                    console.warn(' Gemcore: WebGPU init failed:', e.message);
                     this.info.hasWebGPU = false;
                     this.info.preferredAPI = this.info.hasWebGL2 ? 'webgl2' : 'webgl';
                 });
             }
             
             // Log summary (sync part)
-            console.log('🎮 Gemcore GPU Support:', {
-                WebGPU: this.info.hasWebGPU ? '✅ (loading...)' : '❌',
-                WebGL2: this.info.hasWebGL2 ? '✅' : '❌',
-                WebGL: this.info.hasWebGL ? '✅' : '❌',
+            console.log(' Gemcore GPU Support:', {
+                WebGPU: this.info.hasWebGPU ? ' (loading...)' : '',
+                WebGL2: this.info.hasWebGL2 ? '' : '',
+                WebGL: this.info.hasWebGL ? '' : '',
                 Preferred: this.info.preferredAPI,
                 InitTime: `${this.metrics.initTime.toFixed(2)}ms`
             });
@@ -122,7 +122,7 @@
                         canvas: canvas
                     };
                 } catch (e) {
-                    console.warn('⚠️ WebGPU context creation failed, falling back to WebGL');
+                    console.warn(' WebGPU context creation failed, falling back to WebGL');
                 }
             }
             
@@ -176,7 +176,7 @@
                 if ((contextType === 'webgl2' || contextType === 'webgl') && self.info.hasWebGPU) {
                     // Just log once
                     if (!self._webgpuHintShown) {
-                        console.log('💡 Gemcore: WebGPU available! Use navigator.gpu for better performance');
+                        console.log(' Gemcore: WebGPU available! Use navigator.gpu for better performance');
                         self._webgpuHintShown = true;
                     }
                 }

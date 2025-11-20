@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// 🎨 Gemcore Icon Converter
+//  Gemcore Icon Converter
 // Converts PNG to ICNS (macOS) and ICO (Windows) automatically
 // Inspired by Godot Engine's icon handling
 
@@ -26,7 +26,7 @@ const ICO_SIZES = [16, 32, 48, 64, 128, 256];
  * Convert PNG to ICNS (macOS)
  */
 export async function convertPngToIcns(pngPath: string, outputPath: string): Promise<void> {
-  console.log('🍎 Converting PNG to ICNS...');
+  console.log(' Converting PNG to ICNS...');
   
   if (!existsSync(pngPath)) {
     throw new Error(`PNG file not found: ${pngPath}`);
@@ -36,14 +36,14 @@ export async function convertPngToIcns(pngPath: string, outputPath: string): Pro
   const img = sharp(pngPath);
   const metadata = await img.metadata();
   
-  console.log(`   📐 Source: ${metadata.width}x${metadata.height}`);
+  console.log(`    Source: ${metadata.width}x${metadata.height}`);
   
   // Generate all required sizes
   const sizes = [16, 32, 128, 256, 512, 1024];
   const icons: { size: number; data: Uint8Array }[] = [];
   
   for (const size of sizes) {
-    console.log(`   🔄 Generating ${size}x${size}...`);
+    console.log(`    Generating ${size}x${size}...`);
     
     // Resize image with sharp
     const resized = await sharp(pngPath)
@@ -55,19 +55,19 @@ export async function convertPngToIcns(pngPath: string, outputPath: string): Pro
   }
   
   // Write ICNS file
-  console.log('   📝 Writing ICNS file...');
+  console.log('    Writing ICNS file...');
   const icnsData = createIcnsFile(icons);
   writeFileSync(outputPath, icnsData);
   
   const stats = await Bun.file(outputPath).stat();
-  console.log(`✅ ICNS created: ${(stats.size / 1024).toFixed(1)} KB`);
+  console.log(` ICNS created: ${(stats.size / 1024).toFixed(1)} KB`);
 }
 
 /**
  * Convert PNG to ICO (Windows)
  */
 export async function convertPngToIco(pngPath: string, outputPath: string): Promise<void> {
-  console.log('🪟 Converting PNG to ICO...');
+  console.log(' Converting PNG to ICO...');
   
   if (!existsSync(pngPath)) {
     throw new Error(`PNG file not found: ${pngPath}`);
@@ -76,13 +76,13 @@ export async function convertPngToIco(pngPath: string, outputPath: string): Prom
   // Load PNG with sharp
   const img = sharp(pngPath);
   const metadata = await img.metadata();
-  console.log(`   📐 Source: ${metadata.width}x${metadata.height}`);
+  console.log(`    Source: ${metadata.width}x${metadata.height}`);
   
   // Generate all required sizes
   const icons: { size: number; data: Uint8Array }[] = [];
   
   for (const size of ICO_SIZES) {
-    console.log(`   🔄 Generating ${size}x${size}...`);
+    console.log(`    Generating ${size}x${size}...`);
     
     // Resize image with sharp
     const resized = await sharp(pngPath)
@@ -94,12 +94,12 @@ export async function convertPngToIco(pngPath: string, outputPath: string): Prom
   }
   
   // Write ICO file
-  console.log('   📝 Writing ICO file...');
+  console.log('    Writing ICO file...');
   const icoData = createIcoFile(icons);
   writeFileSync(outputPath, icoData);
   
   const stats = await Bun.file(outputPath).stat();
-  console.log(`✅ ICO created: ${(stats.size / 1024).toFixed(1)} KB`);
+  console.log(` ICO created: ${(stats.size / 1024).toFixed(1)} KB`);
 }
 
 /**
@@ -191,17 +191,17 @@ export async function autoConvertIcon(
   const fullIconPath = join(projectDir, iconPath);
   
   if (!existsSync(fullIconPath)) {
-    console.warn(`⚠️  Icon not found: ${iconPath}`);
+    console.warn(`  Icon not found: ${iconPath}`);
     return { png: iconPath };
   }
   
   // Check if it's a PNG
   if (!iconPath.toLowerCase().endsWith('.png')) {
-    console.warn(`⚠️  Icon must be PNG format: ${iconPath}`);
+    console.warn(`  Icon must be PNG format: ${iconPath}`);
     return { png: iconPath };
   }
   
-  console.log(`\n🎨 Auto-converting icon: ${iconPath}`);
+  console.log(`\n Auto-converting icon: ${iconPath}`);
   
   const assetsDir = join(projectDir, 'assets');
   if (!existsSync(assetsDir)) {
@@ -217,7 +217,7 @@ export async function autoConvertIcon(
     // Copy PNG for Linux (no conversion needed)
     const { cpSync } = await import('fs');
     cpSync(fullIconPath, pngPath);
-    console.log('🐧 PNG copied for Linux');
+    console.log(' PNG copied for Linux');
     
     // Convert to ICNS (macOS)
     await convertPngToIcns(fullIconPath, icnsPath);
@@ -232,7 +232,7 @@ export async function autoConvertIcon(
       png: pngPath,  // Return copied PNG path for Linux
     };
   } catch (error) {
-    console.error('❌ Icon conversion failed:', error);
+    console.error(' Icon conversion failed:', error);
     return { png: fullIconPath };
   }
 }
@@ -243,7 +243,7 @@ if (import.meta.main) {
   
   if (args.length < 2) {
     console.log(`
-🎨 Gemcore Icon Converter
+ Gemcore Icon Converter
 
 Usage:
   bun scripts/convert-icon.ts <input.png> <format>

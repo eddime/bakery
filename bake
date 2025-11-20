@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// 🥐 Gemcore CLI - Standalone Edition
+//  Gemcore CLI - Standalone Edition
 // No dependencies, just Bun!
 
 import { parseArgs } from 'util';
@@ -16,15 +16,15 @@ async function ensurePrebuiltBinaries() {
   
   if (!areBinariesCached()) {
     console.log('');
-    console.log('📦 First-time setup: Downloading pre-built binaries...');
-    console.log('💡 This enables cross-platform builds and offline usage');
+    console.log(' First-time setup: Downloading pre-built binaries...');
+    console.log(' This enables cross-platform builds and offline usage');
     console.log('');
     
     try {
       const { downloadAllBinaries } = await import(join(FRAMEWORK_DIR, 'scripts', 'download-prebuilt-binaries.ts'));
       await downloadAllBinaries('latest', false);
     } catch (error) {
-      console.warn('⚠️  Could not download pre-built binaries (will build locally if needed)');
+      console.warn('  Could not download pre-built binaries (will build locally if needed)');
       console.warn('   Error:', error.message);
       console.log('');
     }
@@ -39,7 +39,7 @@ async function loadConfig() {
       const config = await import(configPath);
       return config.default || config;
     } catch (err) {
-      console.warn('⚠️  Warning: Failed to load gemcore.config.js:', err.message);
+      console.warn('  Warning: Failed to load gemcore.config.js:', err.message);
     }
   }
   return null;
@@ -52,7 +52,7 @@ const commands = {
   win: (args: string[]) => buildCommand(['--platform', 'win', ...args]),
   linux: (args: string[]) => buildCommand(['--platform', 'linux', ...args]),
   all: (args: string[]) => buildCommand(['--platform', 'all', ...args]),
-  release: releaseCommand,  // 🚀 Build Mac + Windows with auto-version increment
+  release: releaseCommand,  //  Build Mac + Windows with auto-version increment
   help: helpCommand,
 };
 
@@ -72,7 +72,7 @@ async function main() {
 
   const handler = commands[command as keyof typeof commands];
   if (!handler) {
-    console.error(`❌ Unknown command: ${command}`);
+    console.error(` Unknown command: ${command}`);
     helpCommand();
     process.exit(1);
   }
@@ -84,7 +84,7 @@ async function main() {
 // DEV COMMAND
 // ==============================================
 async function devCommand(args: string[]) {
-  console.log('🥐 Gemcore Development Mode\n');
+  console.log(' Gemcore Development Mode\n');
 
   const { values } = parseArgs({
     args,
@@ -104,7 +104,7 @@ async function devCommand(args: string[]) {
     const projectName = values.project as string;
     const projectPath = config.projects[projectName];
     if (!projectPath) {
-      console.error(`❌ Project "${projectName}" not found in gemcore.config.js`);
+      console.error(` Project "${projectName}" not found in gemcore.config.js`);
       console.log('Available projects:', Object.keys(config.projects).join(', '));
       process.exit(1);
     }
@@ -118,25 +118,25 @@ async function devCommand(args: string[]) {
       projectDir = currentDir;
     } else if (config?.defaultProject) {
       projectDir = resolve(config.defaultProject);
-      console.log('📌 Using default project from config');
+      console.log(' Using default project from config');
     } else {
-      console.error('❌ No project directory specified');
-      console.error('💡 Usage: ./bake dev --dir <project-dir>');
-      console.error('💡 Or set defaultProject in gemcore.config.js');
+      console.error(' No project directory specified');
+      console.error(' Usage: ./bake dev --dir <project-dir>');
+      console.error(' Or set defaultProject in gemcore.config.js');
       process.exit(1);
     }
   }
   
   const configPath = join(projectDir, 'gemcore.config.js');
   if (!existsSync(configPath)) {
-    console.error('❌ No gemcore.config.js found in', projectDir);
+    console.error(' No gemcore.config.js found in', projectDir);
     process.exit(1);
   }
 
   const runDevScript = join(FRAMEWORK_DIR, 'scripts', 'run-dev.sh');
   
   if (!existsSync(runDevScript)) {
-    console.error('❌ run-dev.sh not found:', runDevScript);
+    console.error(' run-dev.sh not found:', runDevScript);
     process.exit(1);
   }
 
@@ -154,7 +154,7 @@ async function devCommand(args: string[]) {
 // BUILD COMMAND
 // ==============================================
 async function buildCommand(args: string[]) {
-  console.log('🥐 Gemcore Build\n');
+  console.log(' Gemcore Build\n');
 
   const { values } = parseArgs({
     args,
@@ -176,18 +176,18 @@ async function buildCommand(args: string[]) {
     const projectName = values.project as string;
     const projectPath = config.projects[projectName];
     if (!projectPath) {
-      console.error(`❌ Project "${projectName}" not found in gemcore.config.js`);
+      console.error(` Project "${projectName}" not found in gemcore.config.js`);
       console.log('Available projects:', Object.keys(config.projects).join(', '));
       process.exit(1);
     }
     projectDir = resolve(projectPath);
   } else if (config?.defaultProject) {
     projectDir = resolve(config.defaultProject);
-    console.log('📌 Using default project from config');
+    console.log(' Using default project from config');
   } else {
-    console.error('❌ No project specified');
-    console.error('💡 Usage: ./bake all --dir <project-dir>');
-    console.error('💡 Or set defaultProject in gemcore.config.js');
+    console.error(' No project specified');
+    console.error(' Usage: ./bake all --dir <project-dir>');
+    console.error(' Or set defaultProject in gemcore.config.js');
     process.exit(1);
   }
   
@@ -196,21 +196,21 @@ async function buildCommand(args: string[]) {
 
   const configPath = join(projectDir, 'gemcore.config.js');
   if (!existsSync(configPath)) {
-    console.error('❌ No gemcore.config.js found in', projectDir);
+    console.error(' No gemcore.config.js found in', projectDir);
     process.exit(1);
   }
 
   const projectConfig = await import(configPath);
   const appName = projectConfig.default?.app?.name || 'GemcoreApp';
 
-  console.log('📁 Project:', projectDir);
-  console.log('🏗️  Platform:', platform);
-  console.log('📦 App Name:', appName);
+  console.log(' Project:', projectDir);
+  console.log('  Platform:', platform);
+  console.log(' App Name:', appName);
   
-  // 🎨 Auto-convert icon if PNG is specified
+  //  Auto-convert icon if PNG is specified
   const iconPath = projectConfig.default?.app?.icon;
   if (iconPath && iconPath.toLowerCase().endsWith('.png')) {
-    console.log('🎨 Icon:', iconPath);
+    console.log(' Icon:', iconPath);
     console.log('');
     
     const { autoConvertIcon } = await import(join(FRAMEWORK_DIR, 'scripts', 'convert-icon.ts'));
@@ -232,9 +232,9 @@ async function buildCommand(args: string[]) {
   
   const platforms = platform === 'all' ? ['mac', 'win', 'linux'] : [platform];
   
-  // ⚡ OPTIMIZATION: Build assets ONCE for all platforms
+  //  OPTIMIZATION: Build assets ONCE for all platforms
   if (platforms.length > 1) {
-    console.log('⚡ Building shared assets once for all platforms...\n');
+    console.log(' Building shared assets once for all platforms...\n');
     const assetsPath = join(FRAMEWORK_DIR, 'launcher', 'gemcore-assets');
     const embedProc = Bun.spawn(['bun', join(FRAMEWORK_DIR, 'scripts', 'embed-assets-shared.ts'), projectDir, assetsPath], {
       cwd: FRAMEWORK_DIR,
@@ -248,15 +248,15 @@ async function buildCommand(args: string[]) {
     mkdirSync(buildDir, { recursive: true });
     cpSync(assetsPath, join(buildDir, 'gemcore-assets'));
     
-    console.log('✅ Shared assets ready for all platforms!\n');
+    console.log(' Shared assets ready for all platforms!\n');
   }
   
   for (const targetPlatform of platforms) {
-    console.log(`\n🏗️  Building for ${targetPlatform}...\n`);
+    console.log(`\n  Building for ${targetPlatform}...\n`);
     await buildForPlatform(targetPlatform, projectDir, projectConfig, appName, shouldRun, FRAMEWORK_DIR);
   }
   
-  console.log('\n✅ All builds complete!');
+  console.log('\n All builds complete!');
 }
 
 async function buildForPlatform(platform: string, projectDir: string, projectConfig: any, appName: string, shouldRun: boolean, frameworkDir: string) {
@@ -271,12 +271,12 @@ async function buildForPlatform(platform: string, projectDir: string, projectCon
       await buildLinux(projectDir, projectConfig, appName, frameworkDir);
       break;
     default:
-      console.warn(`⚠️  Platform ${platform} not supported`);
+      console.warn(`  Platform ${platform} not supported`);
   }
 }
 
 async function buildMacOS(projectDir: string, projectConfig: any, appName: string, shouldRun: boolean, frameworkDir: string) {
-  console.log('🍎 Building macOS Universal Binary (x64 + ARM64)...\n');
+  console.log(' Building macOS Universal Binary (x64 + ARM64)...\n');
 
   // Check if Steamworks is enabled
   const steamworksEnabled = projectConfig.default?.steamworks?.enabled ? 'ON' : 'OFF';
@@ -296,11 +296,11 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   const assetsFile = join(sharedDir, 'gemcore-assets');
   
   if (!existsSync(launcherPath) || !existsSync(arm64Binary) || !existsSync(x64Binary) || !existsSync(assetsFile)) {
-    console.error('❌ Shared universal build failed!');
+    console.error(' Shared universal build failed!');
     process.exit(1);
   }
   
-  console.log('✅ Shared universal build ready!\n');
+  console.log(' Shared universal build ready!\n');
 
   const distDir = join(projectDir, 'dist', 'mac');
   const appBundle = join(distDir, `${appName}.app`);
@@ -308,7 +308,7 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   const macOSDir = join(contentsDir, 'MacOS');
   const resourcesDir = join(contentsDir, 'Resources');
 
-  console.log('🏗️  Creating shared universal .app bundle...');
+  console.log('  Creating shared universal .app bundle...');
   
   if (existsSync(appBundle)) {
     rmSync(appBundle, { recursive: true });
@@ -328,37 +328,37 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   
   cpSync(assetsFile, join(macOSDir, 'gemcore-assets'));
   
-  // 🎮 Copy Steam DLL only if Steamworks is enabled
+  //  Copy Steam DLL only if Steamworks is enabled
   if (projectConfig.default?.steamworks?.enabled) {
     const steamDll = join(frameworkDir, 'bin', 'steamworks', 'macos', 'libsteam_api.dylib');
     if (existsSync(steamDll)) {
       cpSync(steamDll, join(macOSDir, 'libsteam_api.dylib'));
-      console.log('🎮 Copied Steam SDK (libsteam_api.dylib)');
+      console.log(' Copied Steam SDK (libsteam_api.dylib)');
       
       // Copy steam_appid.txt for testing
       const steamAppId = projectConfig.default?.steamworks?.appId || 480;
       writeFileSync(join(macOSDir, 'steam_appid.txt'), steamAppId.toString());
-      console.log(`🎮 Created steam_appid.txt (${steamAppId})`);
+      console.log(` Created steam_appid.txt (${steamAppId})`);
     } else {
-      console.warn('⚠️  Steam SDK not found at:', steamDll);
+      console.warn('  Steam SDK not found at:', steamDll);
     }
   }
   
-  // 🔒 Config is now embedded in gemcore-assets (encrypted, not accessible to user)
+  //  Config is now embedded in gemcore-assets (encrypted, not accessible to user)
 
-  console.log('✅ Universal launcher (detects architecture)');
-  console.log('✅ ARM64 launcher (228 KB)');
-  console.log('✅ x64 launcher (240 KB)');
-  console.log('✅ Shared assets (8.8 MB, used by both) ✅');
-  console.log('🔒 Config embedded in encrypted assets');
+  console.log(' Universal launcher (detects architecture)');
+  console.log(' ARM64 launcher (228 KB)');
+  console.log(' x64 launcher (240 KB)');
+  console.log(' Shared assets (8.8 MB, used by both) ');
+  console.log(' Config embedded in encrypted assets');
   
-  // 🎨 Copy icon (use auto-converted ICNS if available)
+  //  Copy icon (use auto-converted ICNS if available)
   const iconIcnsPath = projectConfig.default?.app?.iconIcns || join(projectDir, 'assets', 'icon.icns');
   if (existsSync(iconIcnsPath)) {
     cpSync(iconIcnsPath, join(resourcesDir, 'icon.icns'));
-    console.log('🎨 Icon copied (ICNS)');
+    console.log(' Icon copied (ICNS)');
   } else {
-    console.warn('⚠️  No icon.icns found');
+    console.warn('  No icon.icns found');
   }
 
   const infoPlist = `<?xml version="1.0" encoding="UTF-8"?>
@@ -411,7 +411,7 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   // This matches Godot's approach and ensures macOS trusts the app
   // NOTE: We use adhoc signing without hardened runtime to avoid entitlement issues
   // Game Mode still works with proper Info.plist and NSProcessInfo activity
-  console.log('🔐 Signing app...');
+  console.log(' Signing app...');
   const codesignProc = Bun.spawn([
     'codesign',
     '--force',
@@ -423,16 +423,16 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
     stderr: 'pipe',
   });
   await codesignProc.exited;
-  console.log('✅ App signed\n');
+  console.log(' App signed\n');
 
-  console.log('✅ Build complete!\n');
-  console.log('📦 Output:', appBundle);
-  console.log('📊 Size: ~9.2 MB (3 launchers + 1 shared assets file)');
-  console.log('💡 Assets shared between ARM64 and x64 = 50% smaller!');
+  console.log(' Build complete!\n');
+  console.log(' Output:', appBundle);
+  console.log(' Size: ~9.2 MB (3 launchers + 1 shared assets file)');
+  console.log(' Assets shared between ARM64 and x64 = 50% smaller!');
   console.log('');
   
   if (shouldRun) {
-    console.log('🚀 Running app...\n');
+    console.log(' Running app...\n');
     const launcher = Bun.spawn(['open', '-W', appBundle], {
       stdio: ['inherit', 'inherit', 'inherit'],
     });
@@ -441,7 +441,7 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
 }
 
 async function buildWindows(projectDir: string, projectConfig: any, appName: string, frameworkDir: string) {
-  console.log('🪟 Building for Windows...\n');
+  console.log(' Building for Windows...\n');
   
   const buildScript = join(frameworkDir, 'scripts', 'build-windows-single-exe.sh');
   const buildProc = Bun.spawn([buildScript, projectDir, appName], {
@@ -453,7 +453,7 @@ async function buildWindows(projectDir: string, projectConfig: any, appName: str
 }
 
 async function buildLinux(projectDir: string, projectConfig: any, appName: string, frameworkDir: string) {
-  console.log('🐧 Building for Linux...\n');
+  console.log(' Building for Linux...\n');
   
   const buildScript = join(frameworkDir, 'scripts', 'build-linux-single-executables.sh');
   const buildProc = Bun.spawn([buildScript, projectDir, appName], {
@@ -478,8 +478,8 @@ async function releaseCommand(args: string[]) {
 
   const projectDir = values.dir ? resolve(values.dir as string) : process.cwd();
   
-  console.log('🚀 Gemcore Release Build (Mac + Windows)\n');
-  console.log(`📂 Project: ${projectDir}`);
+  console.log(' Gemcore Release Build (Mac + Windows)\n');
+  console.log(` Project: ${projectDir}`);
   console.log('');
 
   // Use the optimized build script
@@ -499,7 +499,7 @@ async function releaseCommand(args: string[]) {
 // ==============================================
 function helpCommand() {
   console.log(`
-🥐 Gemcore CLI
+ Gemcore CLI
 
 Usage: bake <command> [options]
 
@@ -510,7 +510,7 @@ Commands:
   win                Build for Windows
   linux              Build for Linux
   all                Build for all platforms
-  release            🚀 Build Mac + Windows (auto-increment version, parallel)
+  release             Build Mac + Windows (auto-increment version, parallel)
   help               Show this help message
 
 Options:
@@ -536,7 +536,7 @@ Documentation: https://github.com/eddime/gemcore
 
 // Run CLI
 main().catch((err) => {
-  console.error('❌ Error:', err.message);
+  console.error(' Error:', err.message);
   process.exit(1);
 });
 

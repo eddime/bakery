@@ -1,5 +1,5 @@
 /**
- * 🥐 Gemcore Universal Launcher (Windows) - WITH EMBEDDED RESOURCES
+ *  Gemcore Universal Launcher (Windows) - WITH EMBEDDED RESOURCES
  * Extracts embedded binaries/assets to TEMP and launches correct architecture
  */
 
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
     // Read embedded data
     EmbeddedData data;
     if (!readEmbeddedData(exePath, data)) {
-        std::cerr << "❌ Failed to read embedded data!" << std::endl;
+        std::cerr << " Failed to read embedded data!" << std::endl;
         return 1;
     }
     
@@ -138,21 +138,21 @@ int main(int argc, char* argv[]) {
     
     if (data.x64Size > 0) {
         if (!extractFile(exePath, data.x64Offset, data.x64Size, x64Path)) {
-            std::cerr << "❌ Failed to extract x64 binary!" << std::endl;
+            std::cerr << " Failed to extract x64 binary!" << std::endl;
             return 1;
         }
     }
     
     if (data.assetsSize > 0) {
         if (!extractFile(exePath, data.assetsOffset, data.assetsSize, assetsPath)) {
-            std::cerr << "❌ Failed to extract assets!" << std::endl;
+            std::cerr << " Failed to extract assets!" << std::endl;
             return 1;
         }
     }
     
     if (data.configSize > 0) {
         if (!extractFile(exePath, data.configOffset, data.configSize, configPath)) {
-            std::cerr << "❌ Failed to extract config!" << std::endl;
+            std::cerr << " Failed to extract config!" << std::endl;
             return 1;
         }
     }
@@ -181,7 +181,7 @@ int main(int argc, char* argv[]) {
     
     // For now, we only have x64
     if (arch != "x64") {
-        std::cerr << "⚠️  Only x64 is currently supported, falling back..." << std::endl;
+        std::cerr << "  Only x64 is currently supported, falling back..." << std::endl;
         binaryPath = x64Path;
     } else {
         binaryPath = x64Path;
@@ -219,7 +219,7 @@ int main(int argc, char* argv[]) {
         NULL, NULL, FALSE, 0, NULL, wideTempDir,  // Set working directory!
         &si, &pi
     )) {
-        std::cerr << "❌ Failed to launch " << arch << " binary" << std::endl;
+        std::cerr << " Failed to launch " << arch << " binary" << std::endl;
         std::cerr << "Error code: " << GetLastError() << std::endl;
         delete[] widePath;
         return 1;

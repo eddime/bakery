@@ -1,5 +1,5 @@
 /**
- * 🥐 Gemcore Cache Buster
+ *  Gemcore Cache Buster
  * Shared utility to generate cache-busting timestamps
  */
 

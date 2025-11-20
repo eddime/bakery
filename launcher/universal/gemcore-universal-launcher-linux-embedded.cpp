@@ -1,5 +1,5 @@
 /**
- * 🥐 Gemcore Universal Launcher (Linux) - WITH EMBEDDED RESOURCES
+ *  Gemcore Universal Launcher (Linux) - WITH EMBEDDED RESOURCES
  * Extracts embedded binaries/assets to /tmp and launches correct architecture
  */
 
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
     std::string tempDir = getTempDir();
     
     #ifndef NDEBUG
-    std::cout << "🥐 Gemcore Universal Launcher" << std::endl;
+    std::cout << " Gemcore Universal Launcher" << std::endl;
     std::cout << "   Executable: " << exePath << std::endl;
     std::cout << "   Architecture: " << arch << std::endl;
     std::cout << "   Temp Dir: " << tempDir << std::endl;
@@ -143,7 +143,7 @@ int main(int argc, char* argv[]) {
     // Read embedded data
     EmbeddedData data;
     if (!readEmbeddedData(exePath, data)) {
-        std::cerr << "❌ Failed to read embedded data from: " << exePath << std::endl;
+        std::cerr << " Failed to read embedded data from: " << exePath << std::endl;
         std::cerr << "   Make sure this is a valid Gemcore executable!" << std::endl;
         return 1;
     }
@@ -163,27 +163,27 @@ int main(int argc, char* argv[]) {
     
     if (data.x64Size > 0) {
         if (!extractFile(exePath, data.x64Offset, data.x64Size, binaryPath)) {
-            std::cerr << "❌ Failed to extract binary!" << std::endl;
+            std::cerr << " Failed to extract binary!" << std::endl;
             return 1;
         }
     }
     
     if (data.assetsSize > 0) {
         if (!extractFile(exePath, data.assetsOffset, data.assetsSize, assetsPath)) {
-            std::cerr << "❌ Failed to extract assets!" << std::endl;
+            std::cerr << " Failed to extract assets!" << std::endl;
             return 1;
         }
         #ifndef NDEBUG
-        std::cout << "✅ Extracted assets to: " << assetsPath << std::endl;
+        std::cout << " Extracted assets to: " << assetsPath << std::endl;
         #endif
     } else {
-        std::cerr << "⚠️  No assets embedded in executable!" << std::endl;
+        std::cerr << "  No assets embedded in executable!" << std::endl;
         std::cerr << "   App may not work correctly without assets." << std::endl;
     }
     
     if (data.configSize > 0) {
         if (!extractFile(exePath, data.configOffset, data.configSize, configPath)) {
-            std::cerr << "❌ Failed to extract config!" << std::endl;
+            std::cerr << " Failed to extract config!" << std::endl;
             return 1;
         }
     }
@@ -192,10 +192,10 @@ int main(int argc, char* argv[]) {
     if (data.steamSoSize > 0) {
         std::string steamSoPath = tempDir + "/libsteam_api.so";
         if (!extractFile(exePath, data.steamSoOffset, data.steamSoSize, steamSoPath)) {
-            std::cerr << "⚠️  Failed to extract Steam library (Steamworks may not work)" << std::endl;
+            std::cerr << "  Failed to extract Steam library (Steamworks may not work)" << std::endl;
             // Don't fail - app can run without Steam
         } else {
-            std::cout << "✅ Extracted Steam library to: " << steamSoPath << std::endl;
+            std::cout << " Extracted Steam library to: " << steamSoPath << std::endl;
             
             // Set LD_LIBRARY_PATH so the launcher can find libsteam_api.so
             std::string ldPath = tempDir;
@@ -205,7 +205,7 @@ int main(int argc, char* argv[]) {
             }
             setenv("LD_LIBRARY_PATH", ldPath.c_str(), 1);
             
-            std::cout << "✅ Set LD_LIBRARY_PATH=" << ldPath << std::endl;
+            std::cout << " Set LD_LIBRARY_PATH=" << ldPath << std::endl;
         }
     }
     
@@ -225,12 +225,12 @@ int main(int argc, char* argv[]) {
     if (pid == 0) {
         // Child process
         #ifndef NDEBUG
-        std::cout << "🚀 Launching " << arch << " binary: " << binaryPath << std::endl;
+        std::cout << " Launching " << arch << " binary: " << binaryPath << std::endl;
         #endif
         execv(binaryPath.c_str(), args);
         
         // If we get here, exec failed
-        std::cerr << "❌ Failed to launch " << arch << " binary: " << binaryPath << std::endl;
+        std::cerr << " Failed to launch " << arch << " binary: " << binaryPath << std::endl;
         std::cerr << "   Error: " << strerror(errno) << std::endl;
         return 1;
     } else if (pid > 0) {
@@ -252,7 +252,7 @@ int main(int argc, char* argv[]) {
         
         return WIFEXITED(status) ? WEXITSTATUS(status) : 1;
     } else {
-        std::cerr << "❌ Failed to fork process" << std::endl;
+        std::cerr << " Failed to fork process" << std::endl;
         delete[] args;
         return 1;
     }

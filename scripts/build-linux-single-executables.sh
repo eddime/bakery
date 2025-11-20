@@ -12,8 +12,8 @@ if [ -z "$PROJECT_DIR" ] || [ -z "$APP_NAME" ]; then
     exit 1
 fi
 
-echo "🐧 Building Linux Single Executables (x86_64 + ARM64)"
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+echo " Building Linux Single Executables (x86_64 + ARM64)"
+echo ""
 echo ""
 
 cd "$(dirname "$0")/.."
@@ -26,7 +26,7 @@ mkdir -p "$OUTPUT_DIR"
 # ============================================
 # 1. Build Universal Launcher (Embedded)
 # ============================================
-echo "🔨 Building universal launcher..."
+echo " Building universal launcher..."
 BUILD_EMBEDDED="$FRAMEWORK_DIR/launcher/build-linux-universal-embedded"
 mkdir -p "$BUILD_EMBEDDED"
 cd "$BUILD_EMBEDDED"
@@ -36,7 +36,7 @@ PREBUILT_UNIVERSAL="$FRAMEWORK_DIR/launcher/prebuilt/gemcore-universal-launcher-
 UNIVERSAL_CACHED=false
 
 if [ -f "$PREBUILT_UNIVERSAL" ]; then
-    echo "💾 Using cached pre-built universal launcher"
+    echo " Using cached pre-built universal launcher"
     cp "$PREBUILT_UNIVERSAL" "gemcore-universal-launcher-linux-embedded"
     chmod +x "gemcore-universal-launcher-linux-embedded"
     UNIVERSAL_CACHED=true
@@ -48,7 +48,7 @@ if [ "$UNIVERSAL_CACHED" = false ]; then
     PREBUILT_ARM64="$FRAMEWORK_DIR/launcher/prebuilt/linux/gemcore-launcher-linux-arm64"
     
     if [ -f "$PREBUILT_X64" ] && [ -f "$PREBUILT_ARM64" ] && [[ $(uname) != "Linux" ]]; then
-        echo "💡 Skipping universal launcher (using prebuilt x64 + ARM64 binaries)"
+        echo " Skipping universal launcher (using prebuilt x64 + ARM64 binaries)"
         echo "   Universal launcher only needed for single-file distribution"
         UNIVERSAL_CACHED="skipped"
     elif [[ $(uname) == "Linux" ]]; then
@@ -57,35 +57,35 @@ if [ "$UNIVERSAL_CACHED" = false ]; then
         make gemcore-universal-launcher-linux-embedded -j4
         
         if [ ! -f "gemcore-universal-launcher-linux-embedded" ]; then
-            echo "❌ Universal launcher build failed!"
+            echo " Universal launcher build failed!"
             exit 1
         fi
     else
         # Cross-compile from macOS
         if ! command -v x86_64-linux-musl-gcc &> /dev/null; then
-            echo "⚠️  x86_64-linux-musl-gcc not found - skipping universal launcher"
-            echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
-            echo "💡 Or build will use separate x64/ARM64 executables"
+            echo "  x86_64-linux-musl-gcc not found - skipping universal launcher"
+            echo " Install: brew install FiloSottile/musl-cross/musl-cross"
+            echo " Or build will use separate x64/ARM64 executables"
             UNIVERSAL_CACHED="skipped"
         else
             cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
             make gemcore-universal-launcher-linux-embedded -j4
             
             if [ ! -f "gemcore-universal-launcher-linux-embedded" ]; then
-                echo "❌ Universal launcher build failed!"
+                echo " Universal launcher build failed!"
                 exit 1
             fi
         fi
     fi
 fi
 
-echo "✅ Universal launcher ready"
+echo " Universal launcher ready"
 echo ""
 
 # ============================================
 # 2. Build x86_64 launcher binary (with WebKitGTK)
 # ============================================
-echo "🔨 Building x86_64 launcher binary..."
+echo " Building x86_64 launcher binary..."
 BUILD_X64="$FRAMEWORK_DIR/launcher/build-linux-x64-embedded"
 mkdir -p "$BUILD_X64"
 cd "$BUILD_X64"
@@ -96,23 +96,23 @@ PREBUILT_BINARY="$PREBUILT_DIR/gemcore-launcher-linux-x64"
 DOWNLOADED=false
 
 if [ -f "$PREBUILT_BINARY" ]; then
-    echo "💾 Using cached pre-built x64 binary (with WebKitGTK)"
+    echo " Using cached pre-built x64 binary (with WebKitGTK)"
     cp "$PREBUILT_BINARY" "gemcore-launcher-linux"
     chmod +x "gemcore-launcher-linux"
     DOWNLOADED=true
 elif [[ $(uname) != "Linux" ]]; then
     # Try to download from GitHub if not cached
-    echo "📥 Attempting to download pre-built x64 binary (with WebKitGTK)..."
+    echo " Attempting to download pre-built x64 binary (with WebKitGTK)..."
     GITHUB_REPO="eddime/gemcore"
     VERSION="latest"
     BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/gemcore-launcher-linux-x64"
     
     if curl -L -f -o "gemcore-launcher-linux" "${BINARY_URL}" 2>/dev/null; then
         chmod +x "gemcore-launcher-linux"
-        echo "✅ Downloaded pre-built x64 binary (with WebKitGTK)"
+        echo " Downloaded pre-built x64 binary (with WebKitGTK)"
         DOWNLOADED=true
     else
-        echo "⚠️  Pre-built binary not available, will cross-compile (without WebKitGTK)"
+        echo "  Pre-built binary not available, will cross-compile (without WebKitGTK)"
     fi
 fi
 
@@ -128,18 +128,18 @@ if [ "$DOWNLOADED" = false ]; then
     fi
     
     if [ ! -f "gemcore-launcher-linux" ]; then
-        echo "❌ x86_64 build failed!"
+        echo " x86_64 build failed!"
         exit 1
     fi
 fi
 
-echo "✅ x86_64 launcher ready"
+echo " x86_64 launcher ready"
 echo ""
 
 # ============================================
 # 3. Build ARM64 launcher binary
 # ============================================
-echo "🔨 Building ARM64 launcher binary..."
+echo " Building ARM64 launcher binary..."
 BUILD_ARM64="$FRAMEWORK_DIR/launcher/build-linux-arm64-embedded"
 mkdir -p "$BUILD_ARM64"
 cd "$BUILD_ARM64"
@@ -149,7 +149,7 @@ PREBUILT_ARM64="$FRAMEWORK_DIR/launcher/prebuilt/linux/gemcore-launcher-linux-ar
 ARM64_CACHED=false
 
 if [ -f "$PREBUILT_ARM64" ]; then
-    echo "💾 Using cached pre-built ARM64 binary (with WebKitGTK)"
+    echo " Using cached pre-built ARM64 binary (with WebKitGTK)"
     cp "$PREBUILT_ARM64" "gemcore-launcher-linux"
     chmod +x "gemcore-launcher-linux"
     ARM64_CACHED=true
@@ -163,25 +163,25 @@ if [ "$ARM64_CACHED" = false ]; then
     else
         # Cross-compile from macOS or x86_64 Linux (without WebKitGTK - fallback)
         if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
-            echo "⚠️  aarch64-linux-musl-gcc not found! Skipping ARM64 build."
-            echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
+            echo "  aarch64-linux-musl-gcc not found! Skipping ARM64 build."
+            echo " Install: brew install FiloSottile/musl-cross/musl-cross"
             BUILD_ARM64=""
         else
             cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake
             make gemcore-launcher-linux -j4
             
             if [ ! -f "gemcore-launcher-linux" ]; then
-                echo "⚠️  ARM64 build failed! Skipping."
+                echo "  ARM64 build failed! Skipping."
                 BUILD_ARM64=""
             else
-                echo "✅ ARM64 launcher built (without WebKitGTK - cross-compiled)"
+                echo " ARM64 launcher built (without WebKitGTK - cross-compiled)"
             fi
         fi
     fi
 fi
 
 if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/gemcore-launcher-linux" ]; then
-    echo "✅ ARM64 launcher ready"
+    echo " ARM64 launcher ready"
 fi
 
 echo ""
@@ -191,22 +191,22 @@ cd "$FRAMEWORK_DIR"
 # ============================================
 # 3.5. Embed assets (needed for single executable)
 # ============================================
-echo "📦 Embedding assets..."
+echo " Embedding assets..."
 ASSETS_PATH="$BUILD_X64/gemcore-assets"
 bun scripts/embed-assets-shared.ts "$PROJECT_DIR" "$ASSETS_PATH"
 
 if [ ! -f "$ASSETS_PATH" ]; then
-    echo "❌ Failed to embed assets!"
+    echo " Failed to embed assets!"
     exit 1
 fi
 
-echo "✅ Assets embedded: $(du -h "$ASSETS_PATH" | awk '{print $1}')"
+echo " Assets embedded: $(du -h "$ASSETS_PATH" | awk '{print $1}')"
 echo ""
 
 # ============================================
 # 4. Pack everything into single executables
 # ============================================
-echo "📦 Packing single executables..."
+echo " Packing single executables..."
 
 # Check if Steamworks is enabled
 STEAM_SO_X64=""
@@ -229,32 +229,32 @@ if [ -f "$CONFIG_FILE" ]; then
         fi
         
         if [ -n "$STEAM_SO_X64" ] && [ -f "$STEAM_SO_X64" ]; then
-            echo "🎮 Embedding Steam SDK (x86_64) into executable..."
+            echo " Embedding Steam SDK (x86_64) into executable..."
         else
-            echo "⚠️  Steam SDK (x86_64) not found"
+            echo "  Steam SDK (x86_64) not found"
             STEAM_SO_X64=""
         fi
     fi
 fi
 
 # Pack x86_64 executable
-echo "📦 Packing x86_64 executable..."
+echo " Packing x86_64 executable..."
 if [ -f "$ASSETS_PATH" ]; then
     echo "   Using assets: $ASSETS_PATH ($(du -h "$ASSETS_PATH" | awk '{print $1}'))"
 else
-    echo "   ⚠️  Assets not found at: $ASSETS_PATH"
+    echo "     Assets not found at: $ASSETS_PATH"
 fi
 
 if [ "$UNIVERSAL_CACHED" = "skipped" ]; then
     # No universal launcher - create separate executable + assets
-    echo "💡 Creating separate executable (no universal launcher)"
+    echo " Creating separate executable (no universal launcher)"
     cp "$BUILD_X64/gemcore-launcher-linux" "$OUTPUT_DIR/${APP_NAME}-x86_64"
     cp "$ASSETS_PATH" "$OUTPUT_DIR/gemcore-assets"
     chmod +x "$OUTPUT_DIR/${APP_NAME}-x86_64"
     
     if [ -n "$STEAM_SO_X64" ] && [ -f "$STEAM_SO_X64" ]; then
         cp "$STEAM_SO_X64" "$OUTPUT_DIR/"
-        echo "🎮 Copied Steam SDK (x86_64)"
+        echo " Copied Steam SDK (x86_64)"
     fi
 else
     # Pack with universal launcher
@@ -266,23 +266,23 @@ else
         "$ASSETS_PATH"
 fi
 
-echo "✅ x86_64 executable packed!"
+echo " x86_64 executable packed!"
 echo ""
 
 # Pack ARM64 executable if built
 if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/gemcore-launcher-linux" ]; then
-    echo "📦 Packing ARM64 executable..."
+    echo " Packing ARM64 executable..."
     
     if [ "$UNIVERSAL_CACHED" = "skipped" ]; then
         # No universal launcher - create separate executable + assets
-        echo "💡 Creating separate executable (no universal launcher)"
+        echo " Creating separate executable (no universal launcher)"
         cp "$BUILD_ARM64/gemcore-launcher-linux" "$OUTPUT_DIR/${APP_NAME}-arm64"
         # Assets already copied for x64
         chmod +x "$OUTPUT_DIR/${APP_NAME}-arm64"
         
         if [ -n "$STEAM_SO_ARM64" ] && [ -f "$STEAM_SO_ARM64" ]; then
             cp "$STEAM_SO_ARM64" "$OUTPUT_DIR/"
-            echo "🎮 Copied Steam SDK (ARM64)"
+            echo " Copied Steam SDK (ARM64)"
         fi
     else
         # Build ARM64 Universal Launcher (needed for ARM64 builds!)
@@ -295,7 +295,7 @@ if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/gemcore-launcher-linux" ]; then
         ARM64_UNIVERSAL_CACHED=false
         
         if [ -f "$PREBUILT_ARM64_UNIVERSAL" ]; then
-            echo "💾 Using cached pre-built ARM64 universal launcher"
+            echo " Using cached pre-built ARM64 universal launcher"
             cp "$PREBUILT_ARM64_UNIVERSAL" "gemcore-universal-launcher-linux-embedded"
             chmod +x "gemcore-universal-launcher-linux-embedded"
             ARM64_UNIVERSAL_CACHED=true
@@ -309,13 +309,13 @@ if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/gemcore-launcher-linux" ]; then
             else
                 # Cross-compile from macOS or x86_64 Linux
                 if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
-                    echo "⚠️  aarch64-linux-musl-gcc not found! Using x86-64 universal launcher (won't work on ARM64)"
+                    echo "  aarch64-linux-musl-gcc not found! Using x86-64 universal launcher (won't work on ARM64)"
                     BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
                 else
                     cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
                     make gemcore-universal-launcher-linux-embedded -j4
                     if [ ! -f "gemcore-universal-launcher-linux-embedded" ]; then
-                        echo "⚠️  ARM64 universal launcher build failed! Using x86-64 (won't work on ARM64)"
+                        echo "  ARM64 universal launcher build failed! Using x86-64 (won't work on ARM64)"
                         BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
                     fi
                 fi
@@ -326,7 +326,7 @@ if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/gemcore-launcher-linux" ]; then
         
         STEAM_ARG=""
         if [ -f "$STEAM_SO_ARM64" ]; then
-            echo "🎮 Embedding Steam SDK (ARM64) into executable..."
+            echo " Embedding Steam SDK (ARM64) into executable..."
             STEAM_ARG="$STEAM_SO_ARM64"
         fi
         
@@ -347,31 +347,31 @@ if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/gemcore-launcher-linux" ]; then
         fi
     fi
     
-    echo "✅ ARM64 executable packed!"
+    echo " ARM64 executable packed!"
     echo ""
 fi
 
-echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo "✅ Linux Single Executables complete!"
 echo ""
-echo "📦 Output:"
+echo " Linux Single Executables complete!"
+echo ""
+echo " Output:"
 echo "   $OUTPUT_DIR/${APP_NAME}-x86_64"
 if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
     echo "   $OUTPUT_DIR/${APP_NAME}-arm64"
 fi
 echo ""
-echo "📊 Sizes:"
+echo " Sizes:"
 du -h "$OUTPUT_DIR/${APP_NAME}-x86_64" | awk '{print "   " $2 ": " $1}'
 if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
     du -h "$OUTPUT_DIR/${APP_NAME}-arm64" | awk '{print "   " $2 ": " $1}'
 fi
 echo ""
-echo "🔐 Everything embedded (launcher + binary + assets + Steam)"
+echo " Everything embedded (launcher + binary + assets + Steam)"
 echo ""
 # ============================================
 # 4. Create .desktop files for double-click support
 # ============================================
-echo "📝 Creating .desktop files for double-click support..."
+echo " Creating .desktop files for double-click support..."
 
 # Load config to get app name and icon
 CONFIG_PATH="$PROJECT_DIR/gemcore.config.js"
@@ -400,7 +400,7 @@ if [ -n "$ICON_PATH" ]; then
     if [ -n "$ICON_SOURCE" ] && [ -f "$ICON_SOURCE" ]; then
         ICON_FILE="${APP_NAME}.png"
         cp "$ICON_SOURCE" "$OUTPUT_DIR/$ICON_FILE"
-        echo "🎨 Icon copied: $ICON_FILE"
+        echo " Icon copied: $ICON_FILE"
     fi
 fi
 
@@ -441,7 +441,7 @@ EOF
     chmod +x "$OUTPUT_DIR/${APP_NAME}-arm64.desktop"
 fi
 
-echo "✅ .desktop files created!"
+echo " .desktop files created!"
 echo ""
 
 # ============================================
@@ -449,7 +449,7 @@ echo ""
 # Based on AppImage spec: https://docs.appimage.org/
 # Reference: https://github.com/AppImageCommunity/awesome-appimage
 # ============================================
-echo "📦 Creating AppImage (single file, like macOS .app)..."
+echo " Creating AppImage (single file, like macOS .app)..."
 
 create_proper_appimage() {
     local ARCH="$1"
@@ -469,22 +469,22 @@ create_proper_appimage() {
     
     # Copy binary
     if [ ! -f "$OUTPUT_DIR/$BINARY_NAME" ]; then
-        echo "   ❌ Binary not found: $OUTPUT_DIR/$BINARY_NAME"
+        echo "    Binary not found: $OUTPUT_DIR/$BINARY_NAME"
         return 1
     fi
-    echo "   📦 Copying binary ($(du -h "$OUTPUT_DIR/$BINARY_NAME" | awk '{print $1}'))..."
+    echo "    Copying binary ($(du -h "$OUTPUT_DIR/$BINARY_NAME" | awk '{print $1}'))..."
     cp "$OUTPUT_DIR/$BINARY_NAME" "$APPDIR_TMP/usr/bin/${APP_NAME}"
     chmod +x "$APPDIR_TMP/usr/bin/${APP_NAME}"
     
     # Copy assets (required by launcher)
     if [ -f "$OUTPUT_DIR/gemcore-assets" ]; then
-        echo "   📦 Copying assets ($(du -h "$OUTPUT_DIR/gemcore-assets" | awk '{print $1}'))..."
+        echo "    Copying assets ($(du -h "$OUTPUT_DIR/gemcore-assets" | awk '{print $1}'))..."
         cp "$OUTPUT_DIR/gemcore-assets" "$APPDIR_TMP/usr/bin/gemcore-assets"
     fi
     
     # Copy Steam SDK if available
     if [ -f "$OUTPUT_DIR/libsteam_api.so" ]; then
-        echo "   🎮 Copying Steam SDK..."
+        echo "    Copying Steam SDK..."
         cp "$OUTPUT_DIR/libsteam_api.so" "$APPDIR_TMP/usr/bin/libsteam_api.so"
     fi
     
@@ -528,16 +528,16 @@ APPRUN_EOF
     if command -v appimagetool &> /dev/null || [ -f "/usr/bin/appimagetool" ]; then
         echo "   Using appimagetool..."
         appimagetool "$APPDIR_TMP" "$OUTPUT_DIR/$OUTPUT_FILE" 2>/dev/null || {
-            echo "   ⚠️  appimagetool failed, creating self-extracting version..."
+            echo "     appimagetool failed, creating self-extracting version..."
             create_self_extracting_appimage "$ARCH" "$BINARY_NAME" "$OUTPUT_FILE" "$APPDIR_TMP"
         }
     elif [[ $(uname) == "Linux" ]]; then
         # Download appimagetool if on Linux
         APPIMAGETOOL="/tmp/appimagetool-x86_64.AppImage"
         if [ ! -f "$APPIMAGETOOL" ]; then
-            echo "   ⬇️  Downloading appimagetool..."
+            echo "     Downloading appimagetool..."
             wget -q "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" -O "$APPIMAGETOOL" 2>/dev/null || {
-                echo "   ⚠️  Could not download appimagetool, creating self-extracting version..."
+                echo "     Could not download appimagetool, creating self-extracting version..."
                 create_self_extracting_appimage "$ARCH" "$BINARY_NAME" "$OUTPUT_FILE" "$APPDIR_TMP"
                 return
             }
@@ -545,7 +545,7 @@ APPRUN_EOF
         fi
         echo "   Using downloaded appimagetool..."
         "$APPIMAGETOOL" "$APPDIR_TMP" "$OUTPUT_DIR/$OUTPUT_FILE" 2>/dev/null || {
-            echo "   ⚠️  appimagetool failed, creating self-extracting version..."
+            echo "     appimagetool failed, creating self-extracting version..."
             create_self_extracting_appimage "$ARCH" "$BINARY_NAME" "$OUTPUT_FILE" "$APPDIR_TMP"
         }
     else
@@ -562,7 +562,7 @@ APPRUN_EOF
     # Get file size
     if [ -f "$OUTPUT_DIR/$OUTPUT_FILE" ]; then
         FILE_SIZE=$(du -h "$OUTPUT_DIR/$OUTPUT_FILE" | awk '{print $1}')
-        echo "✅ Created: $OUTPUT_FILE ($FILE_SIZE)"
+        echo " Created: $OUTPUT_FILE ($FILE_SIZE)"
     fi
 }
 
@@ -574,35 +574,35 @@ create_self_extracting_appimage() {
     
     # Verify AppDir exists
     if [ ! -d "$APPDIR_TMP" ]; then
-        echo "   ❌ AppDir not found: $APPDIR_TMP"
+        echo "    AppDir not found: $APPDIR_TMP"
         return 1
     fi
     
     # Verify key files exist
     if [ ! -f "$APPDIR_TMP/AppRun" ]; then
-        echo "   ❌ AppRun not found in AppDir"
+        echo "    AppRun not found in AppDir"
         return 1
     fi
     
     if [ ! -f "$APPDIR_TMP/usr/bin/${APP_NAME}" ]; then
-        echo "   ❌ Binary not found in AppDir"
+        echo "    Binary not found in AppDir"
         return 1
     fi
     
-    echo "   📦 Packing AppDir structure (with icon + .desktop)..."
+    echo "    Packing AppDir structure (with icon + .desktop)..."
     
     # Create temporary tar.gz file first
     TAR_FILE="/tmp/${APP_NAME}-${ARCH}.tar.gz.$$"
     cd "$APPDIR_TMP"
     
     tar -czf "$TAR_FILE" . || {
-        echo "   ❌ Failed to create tar.gz archive"
+        echo "    Failed to create tar.gz archive"
         rm -f "$TAR_FILE"
         return 1
     }
     
     TAR_SIZE=$(du -h "$TAR_FILE" | awk '{print $1}')
-    echo "   📦 Packed AppDir: $TAR_SIZE"
+    echo "    Packed AppDir: $TAR_SIZE"
     
     # Create self-extracting AppImage with full AppDir structure (works from macOS/Windows)
     # This embeds the entire AppDir as a tar.gz archive, preserving icon and .desktop file
@@ -625,14 +625,14 @@ trap "rm -rf '$APPDIR'" EXIT
 # Use grep -a to treat binary file as text
 APPDIR_START=$(grep -a -n "^__APPDIR_MARKER__$" "$SCRIPT" | tail -1 | cut -d: -f1)
 if [ -z "$APPDIR_START" ]; then
-    echo "❌ Invalid AppImage format"
+    echo " Invalid AppImage format"
     echo "Debug: Could not find __APPDIR_MARKER__ in script"
     exit 1
 fi
 
 # Extract AppDir from tar.gz archive
 tail -n +$((APPDIR_START + 1)) "$SCRIPT" | tar -xzf - -C "$APPDIR" 2>/dev/null || {
-    echo "❌ Failed to extract AppImage"
+    echo " Failed to extract AppImage"
     echo "Debug: tar extraction failed"
     exit 1
 }
@@ -657,7 +657,7 @@ APPIMAGE_HEADER
     
     # Verify the AppImage was created and has reasonable size
     if [ ! -f "$OUTPUT_DIR/$OUTPUT_FILE" ]; then
-        echo "   ❌ AppImage file not created"
+        echo "    AppImage file not created"
         return 1
     fi
     
@@ -666,15 +666,15 @@ APPIMAGE_HEADER
     
     # Check if file is too small (less than 100KB means something went wrong)
     if [ "$FILE_SIZE_BYTES" -lt 102400 ]; then
-        echo "   ⚠️  AppImage seems too small ($FILE_SIZE), checking..."
+        echo "     AppImage seems too small ($FILE_SIZE), checking..."
         # Check if tar.gz is actually in the file
         if ! grep -q "__APPDIR_MARKER__" "$OUTPUT_DIR/$OUTPUT_FILE"; then
-            echo "   ❌ Marker not found in AppImage"
+            echo "    Marker not found in AppImage"
             return 1
         fi
     fi
     
-    echo "   ✅ AppImage created: $OUTPUT_FILE ($FILE_SIZE)"
+    echo "    AppImage created: $OUTPUT_FILE ($FILE_SIZE)"
     
     # Cleanup AppDir after creating AppImage
     rm -rf "$APPDIR_TMP"
@@ -688,7 +688,7 @@ fi
 
 # Clean up intermediate files (keep only AppImage - icon is embedded!)
 echo ""
-echo "🧹 Cleaning up intermediate files..."
+echo " Cleaning up intermediate files..."
 rm -f "$OUTPUT_DIR/${APP_NAME}-x86_64" "$OUTPUT_DIR/${APP_NAME}-arm64" 2>/dev/null || true
 rm -f "$OUTPUT_DIR/${APP_NAME}-x86_64.desktop" "$OUTPUT_DIR/${APP_NAME}-arm64.desktop" 2>/dev/null || true
 rm -rf "$OUTPUT_DIR/${APP_NAME}.app" "$OUTPUT_DIR/${APP_NAME}-arm64.app" 2>/dev/null || true
@@ -699,28 +699,28 @@ rm -f "$OUTPUT_DIR/gemcore-assets" 2>/dev/null || true  # Assets are embedded in
 rm -f "$OUTPUT_DIR/libsteam_api.so" 2>/dev/null || true  # Steam SDK is embedded in AppImage
 rm -f "$OUTPUT_DIR/install-${APP_NAME}.sh" 2>/dev/null || true
 rm -f "$OUTPUT_DIR/README.txt" 2>/dev/null || true
-echo "✅ Cleanup complete (only AppImage files remain - everything embedded!)"
+echo " Cleanup complete (only AppImage files remain - everything embedded!)"
 
 # No additional files needed - everything is in the AppImage!
 
 echo ""
-echo "🎯 User experience:"
-echo "   🚀 AppImage (single file, like macOS .app):"
-echo "      → Download: ${APP_NAME}-x86_64.AppImage"
-echo "      → Make executable: chmod +x ${APP_NAME}-x86_64.AppImage"
-echo "      → Run: ./${APP_NAME}-x86_64.AppImage"
-echo "      → Icon embedded, works on any Linux!"
+echo " User experience:"
+echo "    AppImage (single file, like macOS .app):"
+echo "      � Download: ${APP_NAME}-x86_64.AppImage"
+echo "      � Make executable: chmod +x ${APP_NAME}-x86_64.AppImage"
+echo "      � Run: ./${APP_NAME}-x86_64.AppImage"
+echo "      � Icon embedded, works on any Linux!"
 echo ""
 if [[ $(uname) != "Linux" ]]; then
-    echo "   💡 Note: Built from $(uname) (self-extracting AppImage format)"
-    echo "   ✅ Full AppDir structure included (icon + .desktop embedded)"
+    echo "    Note: Built from $(uname) (self-extracting AppImage format)"
+    echo "    Full AppDir structure included (icon + .desktop embedded)"
     echo ""
 fi
-echo "   ✅ Everything embedded in ONE file!"
+echo "    Everything embedded in ONE file!"
 echo ""
-echo "   💡 For double-click support on Ubuntu:"
-echo "      → Right-click AppImage → Properties → Permissions"
-echo "      → Enable 'Allow executing file as program'"
-echo "      → Or use: chmod +x ${APP_NAME}-x86_64.AppImage"
+echo "    For double-click support on Ubuntu:"
+echo "      � Right-click AppImage � Properties � Permissions"
+echo "      � Enable 'Allow executing file as program'"
+echo "      � Or use: chmod +x ${APP_NAME}-x86_64.AppImage"
 
 

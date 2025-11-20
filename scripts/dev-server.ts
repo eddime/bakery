@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * 🥐 Gemcore Dev Server
+ *  Gemcore Dev Server
  * Ultra-fast development server (no compilation needed!)
  * 
  * Features:
@@ -30,15 +30,15 @@ if (existsSync(configPath)) {
       entrypoint = entrypoint.substring(4);
     }
   } catch (err) {
-    console.warn('⚠️  Could not load gemcore.config.js, using default entrypoint');
+    console.warn('  Could not load gemcore.config.js, using default entrypoint');
   }
 }
 
-console.log('⚡ Gemcore Dev Server');
-console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
-console.log('📁 Project:', projectDir);
-console.log('🌐 Serving:', srcDir);
-console.log('📄 Entrypoint:', entrypoint);
+console.log(' Gemcore Dev Server');
+console.log('');
+console.log(' Project:', projectDir);
+console.log(' Serving:', srcDir);
+console.log(' Entrypoint:', entrypoint);
 console.log('');
 
 const server = Bun.serve({
@@ -76,34 +76,34 @@ const server = Bun.serve({
     }
     
     if (!fullPath) {
-      console.log('❌ Not found:', path);
+      console.log(' Not found:', path);
       return new Response('Not Found: ' + path, { status: 404 });
     }
     
-    console.log('✅ Serving:', path);
+    console.log(' Serving:', path);
     
     try {
       const file = Bun.file(fullPath);
       return new Response(file);
     } catch (error) {
-      console.error('❌ Error:', error);
+      console.error(' Error:', error);
       return new Response('Error', { status: 500 });
     }
   },
 });
 
-console.log(`⚡ Dev server: http://localhost:${server.port}`);
-console.log('✅ Ready! (Press Ctrl+C to stop)');
+console.log(` Dev server: http://localhost:${server.port}`);
+console.log(' Ready! (Press Ctrl+C to stop)');
 console.log('');
 
 // Keep process alive
 process.on('SIGTERM', () => {
-  console.log('\n👋 Dev server shutting down...');
+  console.log('\n Dev server shutting down...');
   process.exit(0);
 });
 
 process.on('SIGINT', () => {
-  console.log('\n👋 Dev server shutting down...');
+  console.log('\n Dev server shutting down...');
   process.exit(0);
 });
 

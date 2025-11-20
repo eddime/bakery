@@ -1,5 +1,5 @@
 /**
- * 🥐 Gemcore Launcher - macOS (Shared Assets from gemcore-assets file)
+ *  Gemcore Launcher - macOS (Shared Assets from gemcore-assets file)
  * Clean, shared-code version with zero duplication
  */
 
@@ -29,7 +29,7 @@
 #include "gemcore-cache-buster.h"
 
 #ifdef ENABLE_STEAMWORKS
-#include "gemcore-steamworks-bindings.h"    // 🎮 Steamworks integration
+#include "gemcore-steamworks-bindings.h"    //  Steamworks integration
 #endif
 
 using json = nlohmann::json;
@@ -76,14 +76,14 @@ void worker(int server_fd, gemcore::http::HTTPServer* server) {
     }
 }
 
-// ⚡ OPTIMIZATION: Atomic flag for server ready state
+//  OPTIMIZATION: Atomic flag for server ready state
 std::atomic<bool> g_serverReady{false};
 
 // Multi-threaded HTTP server
 void runServer(gemcore::http::HTTPServer* server) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) {
-        std::cerr << "❌ Failed to create socket!" << std::endl;
+        std::cerr << " Failed to create socket!" << std::endl;
         return;
     }
     
@@ -106,12 +106,12 @@ void runServer(gemcore::http::HTTPServer* server) {
     addr.sin_port = htons(server->getPort());
     
     if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-        std::cerr << "❌ Failed to bind to port " << server->getPort() << "!" << std::endl;
+        std::cerr << " Failed to bind to port " << server->getPort() << "!" << std::endl;
         return;
     }
     
     if (listen(fd, 512) < 0) {
-        std::cerr << "❌ Failed to listen on port " << server->getPort() << "!" << std::endl;
+        std::cerr << " Failed to listen on port " << server->getPort() << "!" << std::endl;
         return;
     }
     
@@ -120,11 +120,11 @@ void runServer(gemcore::http::HTTPServer* server) {
     if (threads == 0) threads = 4;
     
     #ifndef NDEBUG
-    std::cout << "⚡ Multi-threaded server (" << threads << " workers) on port " 
+    std::cout << " Multi-threaded server (" << threads << " workers) on port " 
               << server->getPort() << std::endl;
     #endif
     
-    // ⚡ OPTIMIZATION: Signal that server is ready BEFORE launching workers
+    //  OPTIMIZATION: Signal that server is ready BEFORE launching workers
     g_serverReady = true;
     
     std::vector<std::thread> workers;
@@ -142,12 +142,12 @@ int main(int argc, char* argv[]) {
     // Seed random for port selection
     srand(time(nullptr));
     
-    // ⚡ OPTIMIZATION: Disable console output in production for faster startup
+    //  OPTIMIZATION: Disable console output in production for faster startup
     #ifdef NDEBUG
     std::ios::sync_with_stdio(false);
     #else
-    std::cout << "🥐 Gemcore Launcher (macOS Shared Assets)" << std::endl;
-    std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
+    std::cout << " Gemcore Launcher (macOS Shared Assets)" << std::endl;
+    std::cout << "" << std::endl;
     std::cout << std::endl;
     #endif
     
@@ -156,7 +156,7 @@ int main(int argc, char* argv[]) {
     // Set high priority for main process
     setpriority(PRIO_PROCESS, 0, -10);
     #ifndef NDEBUG
-    std::cout << "⚡ Process priority: HIGH" << std::endl;
+    std::cout << " Process priority: HIGH" << std::endl;
     #endif
     #endif
     
@@ -187,11 +187,11 @@ int main(int argc, char* argv[]) {
     // Wait for assets to load first
     assetLoadThread.join();
     if (!assetsLoaded) {
-        std::cerr << "❌ Failed to load shared assets!" << std::endl;
+        std::cerr << " Failed to load shared assets!" << std::endl;
         return 1;
     }
     
-    // 🔒 Load config from encrypted assets (not accessible to user!)
+    //  Load config from encrypted assets (not accessible to user!)
     auto configAsset = assetLoader.getAsset(".gemcore-config.json");
     if (configAsset.data && configAsset.size > 0) {
         try {
@@ -232,7 +232,7 @@ int main(int argc, char* argv[]) {
                 config.app.entrypoint = j["entrypoint"].get<std::string>();
             }
             
-            // 🎮 Load Steamworks config
+            //  Load Steamworks config
             if (j.contains("steamworks")) {
                 if (j["steamworks"].contains("enabled")) {
                     config.steamworks.enabled = j["steamworks"]["enabled"].get<bool>();
@@ -243,30 +243,30 @@ int main(int argc, char* argv[]) {
             }
             
             #ifndef NDEBUG
-            std::cout << "🔒 Config loaded from encrypted assets" << std::endl;
+            std::cout << " Config loaded from encrypted assets" << std::endl;
             #endif
         } catch (const std::exception& e) {
             #ifndef NDEBUG
-            std::cerr << "⚠️ Failed to parse config: " << e.what() << std::endl;
+            std::cerr << " Failed to parse config: " << e.what() << std::endl;
             #endif
         }
     }
     
     #ifndef NDEBUG
-    std::cout << "🎮 " << config.window.title << std::endl;
-    std::cout << "📄 Entrypoint: " << config.app.entrypoint << std::endl;
-    std::cout << "📐 Window: " << config.window.width << "x" << config.window.height 
+    std::cout << " " << config.window.title << std::endl;
+    std::cout << " Entrypoint: " << config.app.entrypoint << std::endl;
+    std::cout << " Window: " << config.window.width << "x" << config.window.height 
               << (config.window.resizable ? " (resizable)" : " (fixed)") << std::endl;
-    if (config.window.fullscreen) std::cout << "🖥️  Fullscreen: ON" << std::endl;
-    if (config.window.alwaysOnTop) std::cout << "📌 Always on Top: ON" << std::endl;
-    if (config.window.frameless) std::cout << "🪟  Frameless: ON" << std::endl;
+    if (config.window.fullscreen) std::cout << "  Fullscreen: ON" << std::endl;
+    if (config.window.alwaysOnTop) std::cout << " Always on Top: ON" << std::endl;
+    if (config.window.frameless) std::cout << "  Frameless: ON" << std::endl;
     if (config.steamworks.enabled) {
-        std::cout << "🎮 Steamworks: ENABLED (App ID: " << config.steamworks.appId << ")" << std::endl;
+        std::cout << " Steamworks: ENABLED (App ID: " << config.steamworks.appId << ")" << std::endl;
     }
     std::cout << std::endl;
     #endif
     
-    // 🎮 Initialize Steamworks (must be done BEFORE WebView creation)
+    //  Initialize Steamworks (must be done BEFORE WebView creation)
     #ifdef ENABLE_STEAMWORKS
     bool steamEnabled = gemcore::steamworks::initSteamworks(config);
     #else
@@ -274,15 +274,15 @@ int main(int argc, char* argv[]) {
     #endif
     
     // OPTIMIZATION 3: Setup server + Build cache in PARALLEL with WebView creation
-    // 🔒 Use deterministic port based on app.name (NOT window.title!)
+    //  Use deterministic port based on app.name (NOT window.title!)
     // This ensures localStorage persists even if window title changes (e.g., version numbers)
     std::hash<std::string> hasher;
     size_t hash = hasher(config.app.name);
     int port = 8765 + (hash % 1000);  // Port range: 8765-9765
     
     #ifndef NDEBUG
-    std::cout << "🔒 Port: " << port << " (based on app.name: " << config.app.name << ")" << std::endl;
-    std::cout << "📦 Version: " << config.app.version << std::endl;
+    std::cout << " Port: " << port << " (based on app.name: " << config.app.name << ")" << std::endl;
+    std::cout << " Version: " << config.app.version << std::endl;
     #endif
     gemcore::http::HTTPServer server(port);
     server.setEntrypoint(config.app.entrypoint);
@@ -301,8 +301,8 @@ int main(int argc, char* argv[]) {
         #ifndef NDEBUG
     auto end = std::chrono::high_resolution_clock::now();
     auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << "⚡ Pre-cached " << server.getCacheSize() << " responses in " << ms << "μs" << std::endl;
-        std::cout << "   ↳ Critical assets (entrypoint, main.js) cached FIRST" << std::endl;
+    std::cout << " Pre-cached " << server.getCacheSize() << " responses in " << ms << "�s" << std::endl;
+        std::cout << "   � Critical assets (entrypoint, main.js) cached FIRST" << std::endl;
         #endif
         
         cacheReady = true;
@@ -310,9 +310,9 @@ int main(int argc, char* argv[]) {
     
     // Create WebView while cache builds (parallel!)
     // true = debug mode (enables Inspector for development)
-    // 🚀 HIGH-PERFORMANCE MODE: Eliminate micro-stuttering
+    //  HIGH-PERFORMANCE MODE: Eliminate micro-stuttering
     #ifndef NDEBUG
-    std::cout << "🚀 Enabling High-Performance Mode..." << std::endl;
+    std::cout << " Enabling High-Performance Mode..." << std::endl;
     #endif
     
     #ifdef __APPLE__
@@ -322,7 +322,7 @@ int main(int argc, char* argv[]) {
     // 2. Disable App Nap via system command
     system("defaults write NSGlobalDomain NSAppSleepDisabled -bool YES 2>/dev/null");
     
-    // 3. 🎮 Request Game Mode optimizations (macOS Sonoma 14+)
+    // 3.  Request Game Mode optimizations (macOS Sonoma 14+)
     // Game Mode gives highest priority to CPU/GPU when in fullscreen
     // Reference: https://support.apple.com/en-us/105118
     // Note: Full Game Mode only activates in native fullscreen, but we can
@@ -342,12 +342,12 @@ int main(int argc, char* argv[]) {
     setenv("WEBKIT_FORCE_DISCRETE_GPU", "1", 1);
     
     #ifndef NDEBUG
-    std::cout << "   ✅ Process priority: REALTIME (-20)" << std::endl;
-    std::cout << "   ✅ App Nap: Disabled" << std::endl;
-    std::cout << "   ✅ Game Mode: Requested (macOS Sonoma 14+)" << std::endl;
-    std::cout << "   ✅ Metal rendering: Forced" << std::endl;
-    std::cout << "   ✅ Discrete GPU: Requested" << std::endl;
-    std::cout << "   ⚠️  Note: Fullscreen will ALWAYS be faster (bypasses WindowServer)" << std::endl;
+    std::cout << "    Process priority: REALTIME (-20)" << std::endl;
+    std::cout << "    App Nap: Disabled" << std::endl;
+    std::cout << "    Game Mode: Requested (macOS Sonoma 14+)" << std::endl;
+    std::cout << "    Metal rendering: Forced" << std::endl;
+    std::cout << "    Discrete GPU: Requested" << std::endl;
+    std::cout << "     Note: Fullscreen will ALWAYS be faster (bypasses WindowServer)" << std::endl;
     #endif
     #endif
     
@@ -358,7 +358,7 @@ int main(int argc, char* argv[]) {
     // Apply window config
     w.set_size(config.window.width, config.window.height, WEBVIEW_HINT_NONE);
     
-    // 🎮 Enable native macOS Game Mode support
+    //  Enable native macOS Game Mode support
     // This adds the fullscreen button and enables Game Mode in fullscreen
     #ifdef __APPLE__
     auto window_result = w.window();
@@ -376,18 +376,18 @@ int main(int argc, char* argv[]) {
             ((void (*)(id, SEL, NSUInteger))objc_msgSend)(nswindow, setCollectionBehavior, behavior);
             
             #ifndef NDEBUG
-            std::cout << "🎮 Native fullscreen button enabled (Game Mode ready)" << std::endl;
-            std::cout << "   ✅ Supports primary display (FullScreenPrimary)" << std::endl;
-            std::cout << "   ✅ Supports external displays (FullScreenAuxiliary)" << std::endl;
+            std::cout << " Native fullscreen button enabled (Game Mode ready)" << std::endl;
+            std::cout << "    Supports primary display (FullScreenPrimary)" << std::endl;
+            std::cout << "    Supports external displays (FullScreenAuxiliary)" << std::endl;
             #endif
         }
     }
     #endif
     
-    // 🖥️ Fullscreen mode for maximum performance (bypasses compositor)
+    //  Fullscreen mode for maximum performance (bypasses compositor)
     if (config.window.fullscreen) {
         #ifndef NDEBUG
-        std::cout << "🖥️  Fullscreen mode: ENABLED (better performance)" << std::endl;
+        std::cout << "  Fullscreen mode: ENABLED (better performance)" << std::endl;
         #endif
         
         // Set fullscreen via JavaScript after WebView is ready
@@ -397,7 +397,7 @@ int main(int argc, char* argv[]) {
     // DISABLED: Performance optimizations causing issues with some games
     // gemcore::universal::enableUniversalPerformance(w);
     
-    // 🎮 Bind Steamworks to JavaScript (if enabled)
+    //  Bind Steamworks to JavaScript (if enabled)
     #ifdef ENABLE_STEAMWORKS
     gemcore::steamworks::bindSteamworksToWebview(w, steamEnabled);
     #endif
@@ -424,14 +424,14 @@ int main(int argc, char* argv[]) {
     jsInit += R"JS(
     };
     
-    // 🎮 Inject Steamworks wrapper (from separate file, but executed here for correct order)
+    //  Inject Steamworks wrapper (from separate file, but executed here for correct order)
     )JS";
     if (!steamworksWrapperScript.empty()) {
         jsInit += steamworksWrapperScript;
     }
     jsInit += R"JS(
       
-      // 🎯 ANTI-STUTTER: Aggressive optimizations for smooth 60 FPS in window mode
+      //  ANTI-STUTTER: Aggressive optimizations for smooth 60 FPS in window mode
       (function() {
           // 1. Force GPU acceleration on EVERYTHING
           const style = document.createElement('style');
@@ -511,16 +511,16 @@ int main(int argc, char* argv[]) {
           // 5. Log performance stats
           setInterval(() => {
               if (droppedFrames > 0) {
-                  console.log('🎯 Frame stats: ' + frameCount + ' frames, ' + droppedFrames + ' skipped (good!)');
+                  console.log(' Frame stats: ' + frameCount + ' frames, ' + droppedFrames + ' skipped (good!)');
                   droppedFrames = 0;
                   frameCount = 0;
               }
           }, 5000);
           
-          console.log('🎯 Anti-Stutter: ENABLED (Aggressive mode for window)');
+          console.log(' Anti-Stutter: ENABLED (Aggressive mode for window)');
       })();
       
-      // ⚡ RUNTIME OPTIMIZATION 1: Passive Event Listeners (less overhead)
+      //  RUNTIME OPTIMIZATION 1: Passive Event Listeners (less overhead)
     (function() {
         const passiveEvents = new Set(['scroll', 'wheel', 'touchstart', 'touchmove', 'touchend', 'mousewheel']);
         const originalAddEventListener = EventTarget.prototype.addEventListener;
@@ -535,7 +535,7 @@ int main(int argc, char* argv[]) {
         };
     })();
     
-    // ⚡ RUNTIME OPTIMIZATION 2: Image Decode Hints
+    //  RUNTIME OPTIMIZATION 2: Image Decode Hints
     if ('decode' in HTMLImageElement.prototype) {
         const observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
@@ -552,7 +552,7 @@ int main(int argc, char* argv[]) {
         });
     }
     
-    // 🖥️ FULLSCREEN: Auto-enable if configured (better performance)
+    //  FULLSCREEN: Auto-enable if configured (better performance)
     window.addEventListener('load', () => {
         const fullscreenEnabled = )JS";
     jsInit += (config.window.fullscreen ? "true" : "false");
@@ -563,16 +563,16 @@ int main(int argc, char* argv[]) {
             const elem = document.documentElement;
             if (elem.requestFullscreen) {
                 elem.requestFullscreen().catch(err => {
-                    console.warn('⚠️ Fullscreen request failed:', err);
+                    console.warn(' Fullscreen request failed:', err);
                 });
             } else if (elem.webkitRequestFullscreen) {
                 elem.webkitRequestFullscreen();
             }
-            console.log('🖥️  Fullscreen: ENABLED (better FPS)');
+            console.log('  Fullscreen: ENABLED (better FPS)');
         }
     });
     
-    // ⚡ RUNTIME OPTIMIZATION 3: Smart GC (only when needed)
+    //  RUNTIME OPTIMIZATION 3: Smart GC (only when needed)
     let gameLoaded = false;
     window.addEventListener('load', () => {
         gameLoaded = true;
@@ -601,7 +601,7 @@ int main(int argc, char* argv[]) {
         }
     });
     
-    // ⚡ RUNTIME OPTIMIZATION 4: Disable text selection (less repaints)
+    //  RUNTIME OPTIMIZATION 4: Disable text selection (less repaints)
     // Note: Context menu (right-click) is left enabled for debugging
     document.addEventListener('selectstart', (e) => {
         if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') {
@@ -609,7 +609,7 @@ int main(int argc, char* argv[]) {
         }
     });
     
-    // ⚡ RUNTIME OPTIMIZATION 5: CSS Hardware Acceleration Hints
+    //  RUNTIME OPTIMIZATION 5: CSS Hardware Acceleration Hints
     // Only apply to game pages, not splash screen (splash.html has its own animations)
     if (!window.location.pathname.includes('splash.html')) {
         const style = document.createElement('style');
@@ -645,7 +645,7 @@ int main(int argc, char* argv[]) {
     std::thread serverThread(runServer, &server);
     serverThread.detach();
     
-    // ⚡ OPTIMIZATION: Wait for server ready flag instead of sleep (faster!)
+    //  OPTIMIZATION: Wait for server ready flag instead of sleep (faster!)
     while (!g_serverReady) {
         std::this_thread::yield();  // Cooperative wait, ~1-5ms instead of 50ms
     }
@@ -654,23 +654,23 @@ int main(int argc, char* argv[]) {
     auto startupMs = std::chrono::duration_cast<std::chrono::milliseconds>(appReady - appStart).count();
     
     #ifndef NDEBUG
-    std::cout << "⚡ STARTUP TIME: " << startupMs << "ms (all optimizations active)" << std::endl;
-    std::cout << "🚀 Launching WebView..." << std::endl;
+    std::cout << " STARTUP TIME: " << startupMs << "ms (all optimizations active)" << std::endl;
+    std::cout << " Launching WebView..." << std::endl;
     std::cout << std::endl;
     #endif
     
-    // 🔥 CACHE BUSTER: Use timestamp to force reload on every build
+    //  CACHE BUSTER: Use timestamp to force reload on every build
     std::string cacheBuster = gemcore::getCacheBuster();
     std::string url = "http://127.0.0.1:" + std::to_string(port) + "/" + config.app.entrypoint + "?t=" + cacheBuster;
     
-    // 🎬 Splash Screen: Show splash.html first, then navigate to game after 2 seconds
+    //  Splash Screen: Show splash.html first, then navigate to game after 2 seconds
     if (config.app.splash) {
         // Pass target URL as query parameter so splash.html knows where to redirect
         std::string splashUrl = "http://127.0.0.1:" + std::to_string(port) + "/splash.html?redirect=" + config.app.entrypoint + "&t=" + cacheBuster;
         
         #ifndef NDEBUG
-        std::cout << "🎬 Splash Screen: ENABLED (splash.html)" << std::endl;
-        std::cout << "🌐 Splash URL: " << splashUrl << std::endl;
+        std::cout << " Splash Screen: ENABLED (splash.html)" << std::endl;
+        std::cout << " Splash URL: " << splashUrl << std::endl;
         #endif
         
         w.navigate(splashUrl);
@@ -682,14 +682,14 @@ int main(int argc, char* argv[]) {
         }).detach();
     } else {
         #ifndef NDEBUG
-        std::cout << "🌐 URL: " << url << std::endl;
-        std::cout << "🔄 Cache Buster: t=" << cacheBuster << std::endl;
+        std::cout << " URL: " << url << std::endl;
+        std::cout << " Cache Buster: t=" << cacheBuster << std::endl;
         #endif
         
         w.navigate(url);
     }
     
-    // 🎮 Start Steamworks callback thread (if enabled)
+    //  Start Steamworks callback thread (if enabled)
     #ifdef ENABLE_STEAMWORKS
     std::thread steamThread;
     if (steamEnabled) {
@@ -706,7 +706,7 @@ int main(int argc, char* argv[]) {
     
     g_running = false;
     
-    // 🎮 Cleanup Steamworks (if enabled)
+    //  Cleanup Steamworks (if enabled)
     #ifdef ENABLE_STEAMWORKS
     if (steamEnabled) {
         if (steamThread.joinable()) {

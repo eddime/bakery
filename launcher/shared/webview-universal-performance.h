@@ -1,14 +1,14 @@
 #pragma once
 /**
- * ğŸŒ Universal WebView Performance Optimizations
+ *  Universal WebView Performance Optimizations
  * 
- * âœ… Works with ANY game engine/framework:
+ *  Works with ANY game engine/framework:
  *    - Phaser, PixiJS, Three.js, Babylon.js
  *    - GDevelop, Construct, RPG Maker
  *    - Unity WebGL, Godot HTML5
  *    - Custom engines
  * 
- * ğŸ¯ Strategy: PASSIVE optimizations only
+ *  Strategy: PASSIVE optimizations only
  *    - No API hijacking/overriding
  *    - No engine-specific assumptions
  *    - Let the engine control its own loop
@@ -27,9 +27,9 @@
 namespace gemcore {
 namespace universal {
 
-// â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
-// 1ï¸âƒ£  PROCESS PRIORITY (Universal: All apps benefit)
-// â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+// 
+// 1£  PROCESS PRIORITY (Universal: All apps benefit)
+// 
 inline void setHighProcessPriority() {
     // High priority for better CPU scheduling
     setpriority(PRIO_PROCESS, 0, -10); // Not too aggressive (-20 causes issues)
@@ -49,9 +49,9 @@ inline void setHighProcessPriority() {
     );
 }
 
-// â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
-// 2ï¸âƒ£  PREVENT APP NAP (Universal: Keep app responsive)
-// â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+// 
+// 2£  PREVENT APP NAP (Universal: Keep app responsive)
+// 
 inline void preventAppNap() {
     id processInfo = ((id(*)(id, SEL))objc_msgSend)(
         (id)objc_getClass("NSProcessInfo"),
@@ -81,9 +81,9 @@ inline void preventAppNap() {
     ((void(*)(id, SEL))objc_msgSend)(activity, sel_registerName("retain"));
 }
 
-// â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
-// 3ï¸âƒ£  METAL RENDERING (Universal: Hardware acceleration)
-// â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+// 
+// 3£  METAL RENDERING (Universal: Hardware acceleration)
+// 
 inline void enableMetalAcceleration(webview::webview& w) {
     auto window_handle = w.window();
     if (!window_handle.has_value()) return;
@@ -121,25 +121,25 @@ inline void enableMetalAcceleration(webview::webview& w) {
     }
 }
 
-// â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
-// 4ï¸âƒ£  UNIVERSAL PERFORMANCE (Passive, non-intrusive)
-// â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+// 
+// 4£  UNIVERSAL PERFORMANCE (Passive, non-intrusive)
+// 
 inline void enableUniversalPerformance(webview::webview& w) {
     // Apply OS-level optimizations
     setHighProcessPriority();
     preventAppNap();
     enableMetalAcceleration(w);
     
-    // â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+    // 
     // JavaScript: PASSIVE optimizations only
-    // â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
+    // 
     w.init(R"JS(
 (function() {
     'use strict';
     
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    // ğŸ¨ CSS Hardware Acceleration Hints (inject once on load)
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+    //  CSS Hardware Acceleration Hints (inject once on load)
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
     const injectCSS = () => {
         if (document.getElementById('gemcore-perf-css')) return; // Already injected
         
@@ -174,9 +174,9 @@ inline void enableUniversalPerformance(webview::webview& w) {
         document.addEventListener('DOMContentLoaded', injectCSS, { once: true });
     }
     
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    // ğŸš€ WebGL Context Optimization
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+    //  WebGL Context Optimization
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
     const originalGetContext = HTMLCanvasElement.prototype.getContext;
     HTMLCanvasElement.prototype.getContext = function(type, attrs) {
         if (type === 'webgl' || type === 'webgl2') {
@@ -192,9 +192,9 @@ inline void enableUniversalPerformance(webview::webview& w) {
         return originalGetContext.call(this, type, attrs);
     };
     
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    // ğŸµ Audio Context: Auto-resume (Universal)
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+    //  Audio Context: Auto-resume (Universal)
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
     if (window.AudioContext || window.webkitAudioContext) {
         const OriginalAudioContext = window.AudioContext || window.webkitAudioContext;
         const contexts = new Set();
@@ -225,9 +225,9 @@ inline void enableUniversalPerformance(webview::webview& w) {
         });
     }
     
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    // ğŸ–¼ï¸  Image Decoding (Async, non-blocking)
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+    //   Image Decoding (Async, non-blocking)
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
     if ('decode' in HTMLImageElement.prototype) {
         const originalSrcSet = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src').set;
         Object.defineProperty(HTMLImageElement.prototype, 'src', {
@@ -243,9 +243,9 @@ inline void enableUniversalPerformance(webview::webview& w) {
         });
     }
     
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    // ğŸ¯ Passive Event Listeners (Better scrolling)
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+    //  Passive Event Listeners (Better scrolling)
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
     // Use Set for O(1) lookup instead of Array O(n)!
     const passiveEvents = new Set(['touchstart', 'touchmove', 'wheel', 'mousewheel']);
     const originalAddEventListener = EventTarget.prototype.addEventListener;
@@ -258,9 +258,9 @@ inline void enableUniversalPerformance(webview::webview& w) {
         return originalAddEventListener.call(this, type, listener, options);
     };
     
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    // ğŸ“± Viewport Meta (Prevent unwanted zooming)
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+    //  Viewport Meta (Prevent unwanted zooming)
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
     if (!document.querySelector('meta[name="viewport"]')) {
         const viewport = document.createElement('meta');
         viewport.name = 'viewport';
@@ -268,14 +268,14 @@ inline void enableUniversalPerformance(webview::webview& w) {
         document.head.appendChild(viewport);
     }
     
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    // âœ… Ready!
-    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-    console.log('âš¡ Gemcore Universal Performance: Active');
-    console.log('   âœ“ GPU Acceleration');
-    console.log('   âœ“ WebGL Optimization');
-    console.log('   âœ“ Audio Auto-Resume');
-    console.log('   âœ“ Passive Listeners');
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+    //  Ready!
+    // •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+    console.log(' Gemcore Universal Performance: Active');
+    console.log('    GPU Acceleration');
+    console.log('    WebGL Optimization');
+    console.log('    Audio Auto-Resume');
+    console.log('    Passive Listeners');
 })();
     )JS");
 }

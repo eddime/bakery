@@ -1,4 +1,4 @@
-# 🎮 Steamworks Deployment Guide
+#  Steamworks Deployment Guide
 
 ## Overview
 
@@ -19,21 +19,21 @@ export default {
 
 When `steamworks.enabled = true`, Gemcore automatically:
 
-✅ **Creates `steam_appid.txt`** in the app directory (with your App ID)  
-✅ **Copies Steam SDK DLLs** to the correct location  
-✅ **Links Steamworks API** to JavaScript  
-✅ **Initializes Steam** on app startup  
+ **Creates `steam_appid.txt`** in the app directory (with your App ID)  
+ **Copies Steam SDK DLLs** to the correct location  
+ **Links Steamworks API** to JavaScript  
+ **Initializes Steam** on app startup  
 
 When `steamworks.enabled = false`:
 
-❌ **No Steam DLLs** are copied  
-❌ **No `steam_appid.txt`** is created  
-❌ **Steamworks API** returns `isAvailable() = false`  
-❌ **No Steam initialization** happens  
+ **No Steam DLLs** are copied  
+ **No `steam_appid.txt`** is created  
+ **Steamworks API** returns `isAvailable() = false`  
+ **No Steam initialization** happens  
 
 ## Platform-Specific Deployment
 
-### 🍎 macOS
+###  macOS
 
 **Build Command:**
 ```bash
@@ -43,25 +43,25 @@ When `steamworks.enabled = false`:
 **Output Structure:**
 ```
 dist/mac/
-  └── steamdemo.app/
-      └── Contents/
-          └── MacOS/
-              ├── steamdemo           # Universal launcher
-              ├── steamdemo-arm64     # ARM64 binary
-              ├── steamdemo-x86_64    # x64 binary
-              ├── gemcore-assets       # Encrypted assets
-              ├── libsteam_api.dylib  # ✅ Auto-copied if enabled
-              └── steam_appid.txt     # ✅ Auto-created at runtime
+   steamdemo.app/
+       Contents/
+           MacOS/
+               steamdemo           # Universal launcher
+               steamdemo-arm64     # ARM64 binary
+               steamdemo-x86_64    # x64 binary
+               gemcore-assets       # Encrypted assets
+               libsteam_api.dylib  #  Auto-copied if enabled
+               steam_appid.txt     #  Auto-created at runtime
 ```
 
 **Distribution:**
-- ✅ Everything is inside the `.app` bundle
-- ✅ Steam DLL is automatically copied during build
-- ✅ Users just download and run the `.app`
+-  Everything is inside the `.app` bundle
+-  Steam DLL is automatically copied during build
+-  Users just download and run the `.app`
 
 ---
 
-### 🪟 Windows
+###  Windows
 
 **Build Command:**
 ```bash
@@ -71,15 +71,15 @@ dist/mac/
 **Output Structure:**
 ```
 dist/windows/
-  ├── steamdemo.exe        # ✅ Single EXE (launcher + assets + Steam DLL embedded!)
-  └── steam_appid.txt      # ✅ Auto-created at runtime
+   steamdemo.exe        #  Single EXE (launcher + assets + Steam DLL embedded!)
+   steam_appid.txt      #  Auto-created at runtime
 ```
 
 **Distribution:**
-- ✅ **Single file!** `steamdemo.exe` (Steam DLL embedded)
-- ✅ Steam DLL is automatically embedded during build
-- ✅ DLL is extracted to TEMP at runtime
-- ✅ Users just download and run `steamdemo.exe`
+-  **Single file!** `steamdemo.exe` (Steam DLL embedded)
+-  Steam DLL is automatically embedded during build
+-  DLL is extracted to TEMP at runtime
+-  Users just download and run `steamdemo.exe`
 
 **How it works:**
 1. Build embeds `steam_api64.dll` into the EXE
@@ -89,7 +89,7 @@ dist/windows/
 
 ---
 
-### 🐧 Linux
+###  Linux
 
 **Build Command:**
 ```bash
@@ -99,24 +99,24 @@ dist/windows/
 **Output Structure:**
 ```
 dist/linux/
-  ├── steamdemo-x86_64     # ✅ Single executable (Intel/AMD 64-bit + Steam SDK)
-  └── steamdemo-arm64      # ✅ Single executable (ARM 64-bit)
+   steamdemo-x86_64     #  Single executable (Intel/AMD 64-bit + Steam SDK)
+   steamdemo-arm64      #  Single executable (ARM 64-bit)
 ```
 
 **Distribution:**
-- ✅ **Two architecture-specific binaries**
-- ✅ `steamdemo-x86_64` for Intel/AMD processors (10 MB, with Steam SDK)
-- ✅ `steamdemo-arm64` for ARM processors (9.6 MB, Raspberry Pi, etc.)
-- ✅ All assets embedded in both
-- ✅ Users just download and run `./steamdemo-x86_64` or `./steamdemo-arm64`
-- 💡 **Note**: Steam SDK only available for x86_64 (Valve doesn't provide ARM64 binaries yet)
+-  **Two architecture-specific binaries**
+-  `steamdemo-x86_64` for Intel/AMD processors (10 MB, with Steam SDK)
+-  `steamdemo-arm64` for ARM processors (9.6 MB, Raspberry Pi, etc.)
+-  All assets embedded in both
+-  Users just download and run `./steamdemo-x86_64` or `./steamdemo-arm64`
+-  **Note**: Steam SDK only available for x86_64 (Valve doesn't provide ARM64 binaries yet)
 
 **Steamworks on Linux:**
-- ✅ **Works EXACTLY like Windows!** Steam library is embedded in the binary
-- ✅ **Runtime extraction**: Library is extracted to `/tmp/gemcore_<pid>/` at startup
-- ✅ **Dynamic loading**: Uses `dlopen()` to load Steam API at runtime
-- 🎯 **Solution**: Embed → Extract → dlopen() → Works perfectly!
-- 🚀 **Cross-compile from macOS**: ✅ Fully functional!
+-  **Works EXACTLY like Windows!** Steam library is embedded in the binary
+-  **Runtime extraction**: Library is extracted to `/tmp/gemcore_<pid>/` at startup
+-  **Dynamic loading**: Uses `dlopen()` to load Steam API at runtime
+-  **Solution**: Embed � Extract � dlopen() � Works perfectly!
+-  **Cross-compile from macOS**:  Fully functional!
 
 ---
 
@@ -142,14 +142,14 @@ open examples/steamdemo/dist/mac/steamdemo.app
 
 If Steam is not running, the app will show:
 ```
-⚠️ [Gemcore Steam] Steamworks is not available. 
+ [Gemcore Steam] Steamworks is not available. 
    Make sure Steam is running and steamworks is enabled in gemcore.config.js
 ```
 
 All Steam API calls will return default values:
-- `getSteamID()` → `'0'`
-- `getPersonaName()` → `''`
-- `isAvailable()` → `false`
+- `getSteamID()` � `'0'`
+- `getPersonaName()` � `''`
+- `isAvailable()` � `false`
 
 ---
 
@@ -163,14 +163,14 @@ All Steam API calls will return default values:
    - Linux: Upload `steamdemo` (single file)
 
 2. **Steam will:**
-   - ✅ Automatically provide `steam_appid.txt` (you don't need to include it)
-   - ✅ Automatically provide Steam DLLs (but include yours as backup)
-   - ✅ Handle updates and DRM
+   -  Automatically provide `steam_appid.txt` (you don't need to include it)
+   -  Automatically provide Steam DLLs (but include yours as backup)
+   -  Handle updates and DRM
 
 3. **Your app will:**
-   - ✅ Detect Steam automatically
-   - ✅ Initialize Steamworks
-   - ✅ Work with achievements, cloud saves, etc.
+   -  Detect Steam automatically
+   -  Initialize Steamworks
+   -  Work with achievements, cloud saves, etc.
 
 ---
 
@@ -210,22 +210,22 @@ All Steam API calls will return default values:
 
 | Platform | Single File? | Steam DLL Location | Auto-Embedded? | Cross-Compile? | Architectures |
 |----------|--------------|-------------------|----------------|----------------|---------------|
-| **macOS** | ✅ Yes (`.app` bundle) | Inside `.app/Contents/MacOS/` | ✅ Yes | ✅ Yes | Universal (x86_64 + ARM64) |
-| **Windows** | ✅ Yes (Single EXE) | Embedded, extracted to TEMP | ✅ Yes | ✅ Yes | x86_64 |
-| **Linux** | ✅ Yes (2 binaries) | Embedded, dlopen() at runtime | ✅ Yes | ✅ Yes | x86_64 + ARM64 |
+| **macOS** |  Yes (`.app` bundle) | Inside `.app/Contents/MacOS/` |  Yes |  Yes | Universal (x86_64 + ARM64) |
+| **Windows** |  Yes (Single EXE) | Embedded, extracted to TEMP |  Yes |  Yes | x86_64 |
+| **Linux** |  Yes (2 binaries) | Embedded, dlopen() at runtime |  Yes |  Yes | x86_64 + ARM64 |
 
 **Key Points:**
-- ✅ Steam DLLs are **automatically embedded** during build if `steamworks.enabled = true`
-- ✅ DLLs are **extracted to TEMP** at runtime
-- ✅ `steam_appid.txt` is **automatically created** at runtime
-- ✅ **TRUE single-file distribution** - no external DLLs needed!
-- ✅ Everything works out of the box - just build and distribute!
+-  Steam DLLs are **automatically embedded** during build if `steamworks.enabled = true`
+-  DLLs are **extracted to TEMP** at runtime
+-  `steam_appid.txt` is **automatically created** at runtime
+-  **TRUE single-file distribution** - no external DLLs needed!
+-  Everything works out of the box - just build and distribute!
 
 ---
 
 ## What Game Developers Need
 
-### ✅ Everything is Ready!
+###  Everything is Ready!
 
 Game developers have **everything they need**:
 
@@ -243,7 +243,7 @@ Game developers have **everything they need**:
 12. **Automatic Error Logging** - All errors logged to console
 13. **Cross-Platform** - Same API for macOS, Windows, and Linux
 
-### 🎯 Simple API:
+###  Simple API:
 
 ```javascript
 // Check if Steam is available
@@ -262,13 +262,13 @@ if (window.Steam.isAvailable()) {
 }
 ```
 
-### 📚 Documentation:
+###  Documentation:
 
 - `STEAMWORKS.md` - Complete API reference
 - `STEAMWORKS-DEPLOYMENT.md` - This file (deployment guide)
 - Demo app: `examples/steamdemo/` - Full feature showcase
 
-**Game developers are ready to ship on Steam!** 🚀
+**Game developers are ready to ship on Steam!** 
 
 
 

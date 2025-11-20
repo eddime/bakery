@@ -1,7 +1,7 @@
-// 🥐 Gemcore Config - Candy Catch Game
+//  Gemcore Config - Candy Catch Game
 export default {
   window: {
-    title: "🍬 Candy Catch - Powered by Gemcore",
+    title: " Candy Catch - Powered by Gemcore",
     width: 800,
     height: 600,
     minWidth: 800,

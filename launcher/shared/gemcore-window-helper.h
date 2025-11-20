@@ -1,5 +1,5 @@
 /**
- * 🪟 Gemcore Window Helper
+ *  Gemcore Window Helper
  * Cross-platform window management wrapper
  * Abstracts native OS window APIs (macOS NSWindow, Windows HWND)
  */
