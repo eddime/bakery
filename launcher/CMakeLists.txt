@@ -359,6 +359,19 @@ if(UNIX AND NOT APPLE)
         dl
     )
     
+    # 🔧 Cross-compilation: Force x86_64 headers when cross-compiling from ARM64
+    if(IS_CROSS_COMPILING AND CMAKE_C_COMPILER MATCHES "x86_64-linux-gnu")
+        # Prioritize x86_64 headers over ARM64 headers
+        target_include_directories(gemcore-launcher-linux PRIVATE
+            /usr/include/x86_64-linux-gnu
+        )
+        target_compile_options(gemcore-launcher-linux PRIVATE
+            -I/usr/include/x86_64-linux-gnu
+            -idirafter /usr/include
+        )
+        message(STATUS "🔧 Cross-compiling: Using x86_64 headers")
+    endif()
+    
     # ⚡ OPTIMIZATION: Precompiled headers for faster builds
     target_precompile_headers(gemcore-launcher-linux PRIVATE
         <iostream>
