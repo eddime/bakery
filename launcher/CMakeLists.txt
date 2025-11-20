@@ -225,6 +225,7 @@ elseif(UNIX)
                     ${X64_WEBKIT_INCLUDE_BASE}/cairo
                     ${X64_WEBKIT_INCLUDE_BASE}/gdk-pixbuf-2.0
                     ${X64_WEBKIT_INCLUDE_BASE}/atk-1.0
+                    ${X64_WEBKIT_INCLUDE_BASE}/libsoup-3.0
                     /usr/include/gtk-3.0
                     /usr/include/glib-2.0
                     /usr/include/pango-1.0
@@ -232,6 +233,7 @@ elseif(UNIX)
                     /usr/include/cairo
                     /usr/include/gdk-pixbuf-2.0
                     /usr/include/atk-1.0
+                    /usr/include/libsoup-3.0
                 )
                 
                 # Check for webkit2gtk-4.1 or 4.0 (check /usr/include first, then arch-specific)
