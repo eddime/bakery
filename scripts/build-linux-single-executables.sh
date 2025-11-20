@@ -43,24 +43,39 @@ if [ -f "$PREBUILT_UNIVERSAL" ]; then
 fi
 
 if [ "$UNIVERSAL_CACHED" = false ]; then
-    if [[ $(uname) == "Linux" ]]; then
+    # Check if we have prebuilt x64 and ARM64 launchers - if so, we can skip universal launcher
+    PREBUILT_X64="$FRAMEWORK_DIR/launcher/prebuilt/linux/gemcore-launcher-linux-x64"
+    PREBUILT_ARM64="$FRAMEWORK_DIR/launcher/prebuilt/linux/gemcore-launcher-linux-arm64"
+    
+    if [ -f "$PREBUILT_X64" ] && [ -f "$PREBUILT_ARM64" ] && [[ $(uname) != "Linux" ]]; then
+        echo "💡 Skipping universal launcher (using prebuilt x64 + ARM64 binaries)"
+        echo "   Universal launcher only needed for single-file distribution"
+        UNIVERSAL_CACHED="skipped"
+    elif [[ $(uname) == "Linux" ]]; then
         # Native Linux build
         cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+        make gemcore-universal-launcher-linux-embedded -j4
+        
+        if [ ! -f "gemcore-universal-launcher-linux-embedded" ]; then
+            echo "❌ Universal launcher build failed!"
+            exit 1
+        fi
     else
         # Cross-compile from macOS
         if ! command -v x86_64-linux-musl-gcc &> /dev/null; then
-            echo "❌ x86_64-linux-musl-gcc not found!"
+            echo "⚠️  x86_64-linux-musl-gcc not found - skipping universal launcher"
             echo "💡 Install: brew install FiloSottile/musl-cross/musl-cross"
-            exit 1
+            echo "💡 Or build will use separate x64/ARM64 executables"
+            UNIVERSAL_CACHED="skipped"
+        else
+            cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+            make gemcore-universal-launcher-linux-embedded -j4
+            
+            if [ ! -f "gemcore-universal-launcher-linux-embedded" ]; then
+                echo "❌ Universal launcher build failed!"
+                exit 1
+            fi
         fi
-        cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-    fi
-
-    make gemcore-universal-launcher-linux-embedded -j4
-
-    if [ ! -f "gemcore-universal-launcher-linux-embedded" ]; then
-        echo "❌ Universal launcher build failed!"
-        exit 1
     fi
 fi
 
@@ -219,12 +234,27 @@ if [ -f "$ASSETS_PATH" ]; then
 else
     echo "   ⚠️  Assets not found at: $ASSETS_PATH"
 fi
-bun scripts/pack-linux-single-exe.ts \
-    "$BUILD_EMBEDDED/gemcore-universal-launcher-linux-embedded" \
-    "$BUILD_X64/gemcore-launcher-linux" \
-    "$OUTPUT_DIR/${APP_NAME}-x86_64" \
-    ${STEAM_SO_X64:-""} \
-    "$ASSETS_PATH"
+
+if [ "$UNIVERSAL_CACHED" = "skipped" ]; then
+    # No universal launcher - create separate executable + assets
+    echo "💡 Creating separate executable (no universal launcher)"
+    cp "$BUILD_X64/gemcore-launcher-linux" "$OUTPUT_DIR/${APP_NAME}-x86_64"
+    cp "$ASSETS_PATH" "$OUTPUT_DIR/gemcore-assets"
+    chmod +x "$OUTPUT_DIR/${APP_NAME}-x86_64"
+    
+    if [ -n "$STEAM_SO_X64" ] && [ -f "$STEAM_SO_X64" ]; then
+        cp "$STEAM_SO_X64" "$OUTPUT_DIR/"
+        echo "🎮 Copied Steam SDK (x86_64)"
+    fi
+else
+    # Pack with universal launcher
+    bun scripts/pack-linux-single-exe.ts \
+        "$BUILD_EMBEDDED/gemcore-universal-launcher-linux-embedded" \
+        "$BUILD_X64/gemcore-launcher-linux" \
+        "$OUTPUT_DIR/${APP_NAME}-x86_64" \
+        ${STEAM_SO_X64:-""} \
+        "$ASSETS_PATH"
+fi
 
 echo "✅ x86_64 executable packed!"
 echo ""
@@ -233,65 +263,78 @@ echo ""
 if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/gemcore-launcher-linux" ]; then
     echo "📦 Packing ARM64 executable..."
     
-    # Build ARM64 Universal Launcher (needed for ARM64 builds!)
-    BUILD_ARM64_UNIVERSAL="$FRAMEWORK_DIR/launcher/build-linux-universal-embedded-arm64"
-    mkdir -p "$BUILD_ARM64_UNIVERSAL"
-    cd "$BUILD_ARM64_UNIVERSAL"
-    
-    # Check if pre-built ARM64 universal launcher is cached locally
-    PREBUILT_ARM64_UNIVERSAL="$FRAMEWORK_DIR/launcher/prebuilt/gemcore-universal-launcher-linux-embedded-arm64"
-    ARM64_UNIVERSAL_CACHED=false
-    
-    if [ -f "$PREBUILT_ARM64_UNIVERSAL" ]; then
-        echo "💾 Using cached pre-built ARM64 universal launcher"
-        cp "$PREBUILT_ARM64_UNIVERSAL" "gemcore-universal-launcher-linux-embedded"
-        chmod +x "gemcore-universal-launcher-linux-embedded"
-        ARM64_UNIVERSAL_CACHED=true
-    fi
-    
-    if [ "$ARM64_UNIVERSAL_CACHED" = false ]; then
-        if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
-            # Native ARM64 Linux build
-            cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-            make gemcore-universal-launcher-linux-embedded -j4
-        else
-            # Cross-compile from macOS or x86_64 Linux
-            if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
-                echo "⚠️  aarch64-linux-musl-gcc not found! Using x86-64 universal launcher (won't work on ARM64)"
-                BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
-            else
-                cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+    if [ "$UNIVERSAL_CACHED" = "skipped" ]; then
+        # No universal launcher - create separate executable + assets
+        echo "💡 Creating separate executable (no universal launcher)"
+        cp "$BUILD_ARM64/gemcore-launcher-linux" "$OUTPUT_DIR/${APP_NAME}-arm64"
+        # Assets already copied for x64
+        chmod +x "$OUTPUT_DIR/${APP_NAME}-arm64"
+        
+        if [ -n "$STEAM_SO_ARM64" ] && [ -f "$STEAM_SO_ARM64" ]; then
+            cp "$STEAM_SO_ARM64" "$OUTPUT_DIR/"
+            echo "🎮 Copied Steam SDK (ARM64)"
+        fi
+    else
+        # Build ARM64 Universal Launcher (needed for ARM64 builds!)
+        BUILD_ARM64_UNIVERSAL="$FRAMEWORK_DIR/launcher/build-linux-universal-embedded-arm64"
+        mkdir -p "$BUILD_ARM64_UNIVERSAL"
+        cd "$BUILD_ARM64_UNIVERSAL"
+        
+        # Check if pre-built ARM64 universal launcher is cached locally
+        PREBUILT_ARM64_UNIVERSAL="$FRAMEWORK_DIR/launcher/prebuilt/linux/gemcore-universal-launcher-linux-embedded-arm64"
+        ARM64_UNIVERSAL_CACHED=false
+        
+        if [ -f "$PREBUILT_ARM64_UNIVERSAL" ]; then
+            echo "💾 Using cached pre-built ARM64 universal launcher"
+            cp "$PREBUILT_ARM64_UNIVERSAL" "gemcore-universal-launcher-linux-embedded"
+            chmod +x "gemcore-universal-launcher-linux-embedded"
+            ARM64_UNIVERSAL_CACHED=true
+        fi
+        
+        if [ "$ARM64_UNIVERSAL_CACHED" = false ]; then
+            if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
+                # Native ARM64 Linux build
+                cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
                 make gemcore-universal-launcher-linux-embedded -j4
-                if [ ! -f "gemcore-universal-launcher-linux-embedded" ]; then
-                    echo "⚠️  ARM64 universal launcher build failed! Using x86-64 (won't work on ARM64)"
+            else
+                # Cross-compile from macOS or x86_64 Linux
+                if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
+                    echo "⚠️  aarch64-linux-musl-gcc not found! Using x86-64 universal launcher (won't work on ARM64)"
                     BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
+                else
+                    cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
+                    make gemcore-universal-launcher-linux-embedded -j4
+                    if [ ! -f "gemcore-universal-launcher-linux-embedded" ]; then
+                        echo "⚠️  ARM64 universal launcher build failed! Using x86-64 (won't work on ARM64)"
+                        BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
+                    fi
                 fi
             fi
         fi
-    fi
-    
-    cd "$FRAMEWORK_DIR"
-    
-    STEAM_ARG=""
-    if [ -f "$STEAM_SO_ARM64" ]; then
-        echo "🎮 Embedding Steam SDK (ARM64) into executable..."
-        STEAM_ARG="$STEAM_SO_ARM64"
-    fi
-    
-    if [ -n "$STEAM_ARG" ]; then
-        bun scripts/pack-linux-single-exe.ts \
-            "$BUILD_ARM64_UNIVERSAL/gemcore-universal-launcher-linux-embedded" \
-            "$BUILD_ARM64/gemcore-launcher-linux" \
-            "$OUTPUT_DIR/${APP_NAME}-arm64" \
-            "$STEAM_ARG" \
-            "$ASSETS_PATH"
-    else
-        bun scripts/pack-linux-single-exe.ts \
-            "$BUILD_ARM64_UNIVERSAL/gemcore-universal-launcher-linux-embedded" \
-            "$BUILD_ARM64/gemcore-launcher-linux" \
-            "$OUTPUT_DIR/${APP_NAME}-arm64" \
-            "" \
-            "$ASSETS_PATH"
+        
+        cd "$FRAMEWORK_DIR"
+        
+        STEAM_ARG=""
+        if [ -f "$STEAM_SO_ARM64" ]; then
+            echo "🎮 Embedding Steam SDK (ARM64) into executable..."
+            STEAM_ARG="$STEAM_SO_ARM64"
+        fi
+        
+        if [ -n "$STEAM_ARG" ]; then
+            bun scripts/pack-linux-single-exe.ts \
+                "$BUILD_ARM64_UNIVERSAL/gemcore-universal-launcher-linux-embedded" \
+                "$BUILD_ARM64/gemcore-launcher-linux" \
+                "$OUTPUT_DIR/${APP_NAME}-arm64" \
+                "$STEAM_ARG" \
+                "$ASSETS_PATH"
+        else
+            bun scripts/pack-linux-single-exe.ts \
+                "$BUILD_ARM64_UNIVERSAL/gemcore-universal-launcher-linux-embedded" \
+                "$BUILD_ARM64/gemcore-launcher-linux" \
+                "$OUTPUT_DIR/${APP_NAME}-arm64" \
+                "" \
+                "$ASSETS_PATH"
+        fi
     fi
     
     echo "✅ ARM64 executable packed!"
