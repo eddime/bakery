@@ -324,11 +324,40 @@ echo "📝 Creating .desktop files for double-click support..."
 CONFIG_PATH="$PROJECT_DIR/bakery.config.js"
 APP_TITLE="$APP_NAME"
 ICON_PATH=""
+ICON_FILE=""
 
 if [ -f "$CONFIG_PATH" ]; then
     # Try to extract title and icon from config (macOS-compatible grep)
     APP_TITLE=$(grep -o 'title:[[:space:]]*"[^"]*"' "$CONFIG_PATH" | head -1 | sed 's/title:[[:space:]]*"\(.*\)"/\1/' || echo "$APP_NAME")
     ICON_PATH=$(grep -o 'icon:[[:space:]]*"[^"]*"' "$CONFIG_PATH" | head -1 | sed 's/icon:[[:space:]]*"\(.*\)"/\1/' || echo "")
+fi
+
+# Copy icon to output directory if available
+if [ -n "$ICON_PATH" ]; then
+    # Try multiple possible locations
+    ICON_SOURCE=""
+    if [ -f "$PROJECT_DIR/$ICON_PATH" ]; then
+        ICON_SOURCE="$PROJECT_DIR/$ICON_PATH"
+    elif [ -f "$PROJECT_DIR/assets/$ICON_PATH" ]; then
+        ICON_SOURCE="$PROJECT_DIR/assets/$ICON_PATH"
+    elif [ -f "$PROJECT_DIR/assets/icon.png" ]; then
+        ICON_SOURCE="$PROJECT_DIR/assets/icon.png"
+    fi
+    
+    if [ -n "$ICON_SOURCE" ] && [ -f "$ICON_SOURCE" ]; then
+        ICON_FILE="${APP_NAME}.png"
+        cp "$ICON_SOURCE" "$OUTPUT_DIR/$ICON_FILE"
+        echo "🎨 Icon copied: $ICON_FILE"
+    fi
+fi
+
+# Use absolute path for icon in .desktop file
+ICON_ABSOLUTE=""
+if [ -n "$ICON_FILE" ] && [ -f "$OUTPUT_DIR/$ICON_FILE" ]; then
+    ICON_ABSOLUTE="$OUTPUT_DIR/$ICON_FILE"
+else
+    # Fallback: use app name (Linux will search in icon theme)
+    ICON_ABSOLUTE="${APP_NAME}"
 fi
 
 # Create .desktop file for x86_64
@@ -338,7 +367,7 @@ Type=Application
 Name=${APP_TITLE}
 Exec=${APP_NAME}-x86_64
 Path=$(dirname "$OUTPUT_DIR")/linux
-Icon=${APP_NAME}
+Icon=${ICON_ABSOLUTE}
 Terminal=false
 Categories=Game;
 EOF
@@ -352,7 +381,7 @@ Type=Application
 Name=${APP_TITLE}
 Exec=${APP_NAME}-arm64
 Path=$(dirname "$OUTPUT_DIR")/linux
-Icon=${APP_NAME}
+Icon=${ICON_ABSOLUTE}
 Terminal=false
 Categories=Game;
 EOF
@@ -362,11 +391,269 @@ fi
 echo "✅ .desktop files created!"
 echo ""
 
-echo "🎯 User experience:"
-echo "   → Download: ${APP_NAME}-x86_64 (or -arm64)"
-echo "   → Double-click: ${APP_NAME}-x86_64.desktop (or right-click → Properties → Allow executing)"
-echo "   → Or terminal: chmod +x ${APP_NAME}-x86_64 && ./${APP_NAME}-x86_64"
-echo "   → Everything embedded, instant launch!"
+# ============================================
+# 5. Create proper AppImage using appimagetool (like Godot)
+# Based on AppImage spec: https://docs.appimage.org/
+# Reference: https://github.com/AppImageCommunity/awesome-appimage
+# ============================================
+echo "📦 Creating AppImage (single file, like macOS .app)..."
+
+create_proper_appimage() {
+    local ARCH="$1"
+    local BINARY_NAME="${APP_NAME}-${ARCH}"
+    local OUTPUT_FILE="${APP_NAME}-${ARCH}.AppImage"
+    
+    if [ ! -f "$OUTPUT_DIR/$BINARY_NAME" ]; then
+        return  # Skip if binary doesn't exist
+    fi
+    
+    # Create AppDir structure (AppImage spec)
+    APPDIR_TMP="$OUTPUT_DIR/${APP_NAME}-${ARCH}.AppDir"
+    rm -rf "$APPDIR_TMP"
+    mkdir -p "$APPDIR_TMP/usr/bin"
+    mkdir -p "$APPDIR_TMP/usr/share/applications"
+    mkdir -p "$APPDIR_TMP/usr/share/icons/hicolor/256x256/apps"
+    
+    # Copy binary
+    if [ ! -f "$OUTPUT_DIR/$BINARY_NAME" ]; then
+        echo "   ❌ Binary not found: $OUTPUT_DIR/$BINARY_NAME"
+        return 1
+    fi
+    echo "   📦 Copying binary ($(du -h "$OUTPUT_DIR/$BINARY_NAME" | awk '{print $1}'))..."
+    cp "$OUTPUT_DIR/$BINARY_NAME" "$APPDIR_TMP/usr/bin/${APP_NAME}"
+    chmod +x "$APPDIR_TMP/usr/bin/${APP_NAME}"
+    
+    # Copy icon if available
+    if [ -n "$ICON_FILE" ] && [ -f "$OUTPUT_DIR/$ICON_FILE" ]; then
+        cp "$OUTPUT_DIR/$ICON_FILE" "$APPDIR_TMP/usr/share/icons/hicolor/256x256/apps/${APP_NAME}.png"
+        cp "$OUTPUT_DIR/$ICON_FILE" "$APPDIR_TMP/${APP_NAME}.png"
+    fi
+    
+    # Create .desktop file (required for AppImage)
+    cat > "$APPDIR_TMP/usr/share/applications/${APP_NAME}.desktop" << EOF
+[Desktop Entry]
+Type=Application
+Name=${APP_TITLE}
+Exec=${APP_NAME}
+Icon=${APP_NAME}
+Categories=Game;
+Terminal=false
+StartupNotify=true
+EOF
+    
+    # Copy .desktop to root (AppImage spec requirement)
+    cp "$APPDIR_TMP/usr/share/applications/${APP_NAME}.desktop" "$APPDIR_TMP/${APP_NAME}.desktop"
+    
+    # Create AppRun script (required for AppImage)
+    cat > "$APPDIR_TMP/AppRun" << APPRUN_EOF
+#!/bin/bash
+# AppRun - Entry point for AppImage
+# Based on AppImage spec: https://docs.appimage.org/
+
+HERE="\$(dirname "\$(readlink -f "\${0}")")"
+export PATH="\${HERE}/usr/bin:\${PATH}"
+export LD_LIBRARY_PATH="\${HERE}/usr/lib:\${LD_LIBRARY_PATH}"
+
+exec "\${HERE}/usr/bin/${APP_NAME}" "\$@"
+APPRUN_EOF
+    
+    chmod +x "$APPDIR_TMP/AppRun"
+    
+    # Try to use appimagetool if available (requires Linux)
+    if command -v appimagetool &> /dev/null || [ -f "/usr/bin/appimagetool" ]; then
+        echo "   Using appimagetool..."
+        appimagetool "$APPDIR_TMP" "$OUTPUT_DIR/$OUTPUT_FILE" 2>/dev/null || {
+            echo "   ⚠️  appimagetool failed, creating self-extracting version..."
+            create_self_extracting_appimage "$ARCH" "$BINARY_NAME" "$OUTPUT_FILE" "$APPDIR_TMP"
+        }
+    elif [[ $(uname) == "Linux" ]]; then
+        # Download appimagetool if on Linux
+        APPIMAGETOOL="/tmp/appimagetool-x86_64.AppImage"
+        if [ ! -f "$APPIMAGETOOL" ]; then
+            echo "   ⬇️  Downloading appimagetool..."
+            wget -q "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage" -O "$APPIMAGETOOL" 2>/dev/null || {
+                echo "   ⚠️  Could not download appimagetool, creating self-extracting version..."
+                create_self_extracting_appimage "$ARCH" "$BINARY_NAME" "$OUTPUT_FILE" "$APPDIR_TMP"
+                return
+            }
+            chmod +x "$APPIMAGETOOL"
+        fi
+        echo "   Using downloaded appimagetool..."
+        "$APPIMAGETOOL" "$APPDIR_TMP" "$OUTPUT_DIR/$OUTPUT_FILE" 2>/dev/null || {
+            echo "   ⚠️  appimagetool failed, creating self-extracting version..."
+            create_self_extracting_appimage "$ARCH" "$BINARY_NAME" "$OUTPUT_FILE" "$APPDIR_TMP"
+        }
+    else
+        # Cross-compile from macOS/Windows: Create self-extracting AppImage with full AppDir
+        echo "   Creating self-extracting AppImage (cross-compile from $(uname))..."
+        create_self_extracting_appimage "$ARCH" "$BINARY_NAME" "$OUTPUT_FILE" "$APPDIR_TMP"
+        # Don't cleanup AppDir yet - it's needed for the self-extracting version
+        return
+    fi
+    
+    # Cleanup AppDir (only if we used appimagetool)
+    rm -rf "$APPDIR_TMP"
+    
+    # Get file size
+    if [ -f "$OUTPUT_DIR/$OUTPUT_FILE" ]; then
+        FILE_SIZE=$(du -h "$OUTPUT_DIR/$OUTPUT_FILE" | awk '{print $1}')
+        echo "✅ Created: $OUTPUT_FILE ($FILE_SIZE)"
+    fi
+}
+
+create_self_extracting_appimage() {
+    local ARCH="$1"
+    local BINARY_NAME="$2"
+    local OUTPUT_FILE="$3"
+    local APPDIR_TMP="$4"
+    
+    # Verify AppDir exists
+    if [ ! -d "$APPDIR_TMP" ]; then
+        echo "   ❌ AppDir not found: $APPDIR_TMP"
+        return 1
+    fi
+    
+    # Verify key files exist
+    if [ ! -f "$APPDIR_TMP/AppRun" ]; then
+        echo "   ❌ AppRun not found in AppDir"
+        return 1
+    fi
+    
+    if [ ! -f "$APPDIR_TMP/usr/bin/${APP_NAME}" ]; then
+        echo "   ❌ Binary not found in AppDir"
+        return 1
+    fi
+    
+    echo "   📦 Packing AppDir structure (with icon + .desktop)..."
+    
+    # Create temporary tar.gz file first
+    TAR_FILE="/tmp/${APP_NAME}-${ARCH}.tar.gz.$$"
+    cd "$APPDIR_TMP"
+    
+    tar -czf "$TAR_FILE" . || {
+        echo "   ❌ Failed to create tar.gz archive"
+        rm -f "$TAR_FILE"
+        return 1
+    }
+    
+    TAR_SIZE=$(du -h "$TAR_FILE" | awk '{print $1}')
+    echo "   📦 Packed AppDir: $TAR_SIZE"
+    
+    # Create self-extracting AppImage with full AppDir structure (works from macOS/Windows)
+    # This embeds the entire AppDir as a tar.gz archive, preserving icon and .desktop file
+    {
+        cat << 'APPIMAGE_HEADER'
+#!/bin/bash
+# Self-extracting AppImage - Single file, double-click to run
+# Compatible with AppImage spec: https://docs.appimage.org/
+# Works from macOS/Windows cross-compilation!
+
+set -e
+
+# Get script location
+SCRIPT="$0"
+APPDIR="/tmp/bakery_appimage_$$"
+mkdir -p "$APPDIR"
+trap "rm -rf '$APPDIR'" EXIT
+
+# Extract AppDir (everything after __APPDIR_MARKER__)
+# Use grep -a to treat binary file as text
+APPDIR_START=$(grep -a -n "^__APPDIR_MARKER__$" "$SCRIPT" | tail -1 | cut -d: -f1)
+if [ -z "$APPDIR_START" ]; then
+    echo "❌ Invalid AppImage format"
+    echo "Debug: Could not find __APPDIR_MARKER__ in script"
+    exit 1
+fi
+
+# Extract AppDir from tar.gz archive
+tail -n +$((APPDIR_START + 1)) "$SCRIPT" | tar -xzf - -C "$APPDIR" 2>/dev/null || {
+    echo "❌ Failed to extract AppImage"
+    echo "Debug: tar extraction failed"
+    exit 1
+}
+
+# Make AppRun executable
+chmod +x "$APPDIR/AppRun" 2>/dev/null || true
+
+# Run AppRun (which will execute the binary)
+exec "$APPDIR/AppRun" "$@"
+
+__APPDIR_MARKER__
+APPIMAGE_HEADER
+    } > "$OUTPUT_DIR/$OUTPUT_FILE"
+    
+    # Append the tar.gz file (must be done separately to avoid shell redirection issues)
+    cat "$TAR_FILE" >> "$OUTPUT_DIR/$OUTPUT_FILE"
+    
+    # Cleanup temp tar file
+    rm -f "$TAR_FILE"
+    
+    chmod +x "$OUTPUT_DIR/$OUTPUT_FILE"
+    
+    # Verify the AppImage was created and has reasonable size
+    if [ ! -f "$OUTPUT_DIR/$OUTPUT_FILE" ]; then
+        echo "   ❌ AppImage file not created"
+        return 1
+    fi
+    
+    FILE_SIZE=$(du -h "$OUTPUT_DIR/$OUTPUT_FILE" | awk '{print $1}')
+    FILE_SIZE_BYTES=$(stat -f%z "$OUTPUT_DIR/$OUTPUT_FILE" 2>/dev/null || stat -c%s "$OUTPUT_DIR/$OUTPUT_FILE" 2>/dev/null || echo "0")
+    
+    # Check if file is too small (less than 100KB means something went wrong)
+    if [ "$FILE_SIZE_BYTES" -lt 102400 ]; then
+        echo "   ⚠️  AppImage seems too small ($FILE_SIZE), checking..."
+        # Check if tar.gz is actually in the file
+        if ! grep -q "__APPDIR_MARKER__" "$OUTPUT_DIR/$OUTPUT_FILE"; then
+            echo "   ❌ Marker not found in AppImage"
+            return 1
+        fi
+    fi
+    
+    echo "   ✅ AppImage created: $OUTPUT_FILE ($FILE_SIZE)"
+    
+    # Cleanup AppDir after creating AppImage
+    rm -rf "$APPDIR_TMP"
+}
+
+# Create AppImages
+create_proper_appimage "x86_64"
+if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
+    create_proper_appimage "arm64"
+fi
+
+# Clean up intermediate files (keep only AppImage - icon is embedded!)
 echo ""
+echo "🧹 Cleaning up intermediate files..."
+rm -f "$OUTPUT_DIR/${APP_NAME}-x86_64" "$OUTPUT_DIR/${APP_NAME}-arm64" 2>/dev/null || true
+rm -f "$OUTPUT_DIR/${APP_NAME}-x86_64.desktop" "$OUTPUT_DIR/${APP_NAME}-arm64.desktop" 2>/dev/null || true
+rm -rf "$OUTPUT_DIR/${APP_NAME}.app" "$OUTPUT_DIR/${APP_NAME}-arm64.app" 2>/dev/null || true
+rm -f "$OUTPUT_DIR/${APP_NAME}.app.desktop" "$OUTPUT_DIR/${APP_NAME}-arm64.app.desktop" 2>/dev/null || true
+rm -f "$OUTPUT_DIR/${APP_NAME}-x86_64.AppImage.desktop" "$OUTPUT_DIR/${APP_NAME}-arm64.AppImage.desktop" 2>/dev/null || true
+rm -f "$OUTPUT_DIR/$ICON_FILE" 2>/dev/null || true  # Icon is embedded in AppImage
+rm -f "$OUTPUT_DIR/install-${APP_NAME}.sh" 2>/dev/null || true
+rm -f "$OUTPUT_DIR/README.txt" 2>/dev/null || true
+echo "✅ Cleanup complete (only AppImage files remain - icon embedded!)"
+
+# No additional files needed - everything is in the AppImage!
+
+echo ""
+echo "🎯 User experience:"
+echo "   🚀 AppImage (single file, like macOS .app):"
+echo "      → Download: ${APP_NAME}-x86_64.AppImage"
+echo "      → Make executable: chmod +x ${APP_NAME}-x86_64.AppImage"
+echo "      → Run: ./${APP_NAME}-x86_64.AppImage"
+echo "      → Icon embedded, works on any Linux!"
+echo ""
+if [[ $(uname) != "Linux" ]]; then
+    echo "   💡 Note: Built from $(uname) (self-extracting AppImage format)"
+    echo "   ✅ Full AppDir structure included (icon + .desktop embedded)"
+    echo ""
+fi
+echo "   ✅ Everything embedded in ONE file!"
+echo ""
+echo "   💡 For double-click support on Ubuntu:"
+echo "      → Right-click AppImage → Properties → Permissions"
+echo "      → Enable 'Allow executing file as program'"
+echo "      → Or use: chmod +x ${APP_NAME}-x86_64.AppImage"
 
 

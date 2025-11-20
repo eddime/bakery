@@ -315,32 +315,60 @@ int main(int argc, char* argv[]) {
     std::cout << std::endl;
     #endif
     
+    // 🎨 Extract icon from embedded assets BEFORE creating window
+    #ifdef WEBVIEW_GTK
+    std::string iconPathForWindow;
+    auto iconAsset = assetLoader.getAsset("icon.png");
+    if (!iconAsset.empty()) {
+        std::string tmpIconPath = "/tmp/bakery_icon_" + config.appName + ".png";
+        std::ofstream iconFile(tmpIconPath, std::ios::binary);
+        if (iconFile) {
+            iconFile.write(iconAsset.data(), iconAsset.size());
+            iconFile.close();
+            iconPathForWindow = tmpIconPath;
+            // Always log icon extraction (even in release mode)
+            std::cout << "🎨 Icon extracted: " << tmpIconPath << " (" << iconAsset.size() << " bytes)" << std::endl;
+        } else {
+            std::cout << "⚠️  Failed to write icon to: " << tmpIconPath << std::endl;
+        }
+    } else {
+        std::cout << "⚠️  Icon not found in assets (size: " << iconAsset.size() << ")" << std::endl;
+        if (!config.app.iconPng.empty() && access(config.app.iconPng.c_str(), F_OK) == 0) {
+            iconPathForWindow = config.app.iconPng;
+        }
+    }
+    #endif
+    
     // Create WebView with debug mode from config
     webview::webview w(config.app.debug, nullptr);
     w.set_title(config.window.title.c_str());
     
-    // 🎨 Set window icon (Linux/GTK)
-    // Set icon if available (requires GTK)
+    // 🎨 Set window icon immediately after window creation (Linux/GTK)
     #ifdef WEBVIEW_GTK
-    if (!config.app.iconPng.empty()) {
-        // Try to set icon if file exists
-        if (access(config.app.iconPng.c_str(), F_OK) == 0) {
-            auto window_result = w.window();
-            if (window_result.has_value()) {
-                void* window_ptr = window_result.value();
-                if (window_ptr) {
-                    GtkWindow* gtk_window = GTK_WINDOW(window_ptr);
-                    gtk_window_set_icon_from_file(gtk_window, config.app.iconPng.c_str(), nullptr);
-                    #ifndef NDEBUG
-                    std::cout << "🎨 Icon set: " << config.app.iconPng << std::endl;
-                    #endif
+    if (!iconPathForWindow.empty()) {
+        auto window_result = w.window();
+        if (window_result.has_value()) {
+            void* window_ptr = window_result.value();
+            if (window_ptr) {
+                GtkWindow* gtk_window = GTK_WINDOW(window_ptr);
+                GError* error = nullptr;
+                gtk_window_set_icon_from_file(gtk_window, iconPathForWindow.c_str(), &error);
+                if (!error) {
+                    // Always log success (even in release mode)
+                    std::cout << "✅ Window icon set: " << iconPathForWindow << std::endl;
+                } else {
+                    // Always log errors (even in release mode)
+                    std::cout << "❌ Failed to set window icon: " << error->message << std::endl;
+                    g_error_free(error);
                 }
+            } else {
+                std::cout << "❌ GTK window pointer is null" << std::endl;
             }
         } else {
-            #ifndef NDEBUG
-            std::cout << "⚠️  Icon not found: " << config.app.iconPng << std::endl;
-            #endif
+            std::cout << "❌ Failed to get GTK window" << std::endl;
         }
+    } else {
+        std::cout << "❌ No icon path available" << std::endl;
     }
     #endif
     

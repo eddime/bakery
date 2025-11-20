@@ -107,7 +107,30 @@ if (config?.app?.splash === true) {
   }
 }
 
-console.log(`✅ Collected ${files.length} files (+ WebGPU helper + config)`);
+// 🎨 Embed icon from config (for all platforms - macOS, Windows, Linux)
+// Use the icon path from config.app.icon (or iconPng for Linux)
+const iconPath = config?.app?.iconPng || config?.app?.icon;
+if (iconPath) {
+  let iconFullPath = join(projectDir, iconPath);
+  
+  // If path doesn't exist, try relative to assets directory
+  if (!existsSync(iconFullPath)) {
+    iconFullPath = join(projectDir, 'assets', iconPath);
+  }
+  
+  if (existsSync(iconFullPath)) {
+    const iconData = readFileSync(iconFullPath);
+    // Always embed as 'icon.png' for consistency across platforms
+    files.push({ path: 'icon.png', data: iconData });
+    console.log(`🎨 Icon embedded: ${iconPath} → icon.png`);
+  } else {
+    console.warn(`⚠️  Icon not found: ${iconPath}`);
+  }
+} else {
+  console.warn('⚠️  No icon specified in config');
+}
+
+console.log(`✅ Collected ${files.length} files (+ WebGPU helper + config + icon)`);
 console.log('');
 
 // Build binary format:
