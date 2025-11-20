@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// 🎨 Bakery Icon Converter
+// 🎨 Gemcore Icon Converter
 // Converts PNG to ICNS (macOS) and ICO (Windows) automatically
 // Inspired by Godot Engine's icon handling
 
@@ -243,7 +243,7 @@ if (import.meta.main) {
   
   if (args.length < 2) {
     console.log(`
-🎨 Bakery Icon Converter
+🎨 Gemcore Icon Converter
 
 Usage:
   bun scripts/convert-icon.ts <input.png> <format>

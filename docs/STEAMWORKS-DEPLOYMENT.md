@@ -2,7 +2,7 @@
 
 ## Overview
 
-When you enable Steamworks in `bakery.config.js`, Bakery automatically handles most of the setup. However, there are platform-specific requirements for deploying Steam DLLs.
+When you enable Steamworks in `gemcore.config.js`, Gemcore automatically handles most of the setup. However, there are platform-specific requirements for deploying Steam DLLs.
 
 ## Configuration
 
@@ -17,7 +17,7 @@ export default {
 
 ## Automatic Build Integration
 
-When `steamworks.enabled = true`, Bakery automatically:
+When `steamworks.enabled = true`, Gemcore automatically:
 
 ✅ **Creates `steam_appid.txt`** in the app directory (with your App ID)  
 ✅ **Copies Steam SDK DLLs** to the correct location  
@@ -49,7 +49,7 @@ dist/mac/
               ├── steamdemo           # Universal launcher
               ├── steamdemo-arm64     # ARM64 binary
               ├── steamdemo-x86_64    # x64 binary
-              ├── bakery-assets       # Encrypted assets
+              ├── gemcore-assets       # Encrypted assets
               ├── libsteam_api.dylib  # ✅ Auto-copied if enabled
               └── steam_appid.txt     # ✅ Auto-created at runtime
 ```
@@ -83,7 +83,7 @@ dist/windows/
 
 **How it works:**
 1. Build embeds `steam_api64.dll` into the EXE
-2. At runtime, DLL is extracted to `%TEMP%\bakery_<pid>\steam_api64.dll`
+2. At runtime, DLL is extracted to `%TEMP%\gemcore_<pid>\steam_api64.dll`
 3. Steam loads the DLL from TEMP
 4. Everything works seamlessly!
 
@@ -113,7 +113,7 @@ dist/linux/
 
 **Steamworks on Linux:**
 - ✅ **Works EXACTLY like Windows!** Steam library is embedded in the binary
-- ✅ **Runtime extraction**: Library is extracted to `/tmp/bakery_<pid>/` at startup
+- ✅ **Runtime extraction**: Library is extracted to `/tmp/gemcore_<pid>/` at startup
 - ✅ **Dynamic loading**: Uses `dlopen()` to load Steam API at runtime
 - 🎯 **Solution**: Embed → Extract → dlopen() → Works perfectly!
 - 🚀 **Cross-compile from macOS**: ✅ Fully functional!
@@ -142,8 +142,8 @@ open examples/steamdemo/dist/mac/steamdemo.app
 
 If Steam is not running, the app will show:
 ```
-⚠️ [Bakery Steam] Steamworks is not available. 
-   Make sure Steam is running and steamworks is enabled in bakery.config.js
+⚠️ [Gemcore Steam] Steamworks is not available. 
+   Make sure Steam is running and steamworks is enabled in gemcore.config.js
 ```
 
 All Steam API calls will return default values:
@@ -188,7 +188,7 @@ All Steam API calls will return default values:
 1. Make sure Steam is running
 2. Check `steamworks.enabled = true` in config
 3. Rebuild the app: `./bake mac --dir <project>`
-4. Check console for errors: `[Bakery Steam] ...`
+4. Check console for errors: `[Gemcore Steam] ...`
 
 ### "steam_api64.dll not found" (Windows)
 

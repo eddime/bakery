@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * 🥐 Bakery Binary Downloader
+ * 🥐 Gemcore Binary Downloader
  * 
  * Downloads pre-built launcher binaries from GitHub Releases.
  * This is used by end-users who don't want to compile from source.
@@ -14,10 +14,10 @@ import { existsSync, mkdirSync } from 'fs';
 
 const FRAMEWORK_DIR = join(import.meta.dir, '..');
 const BIN_DIR = join(FRAMEWORK_DIR, 'bin');
-const GITHUB_REPO = 'eddime/bakery'; // TODO: Update with actual repo
+const GITHUB_REPO = 'eddime/gemcore'; // TODO: Update with actual repo
 const VERSION = 'latest'; // or specific version like 'v1.0.0'
 
-console.log('🥐 Bakery Binary Downloader');
+console.log('🥐 Gemcore Binary Downloader');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 console.log('📦 Downloading pre-built launcher binaries...\n');
 
@@ -27,11 +27,11 @@ for (const dir of ['mac-arm64', 'mac-x64', 'win-x64', 'linux-x64', 'linux-arm64'
 }
 
 const binaries = [
-  { platform: 'mac-arm64', filename: 'bakery-launcher-mac-arm64', output: 'bakery-launcher' },
-  { platform: 'mac-x64', filename: 'bakery-launcher-mac-x64', output: 'bakery-launcher' },
-  { platform: 'win-x64', filename: 'bakery-launcher-win-x64.exe', output: 'bakery-launcher.exe' },
-  { platform: 'linux-x64', filename: 'bakery-launcher-linux-x64', output: 'bakery-launcher' },
-  { platform: 'linux-arm64', filename: 'bakery-launcher-linux-arm64', output: 'bakery-launcher' },
+  { platform: 'mac-arm64', filename: 'gemcore-launcher-mac-arm64', output: 'gemcore-launcher' },
+  { platform: 'mac-x64', filename: 'gemcore-launcher-mac-x64', output: 'gemcore-launcher' },
+  { platform: 'win-x64', filename: 'gemcore-launcher-win-x64.exe', output: 'gemcore-launcher.exe' },
+  { platform: 'linux-x64', filename: 'gemcore-launcher-linux-x64', output: 'gemcore-launcher' },
+  { platform: 'linux-arm64', filename: 'gemcore-launcher-linux-arm64', output: 'gemcore-launcher' },
 ];
 
 for (const binary of binaries) {

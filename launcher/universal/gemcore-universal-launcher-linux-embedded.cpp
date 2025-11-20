@@ -1,5 +1,5 @@
 /**
- * 🥐 Bakery Universal Launcher (Linux) - WITH EMBEDDED RESOURCES
+ * 🥐 Gemcore Universal Launcher (Linux) - WITH EMBEDDED RESOURCES
  * Extracts embedded binaries/assets to /tmp and launches correct architecture
  */
 
@@ -41,7 +41,7 @@ std::string getExecutablePath() {
 
 std::string getTempDir() {
     // Create unique dir for this app
-    std::string uniqueDir = std::string("/tmp/bakery_") + std::to_string(getpid());
+    std::string uniqueDir = std::string("/tmp/gemcore_") + std::to_string(getpid());
     mkdir(uniqueDir.c_str(), 0755);
     return uniqueDir;
 }
@@ -64,12 +64,12 @@ bool readEmbeddedData(const std::string& exePath, EmbeddedData& data) {
     std::ifstream file(exePath, std::ios::binary);
     if (!file) return false;
     
-    // Find magic signature "BAKERY_EMBEDDED" from the end
+    // Find magic signature "GEMCORE_EMBEDDED" from the end
     file.seekg(-8192, std::ios::end); // Search last 8KB
     char buffer[8192];
     file.read(buffer, 8192);
     
-    const char* magic = "BAKERY_EMBEDDED";
+    const char* magic = "GEMCORE_EMBEDDED";
     size_t magicLen = 16; // Including null terminator
     
     // Find magic
@@ -134,7 +134,7 @@ int main(int argc, char* argv[]) {
     std::string tempDir = getTempDir();
     
     #ifndef NDEBUG
-    std::cout << "🥐 Bakery Universal Launcher" << std::endl;
+    std::cout << "🥐 Gemcore Universal Launcher" << std::endl;
     std::cout << "   Executable: " << exePath << std::endl;
     std::cout << "   Architecture: " << arch << std::endl;
     std::cout << "   Temp Dir: " << tempDir << std::endl;
@@ -144,7 +144,7 @@ int main(int argc, char* argv[]) {
     EmbeddedData data;
     if (!readEmbeddedData(exePath, data)) {
         std::cerr << "❌ Failed to read embedded data from: " << exePath << std::endl;
-        std::cerr << "   Make sure this is a valid Bakery executable!" << std::endl;
+        std::cerr << "   Make sure this is a valid Gemcore executable!" << std::endl;
         return 1;
     }
     
@@ -157,9 +157,9 @@ int main(int argc, char* argv[]) {
     // Extract files
     // Note: x64Offset/x64Size actually contains the architecture-specific binary
     // (could be x64 or ARM64 depending on which was packed)
-    std::string binaryPath = tempDir + "/bakery-binary";
-    std::string assetsPath = tempDir + "/bakery-assets";
-    std::string configPath = tempDir + "/bakery.config.json";
+    std::string binaryPath = tempDir + "/gemcore-binary";
+    std::string assetsPath = tempDir + "/gemcore-assets";
+    std::string configPath = tempDir + "/gemcore.config.json";
     
     if (data.x64Size > 0) {
         if (!extractFile(exePath, data.x64Offset, data.x64Size, binaryPath)) {

@@ -1,5 +1,5 @@
 /**
- * 🚀 Bakery WebGPU Helper - Universal GPU Acceleration
+ * 🚀 Gemcore WebGPU Helper - Universal GPU Acceleration
  * Framework-agnostic helper that enables WebGPU for any game engine
  * Automatic fallback: WebGPU → WebGL2 → WebGL
  */
@@ -7,7 +7,7 @@
 (function() {
     'use strict';
     
-    const BakeryGPU = {
+    const GemcoreGPU = {
         // GPU Info
         info: {
             hasWebGPU: false,
@@ -72,17 +72,17 @@
                 }).then(device => {
                     if (device) {
                         this.info.device = device;
-                        console.log('🚀 Bakery: WebGPU ready!', this.info.adapter);
+                        console.log('🚀 Gemcore: WebGPU ready!', this.info.adapter);
                     }
                 }).catch(e => {
-                    console.warn('⚠️ Bakery: WebGPU init failed:', e.message);
+                    console.warn('⚠️ Gemcore: WebGPU init failed:', e.message);
                     this.info.hasWebGPU = false;
                     this.info.preferredAPI = this.info.hasWebGL2 ? 'webgl2' : 'webgl';
                 });
             }
             
             // Log summary (sync part)
-            console.log('🎮 Bakery GPU Support:', {
+            console.log('🎮 Gemcore GPU Support:', {
                 WebGPU: this.info.hasWebGPU ? '✅ (loading...)' : '❌',
                 WebGL2: this.info.hasWebGL2 ? '✅' : '❌',
                 WebGL: this.info.hasWebGL ? '✅' : '❌',
@@ -176,7 +176,7 @@
                 if ((contextType === 'webgl2' || contextType === 'webgl') && self.info.hasWebGPU) {
                     // Just log once
                     if (!self._webgpuHintShown) {
-                        console.log('💡 Bakery: WebGPU available! Use navigator.gpu for better performance');
+                        console.log('💡 Gemcore: WebGPU available! Use navigator.gpu for better performance');
                         self._webgpuHintShown = true;
                     }
                 }
@@ -217,15 +217,15 @@
     
     // Auto-initialize IMMEDIATELY (SYNC, no await!)
     // This ensures GPU info is available before any game code runs
-    BakeryGPU.init();
-    BakeryGPU.patchCanvasAPI();
+    GemcoreGPU.init();
+    GemcoreGPU.patchCanvasAPI();
     
     // Expose globally
-    window.BakeryGPU = BakeryGPU;
+    window.GemcoreGPU = GemcoreGPU;
     
     // Export for module systems
     if (typeof module !== 'undefined' && module.exports) {
-        module.exports = BakeryGPU;
+        module.exports = GemcoreGPU;
     }
 })();
 

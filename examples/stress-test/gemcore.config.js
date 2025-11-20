@@ -9,7 +9,7 @@ export default {
     splash: true  // 🎬 Test splash screen
   },
   window: {
-    title: "🔥 Bakery Stress Test",  // Can change freely (e.g., add version number)
+    title: "🔥 Gemcore Stress Test",  // Can change freely (e.g., add version number)
     width: 1280,
     height: 720,
     resizable: true,

@@ -53,9 +53,9 @@ if ! pkg-config --exists webkit2gtk-4.1 && ! pkg-config --exists webkit2gtk-4.0;
 fi
 
 cmake .. -DCMAKE_BUILD_TYPE=Release -DENABLE_STEAMWORKS=OFF
-make bakery-launcher-linux -j$(nproc)
+make gemcore-launcher-linux -j$(nproc)
 
-if [ ! -f "bakery-launcher-linux" ]; then
+if [ ! -f "gemcore-launcher-linux" ]; then
     echo "❌ Launcher build failed!"
     exit 1
 fi
@@ -77,11 +77,11 @@ mkdir -p "$APPDIR/usr/share/applications"
 mkdir -p "$APPDIR/usr/share/icons/hicolor/256x256/apps"
 
 # Copy launcher
-cp "$BUILD_DIR/bakery-launcher-linux" "$APPDIR/usr/bin/${APP_NAME}"
+cp "$BUILD_DIR/gemcore-launcher-linux" "$APPDIR/usr/bin/${APP_NAME}"
 
 # Copy assets
 echo "📦 Embedding assets..."
-bun scripts/embed-assets-shared.ts "$PROJECT_DIR" "$APPDIR/usr/bin/bakery-assets"
+bun scripts/embed-assets-shared.ts "$PROJECT_DIR" "$APPDIR/usr/bin/gemcore-assets"
 
 # Copy WebKitGTK and dependencies
 echo "📚 Bundling WebKitGTK dependencies..."

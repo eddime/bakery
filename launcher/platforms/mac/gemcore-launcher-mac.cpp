@@ -1,5 +1,5 @@
 /**
- * 🥐 Bakery Launcher - macOS (Shared Assets from bakery-assets file)
+ * 🥐 Gemcore Launcher - macOS (Shared Assets from gemcore-assets file)
  * Clean, shared-code version with zero duplication
  */
 
@@ -24,17 +24,17 @@
 #include "webview-universal-performance.h"
 
 // NEW: Shared HTTP server and asset loader!
-#include "bakery-http-server.h"
-#include "bakery-asset-loader.h"
-#include "bakery-cache-buster.h"
+#include "gemcore-http-server.h"
+#include "gemcore-asset-loader.h"
+#include "gemcore-cache-buster.h"
 
 #ifdef ENABLE_STEAMWORKS
-#include "bakery-steamworks-bindings.h"    // 🎮 Steamworks integration
+#include "gemcore-steamworks-bindings.h"    // 🎮 Steamworks integration
 #endif
 
 using json = nlohmann::json;
 
-struct BakeryConfig {
+struct GemcoreConfig {
     struct {
         std::string title;
         int width;
@@ -63,7 +63,7 @@ struct BakeryConfig {
 std::atomic<bool> g_running{true};
 
 // Multi-threaded request handler
-void worker(int server_fd, bakery::http::HTTPServer* server) {
+void worker(int server_fd, gemcore::http::HTTPServer* server) {
     while (g_running) {
         int client = accept(server_fd, nullptr, nullptr);
         if (client >= 0) {
@@ -80,7 +80,7 @@ void worker(int server_fd, bakery::http::HTTPServer* server) {
 std::atomic<bool> g_serverReady{false};
 
 // Multi-threaded HTTP server
-void runServer(bakery::http::HTTPServer* server) {
+void runServer(gemcore::http::HTTPServer* server) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd < 0) {
         std::cerr << "❌ Failed to create socket!" << std::endl;
@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
     #ifdef NDEBUG
     std::ios::sync_with_stdio(false);
     #else
-    std::cout << "🥐 Bakery Launcher (macOS Shared Assets)" << std::endl;
+    std::cout << "🥐 Gemcore Launcher (macOS Shared Assets)" << std::endl;
     std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
     std::cout << std::endl;
     #endif
@@ -161,8 +161,8 @@ int main(int argc, char* argv[]) {
     #endif
     
     // OPTIMIZATION 2: Load assets + config in parallel
-    bakery::assets::SharedAssetLoader assetLoader;
-    BakeryConfig config;
+    gemcore::assets::SharedAssetLoader assetLoader;
+    GemcoreConfig config;
     std::atomic<bool> assetsLoaded{false};
     
     std::thread assetLoadThread([&assetLoader, &assetsLoaded]() {
@@ -170,7 +170,7 @@ int main(int argc, char* argv[]) {
     });
     
     // While assets load, prepare default config
-    config.window.title = "Bakery App";
+    config.window.title = "Gemcore App";
     config.window.width = 1280;
     config.window.height = 720;
     config.window.resizable = true;
@@ -179,7 +179,7 @@ int main(int argc, char* argv[]) {
     config.window.frameless = false;
     config.window.minWidth = 400;
     config.window.minHeight = 300;
-    config.app.name = "bakery-app";
+    config.app.name = "gemcore-app";
     config.app.version = "1.0.0";
     config.app.entrypoint = "index.html";
     config.app.icon = "";
@@ -192,7 +192,7 @@ int main(int argc, char* argv[]) {
     }
     
     // 🔒 Load config from encrypted assets (not accessible to user!)
-    auto configAsset = assetLoader.getAsset(".bakery-config.json");
+    auto configAsset = assetLoader.getAsset(".gemcore-config.json");
     if (configAsset.data && configAsset.size > 0) {
         try {
             std::string configStr(reinterpret_cast<const char*>(configAsset.data), configAsset.size);
@@ -216,7 +216,7 @@ int main(int argc, char* argv[]) {
             if (j.contains("app")) {
                 if (j["app"].contains("name")) {
                     config.app.name = j["app"]["name"].get<std::string>();
-                    if (config.window.title == "Bakery App") {
+                    if (config.window.title == "Gemcore App") {
                         config.window.title = config.app.name;
                     }
                 }
@@ -268,7 +268,7 @@ int main(int argc, char* argv[]) {
     
     // 🎮 Initialize Steamworks (must be done BEFORE WebView creation)
     #ifdef ENABLE_STEAMWORKS
-    bool steamEnabled = bakery::steamworks::initSteamworks(config);
+    bool steamEnabled = gemcore::steamworks::initSteamworks(config);
     #else
     bool steamEnabled = false;
     #endif
@@ -284,7 +284,7 @@ int main(int argc, char* argv[]) {
     std::cout << "🔒 Port: " << port << " (based on app.name: " << config.app.name << ")" << std::endl;
     std::cout << "📦 Version: " << config.app.version << std::endl;
     #endif
-    bakery::http::HTTPServer server(port);
+    gemcore::http::HTTPServer server(port);
     server.setEntrypoint(config.app.entrypoint);
     server.setAssetProvider([&assetLoader](const std::string& path) {
         return assetLoader.getAsset(path);
@@ -395,18 +395,18 @@ int main(int argc, char* argv[]) {
     }
     
     // DISABLED: Performance optimizations causing issues with some games
-    // bakery::universal::enableUniversalPerformance(w);
+    // gemcore::universal::enableUniversalPerformance(w);
     
     // 🎮 Bind Steamworks to JavaScript (if enabled)
     #ifdef ENABLE_STEAMWORKS
-    bakery::steamworks::bindSteamworksToWebview(w, steamEnabled);
+    gemcore::steamworks::bindSteamworksToWebview(w, steamEnabled);
     #endif
     
     // Load Steamworks wrapper from assets (if available)
     std::string steamworksWrapperScript;
     #ifdef ENABLE_STEAMWORKS
     if (steamEnabled) {
-        auto steamworksAsset = assetLoader.getAsset("bakery-steamworks-wrapper.js");
+        auto steamworksAsset = assetLoader.getAsset("gemcore-steamworks-wrapper.js");
         if (steamworksAsset.data && steamworksAsset.size > 0) {
             steamworksWrapperScript = std::string(reinterpret_cast<const char*>(steamworksAsset.data), steamworksAsset.size);
         }
@@ -415,7 +415,7 @@ int main(int argc, char* argv[]) {
     
     // Build JavaScript init code with fullscreen value
     std::string jsInit = R"JS(
-    window.Bakery = {
+    window.Gemcore = {
         version: '1.0.0',
         platform: 'macos',
         mode: 'shared-assets',
@@ -610,26 +610,29 @@ int main(int argc, char* argv[]) {
     });
     
     // ⚡ RUNTIME OPTIMIZATION 5: CSS Hardware Acceleration Hints
-    const style = document.createElement('style');
-    style.textContent = `
-        * {
-            -webkit-transform: translateZ(0);
-            -webkit-backface-visibility: hidden;
-            -webkit-perspective: 1000;
-        }
-        canvas, video {
-            -webkit-transform: translate3d(0,0,0);
-            transform: translate3d(0,0,0);
-        }
-    `;
-    if (document.head) {
-        document.head.appendChild(style);
-    } else {
-        document.addEventListener('DOMContentLoaded', () => {
-            if (document.head) {
-                document.head.appendChild(style);
+    // Only apply to game pages, not splash screen (splash.html has its own animations)
+    if (!window.location.pathname.includes('splash.html')) {
+        const style = document.createElement('style');
+        style.textContent = `
+            * {
+                -webkit-transform: translateZ(0);
+                -webkit-backface-visibility: hidden;
+                -webkit-perspective: 1000;
             }
-        });
+            canvas, video {
+                -webkit-transform: translate3d(0,0,0);
+                transform: translate3d(0,0,0);
+            }
+        `;
+        if (document.head) {
+            document.head.appendChild(style);
+        } else {
+            document.addEventListener('DOMContentLoaded', () => {
+                if (document.head) {
+                    document.head.appendChild(style);
+                }
+            });
+        }
     }
     )JS";
     
@@ -657,7 +660,7 @@ int main(int argc, char* argv[]) {
     #endif
     
     // 🔥 CACHE BUSTER: Use timestamp to force reload on every build
-    std::string cacheBuster = bakery::getCacheBuster();
+    std::string cacheBuster = gemcore::getCacheBuster();
     std::string url = "http://127.0.0.1:" + std::to_string(port) + "/" + config.app.entrypoint + "?t=" + cacheBuster;
     
     // 🎬 Splash Screen: Show splash.html first, then navigate to game after 2 seconds
@@ -692,7 +695,7 @@ int main(int argc, char* argv[]) {
     if (steamEnabled) {
         steamThread = std::thread([]() {
             while (g_running) {
-                bakery::steamworks::SteamworksManager::RunCallbacks();
+                gemcore::steamworks::SteamworksManager::RunCallbacks();
                 std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
             }
         });
@@ -709,7 +712,7 @@ int main(int argc, char* argv[]) {
         if (steamThread.joinable()) {
             steamThread.join();
         }
-        bakery::steamworks::shutdownSteamworks();
+        gemcore::steamworks::shutdownSteamworks();
     }
     #endif
     

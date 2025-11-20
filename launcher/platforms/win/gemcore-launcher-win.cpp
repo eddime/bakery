@@ -1,5 +1,5 @@
 /**
- * 🥐 Bakery Launcher - Windows (Shared Assets from bakery-assets file)
+ * 🥐 Gemcore Launcher - Windows (Shared Assets from gemcore-assets file)
  * Clean, shared-code version with zero duplication
  */
 
@@ -25,15 +25,15 @@
 #include "webview/webview.h"
 
 // NEW: Shared HTTP server and asset loader!
-#include "bakery-http-server.h"
-#include "bakery-asset-loader.h"
-#include "bakery-cache-buster.h"
-#include "bakery-window-helper.h"          // Cross-platform window management
-#include "bakery-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
+#include "gemcore-http-server.h"
+#include "gemcore-asset-loader.h"
+#include "gemcore-cache-buster.h"
+#include "gemcore-window-helper.h"          // Cross-platform window management
+#include "gemcore-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
 
 using json = nlohmann::json;
 
-struct BakeryConfig {
+struct GemcoreConfig {
     struct {
         std::string title;
         int width;
@@ -59,7 +59,7 @@ std::atomic<bool> g_running{true};
 std::atomic<bool> g_serverReady{false};
 
 // Multi-threaded request handler (Windows version)
-void worker(SOCKET server_fd, bakery::http::HTTPServer* server) {
+void worker(SOCKET server_fd, gemcore::http::HTTPServer* server) {
     while (g_running) {
         SOCKET client = accept(server_fd, nullptr, nullptr);
         if (client != INVALID_SOCKET) {
@@ -73,7 +73,7 @@ void worker(SOCKET server_fd, bakery::http::HTTPServer* server) {
 }
 
 // Multi-threaded HTTP server (Windows version)
-void runServer(bakery::http::HTTPServer* server) {
+void runServer(gemcore::http::HTTPServer* server) {
     // Initialize Winsock
     WSADATA wsaData;
     int wsaResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
@@ -162,7 +162,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     #ifdef NDEBUG
     std::ios::sync_with_stdio(false);
     #else
-    std::cout << "🥐 Bakery Launcher (Windows Shared Assets)" << std::endl;
+    std::cout << "🥐 Gemcore Launcher (Windows Shared Assets)" << std::endl;
     std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
     std::cout << std::endl;
     #endif
@@ -174,7 +174,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     #endif
     
     // OPTIMIZATION 2: Parallel Asset Loading
-    bakery::assets::SharedAssetLoader assetLoader;
+    gemcore::assets::SharedAssetLoader assetLoader;
     std::atomic<bool> assetsLoaded{false};
     
     std::thread assetLoadThread([&assetLoader, &assetsLoaded]() {
@@ -182,23 +182,23 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     });
     
     // OPTIMIZATION 3: Prepare default config
-    BakeryConfig config;
-    config.window.title = "Bakery App";
+    GemcoreConfig config;
+    config.window.title = "Gemcore App";
     config.window.width = 1280;
     config.window.height = 720;
     config.entrypoint = "index.html";
-    config.appName = "bakery-app";  // Default app name
+    config.appName = "gemcore-app";  // Default app name
     
     // Wait for assets to load
     assetLoadThread.join();
     
     if (!assetsLoaded) {
-        MessageBoxA(NULL, "Failed to load assets!", "Bakery Error", MB_ICONERROR);
+        MessageBoxA(NULL, "Failed to load assets!", "Gemcore Error", MB_ICONERROR);
         return 1;
     }
     
     // 🔒 Load config from encrypted assets (not accessible to user!)
-    auto configAsset = assetLoader.getAsset(".bakery-config.json");
+    auto configAsset = assetLoader.getAsset(".gemcore-config.json");
     if (configAsset.data && configAsset.size > 0) {
         try {
             std::string configStr(reinterpret_cast<const char*>(configAsset.data), configAsset.size);
@@ -228,7 +228,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
                 if (j["app"].contains("name")) {
                     config.appName = j["app"]["name"].get<std::string>();
                     config.app.name = config.appName;
-                    if (config.window.title == "Bakery App") {
+                    if (config.window.title == "Gemcore App") {
                         config.window.title = config.appName;
                     }
                 }
@@ -284,7 +284,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     #ifndef NDEBUG
     std::cout << "🔒 Port: " << port << " (based on app.name: " << config.appName << ")" << std::endl;
     #endif
-    bakery::http::HTTPServer server(port);
+    gemcore::http::HTTPServer server(port);
     server.setEntrypoint(config.entrypoint);
     server.setAssetProvider([&assetLoader](const std::string& path) {
         return assetLoader.getAsset(path);
@@ -349,7 +349,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     #endif
     
     // 🎮 Initialize Steamworks (cross-platform helper)
-    bool steamEnabled = bakery::steamworks::initSteamworks(config);
+    bool steamEnabled = gemcore::steamworks::initSteamworks(config);
     
     // While cache builds, create WebView (parallel!)
     // Create WebView with debug mode from config (enables right-click menu, DevTools)
@@ -368,7 +368,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         if (window_result.has_value()) {
             void* window_ptr = window_result.value();
             if (window_ptr) {
-                bakery::window::enableFullscreen(window_ptr);
+                gemcore::window::enableFullscreen(window_ptr);
                 
                 #ifndef NDEBUG
                 std::cout << "   ✅ Native fullscreen activated!" << std::endl;
@@ -378,40 +378,40 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     }
     
     // 🎮 Bind Steamworks to JavaScript (cross-platform helper)
-    bakery::steamworks::bindSteamworksToWebview(w, steamEnabled);
+    gemcore::steamworks::bindSteamworksToWebview(w, steamEnabled);
     
     // Load Steamworks wrapper from assets (if available)
     std::string steamworksWrapperScript;
     #ifdef ENABLE_STEAMWORKS
     if (steamEnabled) {
-        auto steamworksAsset = assetLoader.getAsset("bakery-steamworks-wrapper.js");
+        auto steamworksAsset = assetLoader.getAsset("gemcore-steamworks-wrapper.js");
         if (steamworksAsset.data && steamworksAsset.size > 0) {
             steamworksWrapperScript = std::string(reinterpret_cast<const char*>(steamworksAsset.data), steamworksAsset.size);
         }
     }
     #endif
     
-    // Inject Bakery API + Runtime Optimizations
-    std::string bakeryInit = R"JS(
-    window.Bakery = {
+    // Inject Gemcore API + Runtime Optimizations
+    std::string gemcoreInit = R"JS(
+    window.Gemcore = {
         version: '1.0.0',
         platform: 'windows',
         mode: 'universal',
         launcher: 'shared-assets',
         steam: )JS";
-    bakeryInit += steamEnabled ? "true" : "false";
-    bakeryInit += R"JS(
+    gemcoreInit += steamEnabled ? "true" : "false";
+    gemcoreInit += R"JS(
     };
     
     // 🎮 Inject Steamworks wrapper (from separate file, but executed here for correct order)
     )JS";
     if (!steamworksWrapperScript.empty()) {
-        bakeryInit += steamworksWrapperScript;
+        gemcoreInit += steamworksWrapperScript;
     }
-    bakeryInit += R"JS(
+    gemcoreInit += R"JS(
 )JS";
     
-    w.init(bakeryInit + R"(
+    w.init(gemcoreInit + R"(
         
         // ⚡ RUNTIME OPTIMIZATION 1: Passive Event Listeners
         (function() {
@@ -478,21 +478,24 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         });
         
         // ⚡ RUNTIME OPTIMIZATION 5: CSS Hardware Acceleration
-        const style = document.createElement('style');
-        style.textContent = `
-            * {
-                -webkit-transform: translateZ(0);
-                -webkit-backface-visibility: hidden;
-                -webkit-perspective: 1000;
-            }
-            canvas, video {
-                -webkit-transform: translate3d(0,0,0);
-                transform: translate3d(0,0,0);
-            }
-        `;
-        document.addEventListener('DOMContentLoaded', () => {
-            document.head.appendChild(style);
-        });
+        // Only apply to game pages, not splash screen (splash.html has its own animations)
+        if (!window.location.pathname.includes('splash.html')) {
+            const style = document.createElement('style');
+            style.textContent = `
+                * {
+                    -webkit-transform: translateZ(0);
+                    -webkit-backface-visibility: hidden;
+                    -webkit-perspective: 1000;
+                }
+                canvas, video {
+                    -webkit-transform: translate3d(0,0,0);
+                    transform: translate3d(0,0,0);
+                }
+            `;
+            document.addEventListener('DOMContentLoaded', () => {
+                document.head.appendChild(style);
+            });
+        }
     )");
     
     // Wait for cache to be ready
@@ -517,7 +520,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     #endif
     
     // 🔥 CACHE BUSTER: Use timestamp to force reload on every build
-    std::string cacheBuster = bakery::getCacheBuster();
+    std::string cacheBuster = gemcore::getCacheBuster();
     std::string url = "http://127.0.0.1:" + std::to_string(port) + "/" + config.entrypoint + "?t=" + cacheBuster;
     
     // 🎬 Splash Screen: Show splash.html first, then navigate to game after 2 seconds
@@ -552,7 +555,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
     if (steamEnabled) {
         steamThread = std::thread([]() {
             while (g_running) {
-                bakery::steamworks::SteamworksManager::RunCallbacks();
+                gemcore::steamworks::SteamworksManager::RunCallbacks();
                 std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
             }
         });
@@ -569,7 +572,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine
         if (steamThread.joinable()) {
             steamThread.join();
         }
-        bakery::steamworks::shutdownSteamworks();
+        gemcore::steamworks::shutdownSteamworks();
     }
     
     return 0;

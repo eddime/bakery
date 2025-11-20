@@ -1,21 +1,21 @@
 /**
- * 🎮 Bakery Steamworks Bindings
+ * 🎮 Gemcore Steamworks Bindings
  * Cross-platform Steamworks bindings for all launchers
  * 
  * Usage:
- *   #include "bakery-steamworks-bindings.h"
+ *   #include "gemcore-steamworks-bindings.h"
  *   
- *   bool steamEnabled = bakery::steamworks::initSteamworks(config);
- *   bakery::steamworks::bindSteamworksToWebview(w, steamEnabled);
+ *   bool steamEnabled = gemcore::steamworks::initSteamworks(config);
+ *   gemcore::steamworks::bindSteamworksToWebview(w, steamEnabled);
  */
 
-#ifndef BAKERY_STEAMWORKS_BINDINGS_H
-#define BAKERY_STEAMWORKS_BINDINGS_H
+#ifndef GEMCORE_STEAMWORKS_BINDINGS_H
+#define GEMCORE_STEAMWORKS_BINDINGS_H
 
 #include <string>
 #include <fstream>
 #include <nlohmann/json.hpp>
-#include "bakery-steamworks.h"
+#include "gemcore-steamworks.h"
 
 #ifdef _WIN32
 #include <windows.h>
@@ -27,7 +27,7 @@
 #include <limits.h>
 #endif
 
-namespace bakery {
+namespace gemcore {
 namespace steamworks {
 
 using json = nlohmann::json;
@@ -80,9 +80,9 @@ inline void createSteamAppIdFile(uint32_t appId) {
 
 /**
  * Load Steam DLL from TEMP directory (Windows only)
- * The universal launcher extracts the DLL to %TEMP%\bakery_<pid>\steam_api64.dll
+ * The universal launcher extracts the DLL to %TEMP%\gemcore_<pid>\steam_api64.dll
  * 
- * Note: The DLL is extracted to disk (like bakery-assets file) because:
+ * Note: The DLL is extracted to disk (like gemcore-assets file) because:
  * 1. Windows LoadLibrary requires a file path
  * 2. MemoryLoadLibrary is complex and not needed
  * 3. Steam client provides the runtime dependencies
@@ -430,7 +430,7 @@ inline void bindSteamworksToWebview(WebviewType& w, bool steamEnabled) {
     });
     
     #ifndef NDEBUG
-    std::cout << "🎮 Steamworks bindings: READY (accessible via window.Bakery.Steam)" << std::endl;
+    std::cout << "🎮 Steamworks bindings: READY (accessible via window.Gemcore.Steam)" << std::endl;
     #endif
 }
 
@@ -458,9 +458,9 @@ inline void shutdownSteamworks() {
 }
 
 } // namespace steamworks
-} // namespace bakery
+} // namespace gemcore
 
-#endif // BAKERY_STEAMWORKS_BINDINGS_H
+#endif // GEMCORE_STEAMWORKS_BINDINGS_H
 
 
 

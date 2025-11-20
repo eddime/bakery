@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(BakeryLauncher)
+project(GemcoreLauncher)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -109,8 +109,8 @@ endif()
 # 🚀 CLEAN ARCHITECTURE: Shared HTTP Server + Asset Loader
 # ==================================================
 # All launchers use:
-# - bakery-http-server.h (shared HTTP server with URL decode, writev, etc.)
-# - bakery-asset-loader.h (shared asset loading from embedded/file)
+# - gemcore-http-server.h (shared HTTP server with URL decode, writev, etc.)
+# - gemcore-asset-loader.h (shared asset loading from embedded/file)
 # ==================================================
 
 # ==================================================
@@ -118,17 +118,17 @@ endif()
 # ==================================================
 
 if(APPLE)
-    # bakery-launcher-mac: Uses external bakery-assets file (universal for all games!)
+    # gemcore-launcher-mac: Uses external gemcore-assets file (universal for all games!)
     if(ENABLE_STEAMWORKS)
-        add_executable(bakery-launcher-mac platforms/mac/bakery-launcher-mac.cpp steamworks/bakery-steamworks.cpp)
-        target_compile_definitions(bakery-launcher-mac PRIVATE ENABLE_STEAMWORKS)
+        add_executable(gemcore-launcher-mac platforms/mac/gemcore-launcher-mac.cpp steamworks/gemcore-steamworks.cpp)
+        target_compile_definitions(gemcore-launcher-mac PRIVATE ENABLE_STEAMWORKS)
         message(STATUS "🎮 Building macOS launcher WITH Steamworks")
     else()
-        add_executable(bakery-launcher-mac platforms/mac/bakery-launcher-mac.cpp)
+        add_executable(gemcore-launcher-mac platforms/mac/gemcore-launcher-mac.cpp)
         message(STATUS "📦 Building macOS launcher WITHOUT Steamworks")
     endif()
     
-    target_link_libraries(bakery-launcher-mac 
+    target_link_libraries(gemcore-launcher-mac 
         ${WEBVIEW_LIBS} 
         nlohmann_json::nlohmann_json 
         pthread
@@ -136,13 +136,13 @@ if(APPLE)
     
     # Link Steamworks only if enabled
     if(ENABLE_STEAMWORKS)
-        target_link_libraries(bakery-launcher-mac 
+        target_link_libraries(gemcore-launcher-mac 
             ${CMAKE_SOURCE_DIR}/../deps/steamworks/sdk/redistributable_bin/osx/libsteam_api.dylib
         )
     endif()
     
     # ⚡ OPTIMIZATION: Precompiled headers for faster builds
-    target_precompile_headers(bakery-launcher-mac PRIVATE
+    target_precompile_headers(gemcore-launcher-mac PRIVATE
         <iostream>
         <string>
         <vector>
@@ -154,39 +154,39 @@ if(APPLE)
     )
     
     # MAXIMUM PERFORMANCE optimizations + startup improvements
-    target_compile_options(bakery-launcher-mac PRIVATE
+    target_compile_options(gemcore-launcher-mac PRIVATE
         -O3 -flto -ffast-math -fomit-frame-pointer
         -ffunction-sections -fdata-sections -DNDEBUG
         -finline-functions -funroll-loops
     )
     
     if(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
-        target_compile_options(bakery-launcher-mac PRIVATE -mcpu=apple-m1)
+        target_compile_options(gemcore-launcher-mac PRIVATE -mcpu=apple-m1)
     elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
-        target_compile_options(bakery-launcher-mac PRIVATE -march=x86-64 -mtune=generic)
+        target_compile_options(gemcore-launcher-mac PRIVATE -march=x86-64 -mtune=generic)
     else()
-        target_compile_options(bakery-launcher-mac PRIVATE -march=native -mtune=native)
+        target_compile_options(gemcore-launcher-mac PRIVATE -march=native -mtune=native)
     endif()
     
-    target_link_options(bakery-launcher-mac PRIVATE -flto -Wl,-dead_strip)
+    target_link_options(gemcore-launcher-mac PRIVATE -flto -Wl,-dead_strip)
     
-    add_custom_command(TARGET bakery-launcher-mac POST_BUILD
-        COMMAND strip $<TARGET_FILE:bakery-launcher-mac>
+    add_custom_command(TARGET gemcore-launcher-mac POST_BUILD
+        COMMAND strip $<TARGET_FILE:gemcore-launcher-mac>
         COMMENT "⚡ Stripping macOS launcher..."
     )
     
-    # bakery-universal-launcher: Wrapper that detects architecture and launches correct binary
-    add_executable(bakery-universal-launcher universal/bakery-universal-launcher.cpp)
+    # gemcore-universal-launcher: Wrapper that detects architecture and launches correct binary
+    add_executable(gemcore-universal-launcher universal/gemcore-universal-launcher.cpp)
     if(CMAKE_OSX_ARCHITECTURES MATCHES "arm64;x86_64|x86_64;arm64")
-        set_target_properties(bakery-universal-launcher PROPERTIES
+        set_target_properties(gemcore-universal-launcher PROPERTIES
             OSX_ARCHITECTURES "arm64;x86_64"
         )
     endif()
     
-    target_compile_options(bakery-universal-launcher PRIVATE -O3)
+    target_compile_options(gemcore-universal-launcher PRIVATE -O3)
     
-    add_custom_command(TARGET bakery-universal-launcher POST_BUILD
-        COMMAND strip $<TARGET_FILE:bakery-universal-launcher>
+    add_custom_command(TARGET gemcore-universal-launcher POST_BUILD
+        COMMAND strip $<TARGET_FILE:gemcore-universal-launcher>
         COMMENT "⚡ Stripping universal launcher..."
     )
 endif()
@@ -196,21 +196,21 @@ endif()
 # ==================================================
 
 if(WIN32)
-    # bakery-launcher-win: Uses external bakery-assets file (universal for all games!)
+    # gemcore-launcher-win: Uses external gemcore-assets file (universal for all games!)
     if(ENABLE_STEAMWORKS)
-        add_executable(bakery-launcher-win platforms/win/bakery-launcher-win.cpp steamworks/bakery-steamworks.cpp)
-        target_compile_definitions(bakery-launcher-win PRIVATE ENABLE_STEAMWORKS)
+        add_executable(gemcore-launcher-win platforms/win/gemcore-launcher-win.cpp steamworks/gemcore-steamworks.cpp)
+        target_compile_definitions(gemcore-launcher-win PRIVATE ENABLE_STEAMWORKS)
         message(STATUS "🎮 Building Windows launcher WITH Steamworks")
     else()
-        add_executable(bakery-launcher-win platforms/win/bakery-launcher-win.cpp)
+        add_executable(gemcore-launcher-win platforms/win/gemcore-launcher-win.cpp)
         message(STATUS "📦 Building Windows launcher WITHOUT Steamworks")
     endif()
     
-    target_include_directories(bakery-launcher-win PRIVATE
-        ${CMAKE_SOURCE_DIR}/deps/webview/core/include/webview/detail/platform/windows/webview2-headers
-        ${CMAKE_SOURCE_DIR}/deps/webview/core/include)
+    target_include_directories(gemcore-launcher-win PRIVATE
+        ${CMAKE_SOURCE_DIR}/../deps/webview2-headers
+        ${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
     
-    target_link_libraries(bakery-launcher-win 
+    target_link_libraries(gemcore-launcher-win 
         ${WEBVIEW_LIBS} 
         nlohmann_json::nlohmann_json 
         ws2_32 shlwapi ole32 shell32 user32 version winmm
@@ -218,13 +218,13 @@ if(WIN32)
     
     # Link Steamworks only if enabled
     if(ENABLE_STEAMWORKS)
-        target_link_libraries(bakery-launcher-win 
+        target_link_libraries(gemcore-launcher-win 
             ${CMAKE_SOURCE_DIR}/../deps/steamworks/sdk/redistributable_bin/win64/steam_api64.lib
         )
     endif()
     
     # ⚡ OPTIMIZATION: Precompiled headers for faster builds
-    target_precompile_headers(bakery-launcher-win PRIVATE
+    target_precompile_headers(gemcore-launcher-win PRIVATE
         <iostream>
         <string>
         <vector>
@@ -237,44 +237,44 @@ if(WIN32)
     
     # MAXIMUM PERFORMANCE optimizations + startup improvements
     if(MSVC)
-        target_compile_options(bakery-launcher-win PRIVATE /O2 /GL /Gy /DNDEBUG)
-        target_link_options(bakery-launcher-win PRIVATE /LTCG /OPT:REF /OPT:ICF)
+        target_compile_options(gemcore-launcher-win PRIVATE /O2 /GL /Gy /DNDEBUG)
+        target_link_options(gemcore-launcher-win PRIVATE /LTCG /OPT:REF /OPT:ICF)
     else()
         # MinGW/GCC - SIZE OPTIMIZATION
-        target_compile_options(bakery-launcher-win PRIVATE 
+        target_compile_options(gemcore-launcher-win PRIVATE 
             -Os -DNDEBUG
             -ffunction-sections -fdata-sections
         )
-        target_link_options(bakery-launcher-win PRIVATE 
+        target_link_options(gemcore-launcher-win PRIVATE 
             -Wl,--gc-sections
             -static-libstdc++ -static-libgcc  # Required for Windows (no DLL dependencies)
         )
         
-        add_custom_command(TARGET bakery-launcher-win POST_BUILD
-            COMMAND x86_64-w64-mingw32-strip $<TARGET_FILE:bakery-launcher-win>
+        add_custom_command(TARGET gemcore-launcher-win POST_BUILD
+            COMMAND x86_64-w64-mingw32-strip $<TARGET_FILE:gemcore-launcher-win>
             COMMENT "⚡ Stripping Windows launcher..."
         )
     endif()
     
-    # bakery-universal-launcher-windows-embedded: Single EXE with embedded binaries
-    add_executable(bakery-universal-launcher-windows-embedded universal/bakery-universal-launcher-windows-embedded.cpp)
-    target_link_libraries(bakery-universal-launcher-windows-embedded shlwapi)
+    # gemcore-universal-launcher-windows-embedded: Single EXE with embedded binaries
+    add_executable(gemcore-universal-launcher-windows-embedded universal/gemcore-universal-launcher-windows-embedded.cpp)
+    target_link_libraries(gemcore-universal-launcher-windows-embedded shlwapi)
     if(MSVC)
-        target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE /O2)
+        target_compile_options(gemcore-universal-launcher-windows-embedded PRIVATE /O2)
     else()
         # MinGW: Optimize for size
-        target_compile_options(bakery-universal-launcher-windows-embedded PRIVATE 
+        target_compile_options(gemcore-universal-launcher-windows-embedded PRIVATE 
             -Os -DNDEBUG
             -ffunction-sections -fdata-sections
         )
-        target_link_options(bakery-universal-launcher-windows-embedded PRIVATE 
+        target_link_options(gemcore-universal-launcher-windows-embedded PRIVATE 
             -Wl,--gc-sections
             -static-libstdc++ -static-libgcc  # Required for Windows (no DLL dependencies)
         )
         
         # Strip debug symbols
-        add_custom_command(TARGET bakery-universal-launcher-windows-embedded POST_BUILD
-            COMMAND x86_64-w64-mingw32-strip $<TARGET_FILE:bakery-universal-launcher-windows-embedded>
+        add_custom_command(TARGET gemcore-universal-launcher-windows-embedded POST_BUILD
+            COMMAND x86_64-w64-mingw32-strip $<TARGET_FILE:gemcore-universal-launcher-windows-embedded>
             COMMENT "⚡ Stripping embedded launcher..."
         )
     endif()
@@ -285,21 +285,21 @@ endif()
 # ==================================================
 
 if(UNIX AND NOT APPLE)
-    # bakery-launcher-linux: Uses external bakery-assets file (universal for all games!)
+    # gemcore-launcher-linux: Uses external gemcore-assets file (universal for all games!)
     if(ENABLE_STEAMWORKS)
-        add_executable(bakery-launcher-linux 
-            platforms/linux/bakery-launcher-linux.cpp 
-            steamworks/bakery-steamworks.cpp
+        add_executable(gemcore-launcher-linux 
+            platforms/linux/gemcore-launcher-linux.cpp 
+            steamworks/gemcore-steamworks.cpp
             steamworks/steam-api-stubs.cpp  # Weak symbols for cross-compilation
         )
-        target_compile_definitions(bakery-launcher-linux PRIVATE ENABLE_STEAMWORKS STEAM_API_NODLL)
+        target_compile_definitions(gemcore-launcher-linux PRIVATE ENABLE_STEAMWORKS STEAM_API_NODLL)
         message(STATUS "🎮 Building Linux launcher WITH Steamworks")
     else()
-        add_executable(bakery-launcher-linux platforms/linux/bakery-launcher-linux.cpp)
+        add_executable(gemcore-launcher-linux platforms/linux/gemcore-launcher-linux.cpp)
         message(STATUS "📦 Building Linux launcher WITHOUT Steamworks")
     endif()
     
-    target_link_libraries(bakery-launcher-linux 
+    target_link_libraries(gemcore-launcher-linux 
         ${WEBVIEW_LIBS}
         nlohmann_json::nlohmann_json 
         pthread
@@ -307,7 +307,7 @@ if(UNIX AND NOT APPLE)
     )
     
     # ⚡ OPTIMIZATION: Precompiled headers for faster builds
-    target_precompile_headers(bakery-launcher-linux PRIVATE
+    target_precompile_headers(gemcore-launcher-linux PRIVATE
         <iostream>
         <string>
         <vector>
@@ -327,7 +327,7 @@ if(UNIX AND NOT APPLE)
     endif()
     
     # MAXIMUM PERFORMANCE optimizations + startup improvements
-    target_compile_options(bakery-launcher-linux PRIVATE
+    target_compile_options(gemcore-launcher-linux PRIVATE
         -O3 -flto -ffast-math -fomit-frame-pointer
         -ffunction-sections -fdata-sections -DNDEBUG
         -finline-functions -funroll-loops
@@ -335,10 +335,10 @@ if(UNIX AND NOT APPLE)
     
     # Only use -march=native if not cross-compiling
     if(CMAKE_SYSTEM_PROCESSOR STREQUAL CMAKE_HOST_SYSTEM_PROCESSOR)
-        target_compile_options(bakery-launcher-linux PRIVATE -march=native -mtune=native)
+        target_compile_options(gemcore-launcher-linux PRIVATE -march=native -mtune=native)
     endif()
     
-    target_link_options(bakery-launcher-linux PRIVATE 
+    target_link_options(gemcore-launcher-linux PRIVATE 
         -flto 
         -Wl,--gc-sections
         # Note: Can't use -static-libstdc++ -static-libgcc because we link dynamically to Steam
@@ -347,39 +347,39 @@ if(UNIX AND NOT APPLE)
     # Strip debug symbols (use llvm-strip for cross-compilation)
     find_program(LLVM_STRIP llvm-strip)
     if(LLVM_STRIP)
-        add_custom_command(TARGET bakery-launcher-linux POST_BUILD
-            COMMAND ${LLVM_STRIP} --strip-all $<TARGET_FILE:bakery-launcher-linux>
+        add_custom_command(TARGET gemcore-launcher-linux POST_BUILD
+            COMMAND ${LLVM_STRIP} --strip-all $<TARGET_FILE:gemcore-launcher-linux>
             COMMENT "⚡ Stripping Linux launcher with llvm-strip..."
         )
     else()
         # Fallback to regular strip (might not work for cross-compilation)
-        add_custom_command(TARGET bakery-launcher-linux POST_BUILD
-            COMMAND strip $<TARGET_FILE:bakery-launcher-linux> 2>/dev/null || true
+        add_custom_command(TARGET gemcore-launcher-linux POST_BUILD
+            COMMAND strip $<TARGET_FILE:gemcore-launcher-linux> 2>/dev/null || true
             COMMENT "⚡ Stripping Linux launcher..."
         )
     endif()
     
-    # bakery-universal-launcher-linux: Wrapper that detects architecture (OLD - NOT USED)
-    add_executable(bakery-universal-launcher-linux universal/bakery-universal-launcher-linux.cpp)
-    target_link_libraries(bakery-universal-launcher-linux)
-    target_compile_options(bakery-universal-launcher-linux PRIVATE -O2)
+    # gemcore-universal-launcher-linux: Wrapper that detects architecture (OLD - NOT USED)
+    add_executable(gemcore-universal-launcher-linux universal/gemcore-universal-launcher-linux.cpp)
+    target_link_libraries(gemcore-universal-launcher-linux)
+    target_compile_options(gemcore-universal-launcher-linux PRIVATE -O2)
     
-    add_custom_command(TARGET bakery-universal-launcher-linux POST_BUILD
-        COMMAND strip $<TARGET_FILE:bakery-universal-launcher-linux>
+    add_custom_command(TARGET gemcore-universal-launcher-linux POST_BUILD
+        COMMAND strip $<TARGET_FILE:gemcore-universal-launcher-linux>
         COMMENT "⚡ Stripping universal launcher..."
     )
     
-    # bakery-universal-launcher-linux-embedded: Extracts embedded resources (NEW!)
+    # gemcore-universal-launcher-linux-embedded: Extracts embedded resources (NEW!)
     if(BUILD_UNIVERSAL_LAUNCHER_LINUX)
-        add_executable(bakery-universal-launcher-linux-embedded universal/bakery-universal-launcher-linux-embedded.cpp)
-        target_link_libraries(bakery-universal-launcher-linux-embedded)
+        add_executable(gemcore-universal-launcher-linux-embedded universal/gemcore-universal-launcher-linux-embedded.cpp)
+        target_link_libraries(gemcore-universal-launcher-linux-embedded)
         
         # Minimal size optimizations
-        target_compile_options(bakery-universal-launcher-linux-embedded PRIVATE
+        target_compile_options(gemcore-universal-launcher-linux-embedded PRIVATE
             -Os -DNDEBUG
             -ffunction-sections -fdata-sections
         )
-        target_link_options(bakery-universal-launcher-linux-embedded PRIVATE 
+        target_link_options(gemcore-universal-launcher-linux-embedded PRIVATE 
             -Wl,--gc-sections
             -static-libstdc++ -static-libgcc  # Required for single executable (no .so dependencies)
         )
@@ -387,21 +387,21 @@ if(UNIX AND NOT APPLE)
         # Strip debug symbols (use cross-compiler strip for cross-compilation)
         if(CMAKE_CROSSCOMPILING AND CMAKE_STRIP)
             # Cross-compiling: use toolchain strip (e.g., x86_64-linux-musl-strip)
-            add_custom_command(TARGET bakery-universal-launcher-linux-embedded POST_BUILD
-                COMMAND ${CMAKE_STRIP} --strip-all $<TARGET_FILE:bakery-universal-launcher-linux-embedded>
+            add_custom_command(TARGET gemcore-universal-launcher-linux-embedded POST_BUILD
+                COMMAND ${CMAKE_STRIP} --strip-all $<TARGET_FILE:gemcore-universal-launcher-linux-embedded>
                 COMMENT "⚡ Stripping embedded launcher with ${CMAKE_STRIP}..."
             )
         else()
             # Native build: try llvm-strip first, then strip
             find_program(LLVM_STRIP llvm-strip)
             if(LLVM_STRIP)
-                add_custom_command(TARGET bakery-universal-launcher-linux-embedded POST_BUILD
-                    COMMAND ${LLVM_STRIP} --strip-all $<TARGET_FILE:bakery-universal-launcher-linux-embedded>
+                add_custom_command(TARGET gemcore-universal-launcher-linux-embedded POST_BUILD
+                    COMMAND ${LLVM_STRIP} --strip-all $<TARGET_FILE:gemcore-universal-launcher-linux-embedded>
                     COMMENT "⚡ Stripping embedded launcher with llvm-strip..."
                 )
             else()
-                add_custom_command(TARGET bakery-universal-launcher-linux-embedded POST_BUILD
-                    COMMAND strip $<TARGET_FILE:bakery-universal-launcher-linux-embedded> 2>/dev/null || true
+                add_custom_command(TARGET gemcore-universal-launcher-linux-embedded POST_BUILD
+                    COMMAND strip $<TARGET_FILE:gemcore-universal-launcher-linux-embedded> 2>/dev/null || true
                     COMMENT "⚡ Stripping embedded launcher..."
                 )
             endif()

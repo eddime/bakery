@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
-// 🥐 Bakery Shared Assets Builder
-// Creates a single "bakery-assets" file that can be shared across architectures
+// 🥐 Gemcore Shared Assets Builder
+// Creates a single "gemcore-assets" file that can be shared across architectures
 // 🔒 With XOR Encryption for asset protection
 
 import { readdirSync, statSync, readFileSync, writeFileSync, existsSync } from 'fs';
@@ -17,17 +17,17 @@ if (!projectDir || !outputPath) {
 
 const srcDir = join(projectDir, 'src');
 
-console.log('📦 Bakery Shared Assets Builder');
+console.log('📦 Gemcore Shared Assets Builder');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log(`📁 Source: ${srcDir}`);
 console.log(`📄 Output: ${outputPath}`);
 console.log('');
 
 // 🔒 Generate unique encryption key for this project
-const projectName = projectDir.split('/').pop() || 'bakery';
+const projectName = projectDir.split('/').pop() || 'gemcore';
 const salt = randomBytes(16).toString('hex');
 const encryptionKey = createHash('sha256')
-  .update(`${projectName}-${salt}-bakery-2024`)
+  .update(`${projectName}-${salt}-gemcore-2024`)
   .digest();
 
 console.log('🔐 Encryption enabled');
@@ -72,25 +72,25 @@ function collectFiles(dir: string, baseDir: string = dir): Array<{ path: string;
 const files = collectFiles(srcDir);
 
 // 🚀 Add WebGPU helper script (universal, framework-agnostic)
-const webgpuHelperPath = join(import.meta.dir, '..', 'launcher', 'assets', 'bakery-webgpu-helper.js');
+const webgpuHelperPath = join(import.meta.dir, '..', 'launcher', 'assets', 'gemcore-webgpu-helper.js');
 const webgpuHelper = readFileSync(webgpuHelperPath);
-files.push({ path: 'bakery-webgpu-helper.js', data: webgpuHelper });
+files.push({ path: 'gemcore-webgpu-helper.js', data: webgpuHelper });
 
 // 🎮 Add Steamworks wrapper script (if Steamworks is enabled)
-const steamworksWrapperPath = join(import.meta.dir, '..', 'launcher', 'steamworks', 'bakery-steamworks-wrapper.js');
+const steamworksWrapperPath = join(import.meta.dir, '..', 'launcher', 'steamworks', 'gemcore-steamworks-wrapper.js');
 if (existsSync(steamworksWrapperPath)) {
   const steamworksWrapper = readFileSync(steamworksWrapperPath);
-  files.push({ path: 'bakery-steamworks-wrapper.js', data: steamworksWrapper });
+  files.push({ path: 'gemcore-steamworks-wrapper.js', data: steamworksWrapper });
 }
 
-// 🔒 Embed bakery.config.json (encrypted, not accessible to user)
-const configJsonPath = join(projectDir, 'bakery.config.json');
-const configJsPath = join(projectDir, 'bakery.config.js');
+// 🔒 Embed gemcore.config.json (encrypted, not accessible to user)
+const configJsonPath = join(projectDir, 'gemcore.config.json');
+const configJsPath = join(projectDir, 'gemcore.config.js');
 let config: any = null;
 
 if (existsSync(configJsonPath)) {
   const configData = readFileSync(configJsonPath);
-  files.push({ path: '.bakery-config.json', data: configData });
+  files.push({ path: '.gemcore-config.json', data: configData });
   config = JSON.parse(configData.toString());
   console.log('🔒 Config embedded (JSON)');
 } else if (existsSync(configJsPath)) {
@@ -98,7 +98,7 @@ if (existsSync(configJsonPath)) {
   const configModule = await import(`file://${configJsPath}`);
   config = configModule.default;
   const configJson = JSON.stringify(config, null, 2);
-  files.push({ path: '.bakery-config.json', data: Buffer.from(configJson) });
+  files.push({ path: '.gemcore-config.json', data: Buffer.from(configJson) });
   console.log('🔒 Config embedded (from JS)');
 }
 
@@ -141,7 +141,7 @@ console.log(`✅ Collected ${files.length} files (+ WebGPU helper + config + ico
 console.log('');
 
 // Build binary format:
-// [8 bytes: Magic header "BAKERY1\0"]
+// [8 bytes: Magic header "GEMCORE1\0"]
 // [32 bytes: Encryption key]
 // [uint32: file count]
 // For each file:
@@ -153,8 +153,8 @@ console.log('');
 
 const buffers: Buffer[] = [];
 
-// Magic header (identifies encrypted bakery-assets)
-const magicHeader = Buffer.from('BAKERY1\0', 'utf8');
+// Magic header (identifies encrypted gemcore-assets)
+const magicHeader = Buffer.from('GEMCORE1\0', 'utf8');
 buffers.push(magicHeader);
 
 // Encryption key (needed for decryption)

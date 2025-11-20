@@ -1,5 +1,5 @@
 /**
- * 🥐 Bakery HTTP Server - SHARED ACROSS ALL PLATFORMS
+ * 🥐 Gemcore HTTP Server - SHARED ACROSS ALL PLATFORMS
  * 
  * Universal, high-performance HTTP server for serving embedded assets
  * with all optimizations:
@@ -10,8 +10,8 @@
  * - Pre-cached responses with iovec
  */
 
-#ifndef BAKERY_HTTP_SERVER_H
-#define BAKERY_HTTP_SERVER_H
+#ifndef GEMCORE_HTTP_SERVER_H
+#define GEMCORE_HTTP_SERVER_H
 
 #include <string>
 #include <unordered_map>
@@ -34,7 +34,7 @@
     #include <arpa/inet.h>
 #endif
 
-namespace bakery {
+namespace gemcore {
 namespace http {
 
 /**
@@ -184,12 +184,12 @@ public:
                 Response resp;
                 
                 // 🚀 INJECT WebGPU helper into HTML files (PHASE 1 TOO!)
-                // Note: Steamworks wrapper is injected directly in launcher (after window.Bakery)
+                // Note: Steamworks wrapper is injected directly in launcher (after window.Gemcore)
                 bool isHTML = asset.mimeType.find("html") != std::string::npos;
                 
                 if (isHTML) {
                     // Get WebGPU helper script content (inline for immediate execution!)
-                    auto webgpuAsset = getAsset_("bakery-webgpu-helper.js");
+                    auto webgpuAsset = getAsset_("gemcore-webgpu-helper.js");
                     std::string webgpuScript;
                     if (webgpuAsset.data && webgpuAsset.size > 0) {
                         webgpuScript = std::string(reinterpret_cast<const char*>(webgpuAsset.data), webgpuAsset.size);
@@ -265,12 +265,12 @@ public:
             Response resp;
             
             // 🚀 INJECT WebGPU helper into HTML files (universal, framework-agnostic)
-            // Note: Steamworks wrapper is injected directly in launcher (after window.Bakery)
+            // Note: Steamworks wrapper is injected directly in launcher (after window.Gemcore)
             bool isHTML = asset.mimeType.find("html") != std::string::npos;
             
             if (isHTML) {
                 // Get WebGPU helper script content (inline for immediate execution!)
-                auto webgpuAsset = getAsset_("bakery-webgpu-helper.js");
+                auto webgpuAsset = getAsset_("gemcore-webgpu-helper.js");
                 std::string webgpuScript;
                 if (webgpuAsset.data && webgpuAsset.size > 0) {
                     webgpuScript = std::string(reinterpret_cast<const char*>(webgpuAsset.data), webgpuAsset.size);
@@ -279,7 +279,7 @@ public:
                     #endif
                 } else {
                     #ifndef NDEBUG
-                    std::cerr << "❌ WARNING: bakery-webgpu-helper.js NOT FOUND!" << std::endl;
+                    std::cerr << "❌ WARNING: gemcore-webgpu-helper.js NOT FOUND!" << std::endl;
                     #endif
                 }
                 
@@ -485,7 +485,7 @@ private:
 };
 
 } // namespace http
-} // namespace bakery
+} // namespace gemcore
 
-#endif // BAKERY_HTTP_SERVER_H
+#endif // GEMCORE_HTTP_SERVER_H
 

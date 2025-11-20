@@ -32,8 +32,8 @@ function packSingleEXE(
   const x64Binary = readFileSync(x64BinaryPath);
   console.log(`✅ x64 Binary: ${(x64Binary.length / 1024 / 1024).toFixed(1)}MB`);
 
-  // Read bakery-assets
-  const assetsPath = join(dirname(x64BinaryPath), '..', 'bakery-assets');
+  // Read gemcore-assets
+  const assetsPath = join(dirname(x64BinaryPath), '..', 'gemcore-assets');
   const assets = readFileSync(assetsPath);
   console.log(`✅ Assets: ${(assets.length / 1024 / 1024).toFixed(1)}MB`);
   
@@ -82,7 +82,7 @@ function packSingleEXE(
   }
 
   // Create header
-  const magic = Buffer.from('BAKERY_EMBEDDED\0', 'utf8');
+  const magic = Buffer.from('GEMCORE_EMBEDDED\0', 'utf8');
   const header = Buffer.alloc(64); // Increased from 48 to 64 for Steam DLL
   
   header.writeBigUInt64LE(x64Offset, 0);

@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// 🥐 Bakery CLI - Standalone Edition
+// 🥐 Gemcore CLI - Standalone Edition
 // No dependencies, just Bun!
 
 import { parseArgs } from 'util';
@@ -31,15 +31,15 @@ async function ensurePrebuiltBinaries() {
   }
 }
 
-// Load bakery.config.js if it exists
+// Load gemcore.config.js if it exists
 async function loadConfig() {
-  const configPath = resolve('./bakery.config.js');
+  const configPath = resolve('./gemcore.config.js');
   if (existsSync(configPath)) {
     try {
       const config = await import(configPath);
       return config.default || config;
     } catch (err) {
-      console.warn('⚠️  Warning: Failed to load bakery.config.js:', err.message);
+      console.warn('⚠️  Warning: Failed to load gemcore.config.js:', err.message);
     }
   }
   return null;
@@ -84,7 +84,7 @@ async function main() {
 // DEV COMMAND
 // ==============================================
 async function devCommand(args: string[]) {
-  console.log('🥐 Bakery Development Mode\n');
+  console.log('🥐 Gemcore Development Mode\n');
 
   const { values } = parseArgs({
     args,
@@ -104,14 +104,14 @@ async function devCommand(args: string[]) {
     const projectName = values.project as string;
     const projectPath = config.projects[projectName];
     if (!projectPath) {
-      console.error(`❌ Project "${projectName}" not found in bakery.config.js`);
+      console.error(`❌ Project "${projectName}" not found in gemcore.config.js`);
       console.log('Available projects:', Object.keys(config.projects).join(', '));
       process.exit(1);
     }
     projectDir = resolve(projectPath);
   } else {
     const currentDir = resolve('.');
-    const hasConfig = existsSync(join(currentDir, 'bakery.config.js'));
+    const hasConfig = existsSync(join(currentDir, 'gemcore.config.js'));
     const hasSrc = existsSync(join(currentDir, 'src'));
     
     if (hasConfig && hasSrc) {
@@ -122,14 +122,14 @@ async function devCommand(args: string[]) {
     } else {
       console.error('❌ No project directory specified');
       console.error('💡 Usage: ./bake dev --dir <project-dir>');
-      console.error('💡 Or set defaultProject in bakery.config.js');
+      console.error('💡 Or set defaultProject in gemcore.config.js');
       process.exit(1);
     }
   }
   
-  const configPath = join(projectDir, 'bakery.config.js');
+  const configPath = join(projectDir, 'gemcore.config.js');
   if (!existsSync(configPath)) {
-    console.error('❌ No bakery.config.js found in', projectDir);
+    console.error('❌ No gemcore.config.js found in', projectDir);
     process.exit(1);
   }
 
@@ -154,7 +154,7 @@ async function devCommand(args: string[]) {
 // BUILD COMMAND
 // ==============================================
 async function buildCommand(args: string[]) {
-  console.log('🥐 Bakery Build\n');
+  console.log('🥐 Gemcore Build\n');
 
   const { values } = parseArgs({
     args,
@@ -176,7 +176,7 @@ async function buildCommand(args: string[]) {
     const projectName = values.project as string;
     const projectPath = config.projects[projectName];
     if (!projectPath) {
-      console.error(`❌ Project "${projectName}" not found in bakery.config.js`);
+      console.error(`❌ Project "${projectName}" not found in gemcore.config.js`);
       console.log('Available projects:', Object.keys(config.projects).join(', '));
       process.exit(1);
     }
@@ -187,21 +187,21 @@ async function buildCommand(args: string[]) {
   } else {
     console.error('❌ No project specified');
     console.error('💡 Usage: ./bake all --dir <project-dir>');
-    console.error('💡 Or set defaultProject in bakery.config.js');
+    console.error('💡 Or set defaultProject in gemcore.config.js');
     process.exit(1);
   }
   
   const platform = values.platform as string;
   const shouldRun = values.run as boolean;
 
-  const configPath = join(projectDir, 'bakery.config.js');
+  const configPath = join(projectDir, 'gemcore.config.js');
   if (!existsSync(configPath)) {
-    console.error('❌ No bakery.config.js found in', projectDir);
+    console.error('❌ No gemcore.config.js found in', projectDir);
     process.exit(1);
   }
 
   const projectConfig = await import(configPath);
-  const appName = projectConfig.default?.app?.name || 'BakeryApp';
+  const appName = projectConfig.default?.app?.name || 'GemcoreApp';
 
   console.log('📁 Project:', projectDir);
   console.log('🏗️  Platform:', platform);
@@ -235,7 +235,7 @@ async function buildCommand(args: string[]) {
   // ⚡ OPTIMIZATION: Build assets ONCE for all platforms
   if (platforms.length > 1) {
     console.log('⚡ Building shared assets once for all platforms...\n');
-    const assetsPath = join(FRAMEWORK_DIR, 'launcher', 'bakery-assets');
+    const assetsPath = join(FRAMEWORK_DIR, 'launcher', 'gemcore-assets');
     const embedProc = Bun.spawn(['bun', join(FRAMEWORK_DIR, 'scripts', 'embed-assets-shared.ts'), projectDir, assetsPath], {
       cwd: FRAMEWORK_DIR,
       stdout: 'inherit',
@@ -246,7 +246,7 @@ async function buildCommand(args: string[]) {
     // Copy to macOS build location
     const buildDir = join(FRAMEWORK_DIR, 'launcher', 'build-shared');
     mkdirSync(buildDir, { recursive: true });
-    cpSync(assetsPath, join(buildDir, 'bakery-assets'));
+    cpSync(assetsPath, join(buildDir, 'gemcore-assets'));
     
     console.log('✅ Shared assets ready for all platforms!\n');
   }
@@ -290,10 +290,10 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   await buildProc.exited;
 
   const sharedDir = join(frameworkDir, 'launcher', 'build-shared');
-  const launcherPath = join(sharedDir, 'bakery-universal');
-  const arm64Binary = join(sharedDir, 'bakery-arm64');
-  const x64Binary = join(sharedDir, 'bakery-x86_64');
-  const assetsFile = join(sharedDir, 'bakery-assets');
+  const launcherPath = join(sharedDir, 'gemcore-universal');
+  const arm64Binary = join(sharedDir, 'gemcore-arm64');
+  const x64Binary = join(sharedDir, 'gemcore-x86_64');
+  const assetsFile = join(sharedDir, 'gemcore-assets');
   
   if (!existsSync(launcherPath) || !existsSync(arm64Binary) || !existsSync(x64Binary) || !existsSync(assetsFile)) {
     console.error('❌ Shared universal build failed!');
@@ -326,7 +326,7 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   cpSync(x64Binary, join(macOSDir, `${appName}-x86_64`));
   chmodSync(join(macOSDir, `${appName}-x86_64`), 0o755);
   
-  cpSync(assetsFile, join(macOSDir, 'bakery-assets'));
+  cpSync(assetsFile, join(macOSDir, 'gemcore-assets'));
   
   // 🎮 Copy Steam DLL only if Steamworks is enabled
   if (projectConfig.default?.steamworks?.enabled) {
@@ -344,7 +344,7 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
     }
   }
   
-  // 🔒 Config is now embedded in bakery-assets (encrypted, not accessible to user)
+  // 🔒 Config is now embedded in gemcore-assets (encrypted, not accessible to user)
 
   console.log('✅ Universal launcher (detects architecture)');
   console.log('✅ ARM64 launcher (228 KB)');
@@ -368,7 +368,7 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
     <key>CFBundleExecutable</key>
     <string>${appName}</string>
     <key>CFBundleIdentifier</key>
-    <string>com.bakery.${appName.toLowerCase()}</string>
+    <string>com.gemcore.${appName.toLowerCase()}</string>
     <key>CFBundleName</key>
     <string>${appName}</string>
     <key>CFBundleDisplayName</key>
@@ -478,7 +478,7 @@ async function releaseCommand(args: string[]) {
 
   const projectDir = values.dir ? resolve(values.dir as string) : process.cwd();
   
-  console.log('🚀 Bakery Release Build (Mac + Windows)\n');
+  console.log('🚀 Gemcore Release Build (Mac + Windows)\n');
   console.log(`📂 Project: ${projectDir}`);
   console.log('');
 
@@ -499,7 +499,7 @@ async function releaseCommand(args: string[]) {
 // ==============================================
 function helpCommand() {
   console.log(`
-🥐 Bakery CLI
+🥐 Gemcore CLI
 
 Usage: bake <command> [options]
 
@@ -516,11 +516,11 @@ Commands:
 Options:
   dev:
     -d, --dir <path>       Project directory
-    -p, --project <name>   Named project from bakery.config.js
+    -p, --project <name>   Named project from gemcore.config.js
     
   build:
     -d, --dir <path>       Project directory
-    -p, --project <name>   Named project from bakery.config.js
+    -p, --project <name>   Named project from gemcore.config.js
     --platform <name>      Platform: mac, win, linux, all (default: mac)
     -r, --run              Run after building (mac only)
 
@@ -530,7 +530,7 @@ Examples:
   bake mac                   Build for macOS
   bake all                   Build for all platforms
 
-Documentation: https://github.com/eddime/bakery
+Documentation: https://github.com/eddime/gemcore
 `);
 }
 

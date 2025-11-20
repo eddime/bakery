@@ -116,7 +116,7 @@ async function packSingleExecutable(
   }
   
   // Create header (64 bytes total)
-  // Magic: "BAKERY_EMBEDDED\0" (16 bytes)
+  // Magic: "GEMCORE_EMBEDDED\0" (16 bytes)
   // x64Offset: 8 bytes
   // x64Size: 8 bytes
   // assetsOffset: 8 bytes
@@ -126,7 +126,7 @@ async function packSingleExecutable(
   // steamSoOffset: 8 bytes
   // steamSoSize: 8 bytes
   const header = Buffer.alloc(64);
-  header.write('BAKERY_EMBEDDED', 0, 'utf-8');
+  header.write('GEMCORE_EMBEDDED', 0, 'utf-8');
   header.writeBigUInt64LE(data.x64Offset, 16);
   header.writeBigUInt64LE(data.x64Size, 24);
   header.writeBigUInt64LE(data.assetsOffset, 32);

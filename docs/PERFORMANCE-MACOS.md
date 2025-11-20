@@ -46,7 +46,7 @@ Game → WebView → GPU → Display
 | **Fenster** | 55-60 | 16-20ms | ⚠️ Ja |
 | **Fullscreen** | 60 | 16.6ms | ✅ Nein |
 
-## ✅ **Was Bakery macht (automatisch):**
+## ✅ **Was Gemcore macht (automatisch):**
 
 ### **System-Level:**
 1. ✅ REALTIME Process Priority (`-20`)
@@ -79,7 +79,7 @@ export default {
 ### **2. Hinweis für Spieler:**
 ```javascript
 // In deinem Game:
-if (window.Bakery.platform === 'macos') {
+if (window.Gemcore.platform === 'macos') {
   console.log('💡 Tipp: Drücke F11 für Fullscreen (bessere Performance!)');
 }
 ```
@@ -102,13 +102,13 @@ if (avgFPS < 50 && !document.fullscreenElement) {
 ## 📈 **Was du erwarten kannst:**
 
 ### **Fenster-Modus:**
-- ✅ Alle Bakery-Optimierungen aktiv
+- ✅ Alle Gemcore-Optimierungen aktiv
 - ✅ Smooth 60 FPS (meistens)
 - ⚠️ Gelegentliches Micro-Stuttering (WindowServer Overhead)
 - ⚠️ Höhere Latenz (~1-2ms)
 
 ### **Fullscreen-Modus:**
-- ✅ Alle Bakery-Optimierungen aktiv
+- ✅ Alle Gemcore-Optimierungen aktiv
 - ✅ Perfekt smooth 60 FPS
 - ✅ Kein Micro-Stuttering
 - ✅ Minimale Latenz
@@ -134,9 +134,9 @@ Dieses Problem betrifft **ALLE** macOS Apps:
 - Unreal Engine
 - Electron Apps
 - Native Apps
-- **Bakery Apps**
+- **Gemcore Apps**
 
-**Fullscreen ist IMMER schneller!** Das ist macOS-Architektur, nicht Bakery.
+**Fullscreen ist IMMER schneller!** Das ist macOS-Architektur, nicht Gemcore.
 
 ## 📚 **Quellen:**
 
@@ -146,5 +146,5 @@ Dieses Problem betrifft **ALLE** macOS Apps:
 
 ---
 
-**TL;DR**: Fullscreen ist schneller weil WindowServer umgangen wird. Das ist normal und kann nicht gefixt werden. Bakery optimiert beide Modi, aber Fullscreen wird IMMER besser sein. 🎯
+**TL;DR**: Fullscreen ist schneller weil WindowServer umgangen wird. Das ist normal und kann nicht gefixt werden. Gemcore optimiert beide Modi, aber Fullscreen wird IMMER besser sein. 🎯
 

@@ -2,7 +2,7 @@
 
 ## Overview
 
-Like Neutralino, Bakery requires **native Linux builds** for Linux binaries. This ensures compatibility with all Linux distributions (Ubuntu, Debian, Fedora, etc.).
+Like Neutralino, Gemcore requires **native Linux builds** for Linux binaries. This ensures compatibility with all Linux distributions (Ubuntu, Debian, Fedora, etc.).
 
 ## Why Native Builds?
 
@@ -37,10 +37,10 @@ curl -fsSL https://bun.sh/install | bash
 
 ```bash
 # Build Docker image
-docker build -f Dockerfile.linux -t bakery-linux .
+docker build -f Dockerfile.linux -t gemcore-linux .
 
 # Build Linux binaries
-docker run --rm -v $(pwd):/work bakery-linux
+docker run --rm -v $(pwd):/work gemcore-linux
 
 # Or use the script
 ./scripts/build-linux-docker.sh ./examples/stress-test
@@ -52,11 +52,11 @@ Pre-built binaries are automatically built on GitHub Actions and available for d
 
 ```bash
 # Download from GitHub Releases
-curl -L -o bakery-launcher-linux-x64 \
-  https://github.com/eddime/bakery/releases/download/latest/bakery-launcher-linux-x64
+curl -L -o gemcore-launcher-linux-x64 \
+  https://github.com/eddime/gemcore/releases/download/latest/gemcore-launcher-linux-x64
 
-curl -L -o bakery-universal-launcher-linux-embedded \
-  https://github.com/eddime/bakery/releases/download/latest/bakery-universal-launcher-linux-embedded
+curl -L -o gemcore-universal-launcher-linux-embedded \
+  https://github.com/eddime/gemcore/releases/download/latest/gemcore-universal-launcher-linux-embedded
 ```
 
 The build script automatically downloads these if available.

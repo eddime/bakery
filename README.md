@@ -1,4 +1,4 @@
-# 🥐 Bakery
+# 🥐 Gemcore
 
 **The fastest way to package HTML5 games as native desktop apps.**
 
@@ -23,8 +23,8 @@ Cross-platform game launcher with WebView - like Neutralino, but optimized for g
 
 ```bash
 # 1. Clone or add as submodule
-git clone https://github.com/eddime/bakery.git
-cd bakery
+git clone https://github.com/eddime/gemcore.git
+cd gemcore
 
 # 2. Setup (downloads pre-built binaries once)
 bun scripts/setup.ts
@@ -38,7 +38,7 @@ bun bake build --platform=all
 
 **That's it!** No CMake, no compilers, no build tools needed.
 
-After initial setup, Bakery works **100% offline**!
+After initial setup, Gemcore works **100% offline**!
 
 ---
 
@@ -57,7 +57,7 @@ After initial setup, Bakery works **100% offline**!
 ## 🏗️ How It Works (Like Neutralino)
 
 ### For End-Users
-Bakery uses **pre-built binaries** downloaded from GitHub Releases:
+Gemcore uses **pre-built binaries** downloaded from GitHub Releases:
 
 ```
 bake all
@@ -90,20 +90,20 @@ git commit -m "Update launcher binaries"
 ## 📁 Project Structure
 
 ```
-bakery/
+gemcore/
 ├── bin/                          ← Pre-built binaries (committed!)
-│   ├── mac-arm64/bakery-launcher    (173 KB)
-│   ├── mac-x64/bakery-launcher      (188 KB)
-│   ├── linux-x64/bakery-launcher    (9.7 MB)
-│   ├── linux-arm64/bakery-launcher  (10 MB)
+│   ├── mac-arm64/gemcore-launcher    (173 KB)
+│   ├── mac-x64/gemcore-launcher      (188 KB)
+│   ├── linux-x64/gemcore-launcher    (9.7 MB)
+│   ├── linux-arm64/gemcore-launcher  (10 MB)
 │   └── win-x64/                     (built on CI)
 │
 ├── launcher/                     ← C++ source (for developers)
-│   ├── bakery-launcher-mac.cpp
-│   ├── bakery-launcher-win.cpp
-│   ├── bakery-launcher-linux.cpp
-│   ├── bakery-http-server.h
-│   └── bakery-asset-loader.h
+│   ├── gemcore-launcher-mac.cpp
+│   ├── gemcore-launcher-win.cpp
+│   ├── gemcore-launcher-linux.cpp
+│   ├── gemcore-http-server.h
+│   └── gemcore-asset-loader.h
 │
 ├── scripts/
 │   ├── build-launchers.ts        ← Rebuild C++ binaries
@@ -120,7 +120,7 @@ bakery/
 
 ## 🔧 Configuration
 
-Create `bakery.config.js` in your game directory:
+Create `gemcore.config.js` in your game directory:
 
 ```javascript
 export default {
@@ -162,7 +162,7 @@ bun run download:binaries   # Download pre-built binaries
 
 ## 🎯 Comparison with Neutralino
 
-| Feature | Bakery | Neutralino |
+| Feature | Gemcore | Neutralino |
 |---------|--------|------------|
 | **Target** | HTML5 Games | General Apps |
 | **Startup** | ~50ms | ~100ms |
@@ -222,13 +222,13 @@ End-users will automatically download these binaries when they run `bake`.
 
 ## 🎨 Bunery GUI (Coming Soon)
 
-Visual interface for Bakery - like GemShell but better:
+Visual interface for Gemcore - like GemShell but better:
 
 - Drag & drop game creation
 - Live preview
 - One-click multi-platform builds
 - Asset management
-- Built with Tauri (native WebView, like Bakery itself!)
+- Built with Tauri (native WebView, like Gemcore itself!)
 
 ---
 
@@ -249,10 +249,10 @@ Inspired by:
 
 ## 🔗 Links
 
-- [Documentation](https://github.com/eddime/bakery/wiki)
+- [Documentation](https://github.com/eddime/gemcore/wiki)
 - [Examples](./examples/)
-- [Discord Community](https://discord.gg/bakery)
-- [Report Issues](https://github.com/eddime/bakery/issues)
+- [Discord Community](https://discord.gg/gemcore)
+- [Report Issues](https://github.com/eddime/gemcore/issues)
 
 ---
 

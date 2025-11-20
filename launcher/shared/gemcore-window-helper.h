@@ -1,15 +1,15 @@
 /**
- * 🪟 Bakery Window Helper
+ * 🪟 Gemcore Window Helper
  * Cross-platform window management wrapper
  * Abstracts native OS window APIs (macOS NSWindow, Windows HWND)
  */
 
-#ifndef BAKERY_WINDOW_HELPER_H
-#define BAKERY_WINDOW_HELPER_H
+#ifndef GEMCORE_WINDOW_HELPER_H
+#define GEMCORE_WINDOW_HELPER_H
 
 #include <string>
 
-namespace bakery {
+namespace gemcore {
 namespace window {
 
 #ifdef __APPLE__
@@ -94,7 +94,7 @@ inline void enablePersistentGameMode() {
     Class nsStringClass = objc_getClass("NSString");
     SEL stringWithUTF8Sel = sel_registerName("stringWithUTF8String:");
     id reasonStr = ((id (*)(Class, SEL, const char*))objc_msgSend)(
-        nsStringClass, stringWithUTF8Sel, "Bakery Game - Latency Critical"
+        nsStringClass, stringWithUTF8Sel, "Gemcore Game - Latency Critical"
     );
     
     // CRITICAL: Use local static with initialization guard
@@ -197,8 +197,8 @@ inline void enablePersistentGameMode() {
 #endif
 
 } // namespace window
-} // namespace bakery
+} // namespace gemcore
 
-#endif // BAKERY_WINDOW_HELPER_H
+#endif // GEMCORE_WINDOW_HELPER_H
 
 

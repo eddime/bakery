@@ -24,7 +24,7 @@
 #include <mach/thread_policy.h>
 #include <sys/resource.h>
 
-namespace bakery {
+namespace gemcore {
 namespace universal {
 
 // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -67,7 +67,7 @@ inline void preventAppNap() {
     id reason = ((id(*)(id, SEL, const char*))objc_msgSend)(
         (id)objc_getClass("NSString"),
         sel_registerName("stringWithUTF8String:"),
-        "Bakery Game Running"
+        "Gemcore Game Running"
     );
     
     id activity = ((id(*)(id, SEL, unsigned long long, id))objc_msgSend)(
@@ -141,10 +141,10 @@ inline void enableUniversalPerformance(webview::webview& w) {
     // 🎨 CSS Hardware Acceleration Hints (inject once on load)
     // ═══════════════════════════════════════════════════════════
     const injectCSS = () => {
-        if (document.getElementById('bakery-perf-css')) return; // Already injected
+        if (document.getElementById('gemcore-perf-css')) return; // Already injected
         
         const style = document.createElement('style');
-        style.id = 'bakery-perf-css';
+        style.id = 'gemcore-perf-css';
         style.textContent = `
             /* Force GPU layers for common game containers */
             body, html {
@@ -271,7 +271,7 @@ inline void enableUniversalPerformance(webview::webview& w) {
     // ═══════════════════════════════════════════════════════════
     // ✅ Ready!
     // ═══════════════════════════════════════════════════════════
-    console.log('⚡ Bakery Universal Performance: Active');
+    console.log('⚡ Gemcore Universal Performance: Active');
     console.log('   ✓ GPU Acceleration');
     console.log('   ✓ WebGL Optimization');
     console.log('   ✓ Audio Auto-Resume');
@@ -281,12 +281,12 @@ inline void enableUniversalPerformance(webview::webview& w) {
 }
 
 } // namespace universal
-} // namespace bakery
+} // namespace gemcore
 
 #elif defined(_WIN32)
 // Windows implementation
 #include <windows.h>
-namespace bakery {
+namespace gemcore {
 namespace universal {
 inline void enableUniversalPerformance(webview::webview& w) {
     SetPriorityClass(GetCurrentProcess(), HIGH_PRIORITY_CLASS);
@@ -296,12 +296,12 @@ inline void enableUniversalPerformance(webview::webview& w) {
     w.init(R"JS(/* Same JS code as above */)JS");
 }
 } // namespace universal
-} // namespace bakery
+} // namespace gemcore
 
 #else
 // Linux implementation
 #include <sys/resource.h>
-namespace bakery {
+namespace gemcore {
 namespace universal {
 inline void enableUniversalPerformance(webview::webview& w) {
     setpriority(PRIO_PROCESS, 0, -10);
@@ -310,7 +310,7 @@ inline void enableUniversalPerformance(webview::webview& w) {
     w.init(R"JS(/* Same JS code as above */)JS");
 }
 } // namespace universal
-} // namespace bakery
+} // namespace gemcore
 
 #endif
 

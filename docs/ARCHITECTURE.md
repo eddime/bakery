@@ -1,17 +1,17 @@
-# 🥐 Bakery Architecture
+# 🥐 Gemcore Architecture
 
 ## 📦 Dual-Mode System
 
 ### For End-Users (No Compiler Needed)
 ```bash
-bun install -g bakery
+bun install -g gemcore
 bake all --dir my-game    # Uses pre-built binaries
 ```
 
 ### For Developers (Full Source Access)
 ```bash
-git clone https://github.com/eddime/bakery
-cd bakery
+git clone https://github.com/eddime/gemcore
+cd gemcore
 bun install
 bun run build:launchers   # Rebuilds all binaries with CMake
 ```
@@ -21,25 +21,25 @@ bun run build:launchers   # Rebuilds all binaries with CMake
 ## 📁 Project Structure
 
 ```
-bakery/
+gemcore/
 ├── bin/                           ← Pre-built launcher binaries (committed)
 │   ├── mac-arm64/
-│   │   └── bakery-launcher        (176 KB)
+│   │   └── gemcore-launcher        (176 KB)
 │   ├── mac-x64/
-│   │   └── bakery-launcher        (188 KB)
+│   │   └── gemcore-launcher        (188 KB)
 │   ├── win-x64/
-│   │   └── bakery-launcher.exe    (~200 KB)
+│   │   └── gemcore-launcher.exe    (~200 KB)
 │   ├── linux-x64/
-│   │   └── bakery-launcher        (~180 KB)
+│   │   └── gemcore-launcher        (~180 KB)
 │   └── linux-arm64/
-│       └── bakery-launcher        (~180 KB)
+│       └── gemcore-launcher        (~180 KB)
 │
 ├── launcher/                      ← C++ Source Code (for developers)
-│   ├── bakery-launcher-mac.cpp
-│   ├── bakery-launcher-win.cpp
-│   ├── bakery-launcher-linux.cpp
-│   ├── bakery-http-server.h
-│   ├── bakery-asset-loader.h
+│   ├── gemcore-launcher-mac.cpp
+│   ├── gemcore-launcher-win.cpp
+│   ├── gemcore-launcher-linux.cpp
+│   ├── gemcore-http-server.h
+│   ├── gemcore-asset-loader.h
 │   └── CMakeLists.txt
 │
 ├── scripts/                       ← Build scripts (TypeScript/Bun)
@@ -116,10 +116,10 @@ bakery/
 
 ## 🚀 Future: Bunery GUI
 
-Visual interface for Bakery:
+Visual interface for Gemcore:
 - Drag & drop game creation
 - Live preview
 - One-click multi-platform builds
 - Asset management
-- Built with Tauri (native WebView, like Bakery itself!)
+- Built with Tauri (native WebView, like Gemcore itself!)
 

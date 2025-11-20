@@ -18,14 +18,14 @@ fi
 
 # Build Docker image
 echo "📦 Building Docker image..."
-docker build -f Dockerfile.linux -t bakery-linux . || {
+docker build -f Dockerfile.linux -t gemcore-linux . || {
     echo "❌ Docker build failed!"
     exit 1
 }
 
 echo ""
 echo "🔨 Building Linux binaries in Docker container..."
-docker run --rm -v "$(pwd)":/work bakery-linux bash -c "./bake linux --dir $PROJECT_DIR"
+docker run --rm -v "$(pwd)":/work gemcore-linux bash -c "./bake linux --dir $PROJECT_DIR"
 
 echo ""
 echo "✅ Linux binaries built successfully!"

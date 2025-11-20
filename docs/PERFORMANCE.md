@@ -1,4 +1,4 @@
-# 🚀 Bakery Performance Optimizations
+# 🚀 Gemcore Performance Optimizations
 
 ## High-Performance Mode (Alle Plattformen)
 
@@ -61,7 +61,7 @@ export default {
 
 #### API:
 ```javascript
-window.BakeryGPU.info = {
+window.GemcoreGPU.info = {
   hasWebGPU: true/false,
   hasWebGL2: true/false,
   hasWebGL: true/false,
@@ -113,7 +113,7 @@ window.BakeryGPU.info = {
 5. Fixed Timestep für Physik
 
 **Best Practices**:
-- Nutze `window.BakeryGPU.info.preferredAPI` für Renderer-Wahl
+- Nutze `window.GemcoreGPU.info.preferredAPI` für Renderer-Wahl
 - Messe Frame-Times mit `performance.now()`
 - Implementiere FPS Cap für Konsistenz
 - Teste auf verschiedenen Display-Hz
@@ -122,18 +122,18 @@ window.BakeryGPU.info = {
 
 ```javascript
 // Check GPU Support
-console.log(window.BakeryGPU.info);
+console.log(window.GemcoreGPU.info);
 
 // Check Port (localStorage)
 console.log(window.location.port);  // Sollte konstant sein!
 
 // Check Performance
-console.log(window.Bakery.platform);  // 'windows' | 'macos' | 'linux'
+console.log(window.Gemcore.platform);  // 'windows' | 'macos' | 'linux'
 ```
 
 ---
 
 **Stand**: November 2025  
-**Version**: Bakery 1.0.0  
+**Version**: Gemcore 1.0.0  
 **Optimierungen**: Universal für alle Plattformen ✅
 

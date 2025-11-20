@@ -1,5 +1,5 @@
 /**
- * 🥐 Bakery Universal Launcher (Windows) - WITH EMBEDDED RESOURCES
+ * 🥐 Gemcore Universal Launcher (Windows) - WITH EMBEDDED RESOURCES
  * Extracts embedded binaries/assets to TEMP and launches correct architecture
  */
 
@@ -32,7 +32,7 @@ std::string getTempDir() {
     GetTempPathA(MAX_PATH, tempPath);
     
     // Create unique dir for this app
-    std::string uniqueDir = std::string(tempPath) + "\\bakery_" + std::to_string(GetCurrentProcessId());
+    std::string uniqueDir = std::string(tempPath) + "\\gemcore_" + std::to_string(GetCurrentProcessId());
     CreateDirectoryA(uniqueDir.c_str(), NULL);
     
     return uniqueDir;
@@ -58,12 +58,12 @@ bool readEmbeddedData(const std::string& exePath, EmbeddedData& data) {
     std::ifstream file(exePath, std::ios::binary);
     if (!file) return false;
     
-    // Find magic signature "BAKERY_EMBEDDED" from the end
+    // Find magic signature "GEMCORE_EMBEDDED" from the end
     file.seekg(-8192, std::ios::end); // Search last 8KB
     char buffer[8192];
     file.read(buffer, 8192);
     
-    const char* magic = "BAKERY_EMBEDDED";
+    const char* magic = "GEMCORE_EMBEDDED";
     size_t magicLen = 16; // Including null terminator
     
     // Find magic
@@ -131,9 +131,9 @@ int main(int argc, char* argv[]) {
     }
     
     // Extract files
-    std::string x64Path = tempDir + "\\bakery-x64.exe";
-    std::string assetsPath = tempDir + "\\bakery-assets";
-    std::string configPath = tempDir + "\\bakery.config.json";
+    std::string x64Path = tempDir + "\\gemcore-x64.exe";
+    std::string assetsPath = tempDir + "\\gemcore-assets";
+    std::string configPath = tempDir + "\\gemcore.config.json";
     std::string steamDllPath = tempDir + "\\steam_api64.dll";
     
     if (data.x64Size > 0) {
@@ -177,7 +177,7 @@ int main(int argc, char* argv[]) {
     }
     
     // Launch architecture-specific binary
-    std::string binaryPath = tempDir + "\\bakery-" + arch + ".exe";
+    std::string binaryPath = tempDir + "\\gemcore-" + arch + ".exe";
     
     // For now, we only have x64
     if (arch != "x64") {

@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * Download pre-built Bakery binaries from GitHub Releases
+ * Download pre-built Gemcore binaries from GitHub Releases
  * Similar to how Neutralino.js downloads binaries for all platforms
  * 
  * This allows cross-platform builds: build for Windows/Linux from macOS!
@@ -12,7 +12,7 @@
 import { existsSync, mkdirSync, statSync } from 'fs';
 import { join } from 'path';
 
-const GITHUB_REPO = 'eddime/bakery';
+const GITHUB_REPO = 'eddime/gemcore';
 const BINARIES_DIR = join(import.meta.dir, '..', 'launcher', 'prebuilt');
 const VERSION_FILE = join(BINARIES_DIR, '.version');
 
@@ -72,10 +72,10 @@ function areBinariesCached(): boolean {
   
   // Check if all required binaries exist
   const requiredBinaries = [
-    'bakery-launcher-linux-x64',
-    'bakery-universal-launcher-linux-embedded',
-    'bakery-launcher-win.exe',
-    'bakery-launcher-mac',
+    'gemcore-launcher-linux-x64',
+    'gemcore-universal-launcher-linux-embedded',
+    'gemcore-launcher-win.exe',
+    'gemcore-launcher-mac',
   ];
   
   for (const binary of requiredBinaries) {
@@ -89,7 +89,7 @@ function areBinariesCached(): boolean {
 }
 
 async function downloadAllBinaries(version: string = 'latest', force: boolean = false): Promise<void> {
-  console.log('📦 Bakery Pre-built Binaries');
+  console.log('📦 Gemcore Pre-built Binaries');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
   console.log('');
   
@@ -104,7 +104,7 @@ async function downloadAllBinaries(version: string = 'latest', force: boolean = 
     console.log('✅ Pre-built binaries already cached!');
     console.log(`   Version: ${cachedVersion || 'unknown'}`);
     console.log('');
-    console.log('💡 Bakery can now be used offline');
+    console.log('💡 Gemcore can now be used offline');
     console.log('');
     console.log('🔄 To update binaries:');
     console.log('   bun scripts/download-prebuilt-binaries.ts --force');
@@ -128,26 +128,26 @@ async function downloadAllBinaries(version: string = 'latest', force: boolean = 
     // Linux x64 (with WebKitGTK)
     {
       name: 'Linux x64 Launcher (WebKitGTK)',
-      url: `https://github.com/${GITHUB_REPO}/releases/download/${version}/bakery-launcher-linux-x64`,
-      path: join(BINARIES_DIR, 'bakery-launcher-linux-x64'),
+      url: `https://github.com/${GITHUB_REPO}/releases/download/${version}/gemcore-launcher-linux-x64`,
+      path: join(BINARIES_DIR, 'gemcore-launcher-linux-x64'),
     },
     // Linux Universal Launcher (embedded)
     {
       name: 'Linux Universal Launcher',
-      url: `https://github.com/${GITHUB_REPO}/releases/download/${version}/bakery-universal-launcher-linux-embedded`,
-      path: join(BINARIES_DIR, 'bakery-universal-launcher-linux-embedded'),
+      url: `https://github.com/${GITHUB_REPO}/releases/download/${version}/gemcore-universal-launcher-linux-embedded`,
+      path: join(BINARIES_DIR, 'gemcore-universal-launcher-linux-embedded'),
     },
     // Windows x64 Launcher
     {
       name: 'Windows x64 Launcher',
-      url: `https://github.com/${GITHUB_REPO}/releases/download/${version}/bakery-launcher-win.exe`,
-      path: join(BINARIES_DIR, 'bakery-launcher-win.exe'),
+      url: `https://github.com/${GITHUB_REPO}/releases/download/${version}/gemcore-launcher-win.exe`,
+      path: join(BINARIES_DIR, 'gemcore-launcher-win.exe'),
     },
     // macOS Universal Launcher
     {
       name: 'macOS Universal Launcher',
-      url: `https://github.com/${GITHUB_REPO}/releases/download/${version}/bakery-launcher-mac`,
-      path: join(BINARIES_DIR, 'bakery-launcher-mac'),
+      url: `https://github.com/${GITHUB_REPO}/releases/download/${version}/gemcore-launcher-mac`,
+      path: join(BINARIES_DIR, 'gemcore-launcher-mac'),
     },
   ];
   
@@ -182,7 +182,7 @@ async function downloadAllBinaries(version: string = 'latest', force: boolean = 
   
   console.log('');
   console.log('💾 Binaries cached locally');
-  console.log('💡 Bakery can now be used offline!');
+  console.log('💡 Gemcore can now be used offline!');
   console.log('');
   console.log('🎯 You can now build games for all platforms from any OS:');
   console.log('   → bun bake build --platform=all');

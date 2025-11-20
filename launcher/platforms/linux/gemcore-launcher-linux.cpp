@@ -1,5 +1,5 @@
 /**
- * 🥐 Bakery Launcher - Linux (WebKitGTK WebView - like Neutralino)
+ * 🥐 Gemcore Launcher - Linux (WebKitGTK WebView - like Neutralino)
  * Uses system WebKitGTK via pkg-config (no bundling needed)
  */
 
@@ -24,15 +24,15 @@
 #endif
 
 // NEW: Shared HTTP server and asset loader!
-#include "bakery-http-server.h"
-#include "bakery-asset-loader.h"
-#include "bakery-cache-buster.h"
-#include "bakery-window-helper.h"          // Cross-platform window management
-#include "bakery-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
+#include "gemcore-http-server.h"
+#include "gemcore-asset-loader.h"
+#include "gemcore-cache-buster.h"
+#include "gemcore-window-helper.h"          // Cross-platform window management
+#include "gemcore-steamworks-bindings.h"    // 🎮 Steamworks integration (cross-platform)
 
 using json = nlohmann::json;
 
-struct BakeryConfig {
+struct GemcoreConfig {
     struct {
         std::string title;
         int width;
@@ -59,7 +59,7 @@ std::atomic<bool> g_running{true};
 std::atomic<bool> g_serverReady{false};
 
 // Multi-threaded request handler
-void worker(int server_fd, bakery::http::HTTPServer* server) {
+void worker(int server_fd, gemcore::http::HTTPServer* server) {
     while (g_running) {
         int client = accept(server_fd, nullptr, nullptr);
         if (client >= 0) {
@@ -73,7 +73,7 @@ void worker(int server_fd, bakery::http::HTTPServer* server) {
 }
 
 // Multi-threaded HTTP server
-void runServer(bakery::http::HTTPServer* server) {
+void runServer(gemcore::http::HTTPServer* server) {
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     
     // MAXIMUM PERFORMANCE socket options
@@ -126,7 +126,7 @@ int main(int argc, char* argv[]) {
     #ifdef NDEBUG
     std::ios::sync_with_stdio(false);
     #else
-    std::cout << "🥐 Bakery Launcher (Linux WebKitGTK)" << std::endl;
+    std::cout << "🥐 Gemcore Launcher (Linux WebKitGTK)" << std::endl;
     std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
     std::cout << std::endl;
     #endif
@@ -138,7 +138,7 @@ int main(int argc, char* argv[]) {
     #endif
     
     // OPTIMIZATION 2: Parallel Asset Loading
-    bakery::assets::SharedAssetLoader assetLoader;
+    gemcore::assets::SharedAssetLoader assetLoader;
     std::atomic<bool> assetsLoaded{false};
     
     std::thread assetLoadThread([&assetLoader, &assetsLoaded]() {
@@ -146,12 +146,12 @@ int main(int argc, char* argv[]) {
     });
     
     // OPTIMIZATION 3: Prepare default config
-    BakeryConfig config;
-    config.window.title = "Bakery App";
+    GemcoreConfig config;
+    config.window.title = "Gemcore App";
     config.window.width = 1280;
     config.window.height = 720;
     config.entrypoint = "index.html";
-    config.appName = "bakery-app";  // Default app name
+    config.appName = "gemcore-app";  // Default app name
     
     // Wait for assets to load
     assetLoadThread.join();
@@ -162,7 +162,7 @@ int main(int argc, char* argv[]) {
     }
     
     // 🔒 Load config from encrypted assets (not accessible to user!)
-    auto configAsset = assetLoader.getAsset(".bakery-config.json");
+    auto configAsset = assetLoader.getAsset(".gemcore-config.json");
     if (configAsset.data && configAsset.size > 0) {
         try {
             std::string configStr(reinterpret_cast<const char*>(configAsset.data), configAsset.size);
@@ -186,7 +186,7 @@ int main(int argc, char* argv[]) {
                 if (j["app"].contains("name")) {
                     config.appName = j["app"]["name"].get<std::string>();
                     config.app.name = config.appName;
-                    if (config.window.title == "Bakery App") {
+                    if (config.window.title == "Gemcore App") {
                         config.window.title = config.appName;
                     }
                 }
@@ -245,7 +245,7 @@ int main(int argc, char* argv[]) {
     #ifndef NDEBUG
     std::cout << "🔒 Port: " << port << " (based on app.name: " << config.appName << ")" << std::endl;
     #endif
-    bakery::http::HTTPServer server(port);
+    gemcore::http::HTTPServer server(port);
     server.setEntrypoint(config.entrypoint);
     server.setAssetProvider([&assetLoader](const std::string& path) {
         return assetLoader.getAsset(path);
@@ -273,7 +273,7 @@ int main(int argc, char* argv[]) {
     
     // 🎮 Initialize Steamworks (cross-platform helper)
     #ifdef ENABLE_STEAMWORKS
-    bool steamEnabled = bakery::steamworks::initSteamworks(config);
+    bool steamEnabled = gemcore::steamworks::initSteamworks(config);
     #else
     bool steamEnabled = false;
     #endif
@@ -305,7 +305,7 @@ int main(int argc, char* argv[]) {
     #endif
     
     // 🔥 CACHE BUSTER: Use timestamp to force reload on every build
-    std::string cacheBuster = bakery::getCacheBuster();
+    std::string cacheBuster = gemcore::getCacheBuster();
     std::string url = "http://127.0.0.1:" + std::to_string(port) + "/" + config.entrypoint + "?t=" + cacheBuster;
     
     #if USE_WEBVIEW
@@ -320,7 +320,7 @@ int main(int argc, char* argv[]) {
     std::string iconPathForWindow;
     auto iconAsset = assetLoader.getAsset("icon.png");
     if (!iconAsset.empty()) {
-        std::string tmpIconPath = "/tmp/bakery_icon_" + config.appName + ".png";
+        std::string tmpIconPath = "/tmp/gemcore_icon_" + config.appName + ".png";
         std::ofstream iconFile(tmpIconPath, std::ios::binary);
         if (iconFile) {
             iconFile.write(iconAsset.data(), iconAsset.size());
@@ -377,14 +377,14 @@ int main(int argc, char* argv[]) {
     
     // 🎮 Bind Steamworks to JavaScript (if enabled)
     #ifdef ENABLE_STEAMWORKS
-    bakery::steamworks::bindSteamworksToWebview(w, steamEnabled);
+    gemcore::steamworks::bindSteamworksToWebview(w, steamEnabled);
     #endif
     
     // Load Steamworks wrapper from assets (if available)
     std::string steamworksWrapperScript;
     #ifdef ENABLE_STEAMWORKS
     if (steamEnabled) {
-        auto steamworksAsset = assetLoader.getAsset("bakery-steamworks-wrapper.js");
+        auto steamworksAsset = assetLoader.getAsset("gemcore-steamworks-wrapper.js");
         if (steamworksAsset.data && steamworksAsset.size > 0) {
             steamworksWrapperScript = std::string(reinterpret_cast<const char*>(steamworksAsset.data), steamworksAsset.size);
         }
@@ -393,7 +393,7 @@ int main(int argc, char* argv[]) {
     
     // Build JavaScript init code
     std::string jsInit = R"JS(
-    window.Bakery = {
+    window.Gemcore = {
         version: '1.0.0',
         platform: 'linux',
         mode: 'shared-assets',
@@ -444,7 +444,7 @@ int main(int argc, char* argv[]) {
     if (steamEnabled) {
         steamThread = std::thread([]() {
             while (g_running) {
-                bakery::steamworks::SteamworksManager::RunCallbacks();
+                gemcore::steamworks::SteamworksManager::RunCallbacks();
                 std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
             }
         });
@@ -462,7 +462,7 @@ int main(int argc, char* argv[]) {
         if (steamThread.joinable()) {
             steamThread.join();
         }
-        bakery::steamworks::shutdownSteamworks();
+        gemcore::steamworks::shutdownSteamworks();
     }
     #endif
     #else
@@ -509,7 +509,7 @@ int main(int argc, char* argv[]) {
     if (steamEnabled) {
         steamThread = std::thread([]() {
             while (g_running) {
-                bakery::steamworks::SteamworksManager::RunCallbacks();
+                gemcore::steamworks::SteamworksManager::RunCallbacks();
                 std::this_thread::sleep_for(std::chrono::milliseconds(16)); // ~60 FPS
             }
         });
@@ -527,7 +527,7 @@ int main(int argc, char* argv[]) {
         if (steamThread.joinable()) {
             steamThread.join();
         }
-        bakery::steamworks::shutdownSteamworks();
+        gemcore::steamworks::shutdownSteamworks();
     }
     #endif
     #endif

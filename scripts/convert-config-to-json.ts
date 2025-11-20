@@ -1,5 +1,5 @@
 #!/usr/bin/env bun
-// Convert bakery.config.js to bakery.config.json
+// Convert gemcore.config.js to gemcore.config.json
 
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
@@ -13,8 +13,8 @@ if (!projectDir || !outputPath) {
 }
 
 // Try to import the config
-const configJsPath = join(projectDir, 'bakery.config.js');
-const configJsonPath = join(projectDir, 'bakery.config.json');
+const configJsPath = join(projectDir, 'gemcore.config.js');
+const configJsonPath = join(projectDir, 'gemcore.config.json');
 
 let config: any;
 
@@ -35,7 +35,7 @@ try {
 // Normalize config structure
 const normalized = {
   window: {
-    title: config.window?.title || config.app?.name || 'Bakery App',
+    title: config.window?.title || config.app?.name || 'Gemcore App',
     width: config.window?.width || 800,
     height: config.window?.height || 600,
   },

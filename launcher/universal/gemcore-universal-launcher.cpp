@@ -1,5 +1,5 @@
 /**
- * 🥐 Bakery Universal Launcher (macOS)
+ * 🥐 Gemcore Universal Launcher (macOS)
  * Detects CPU architecture (x64/ARM64) and launches correct binary
  */
 

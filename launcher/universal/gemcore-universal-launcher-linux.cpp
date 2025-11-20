@@ -1,5 +1,5 @@
 /**
- * 🥐 Bakery Universal Launcher - Linux
+ * 🥐 Gemcore Universal Launcher - Linux
  * Detects CPU architecture and launches the correct binary
  */
 
@@ -43,7 +43,7 @@ int main(int argc, char* argv[]) {
     std::string arch = detectArchitecture();
     std::string execDir = getExecutableDir();
     
-    std::cout << "🥐 Bakery Universal Launcher (Linux)" << std::endl;
+    std::cout << "🥐 Gemcore Universal Launcher (Linux)" << std::endl;
     std::cout << "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" << std::endl;
     std::cout << "🔍 Detected architecture: " << arch << std::endl;
     std::cout << std::endl;

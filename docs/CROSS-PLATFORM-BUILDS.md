@@ -1,6 +1,6 @@
 # Cross-Platform Builds (wie Neutralino.js)
 
-Bakery ermöglicht es, **von jedem Betriebssystem aus für alle Plattformen zu bauen** - genau wie Neutralino.js!
+Gemcore ermöglicht es, **von jedem Betriebssystem aus für alle Plattformen zu bauen** - genau wie Neutralino.js!
 
 ## 🎯 Ziel
 
@@ -23,7 +23,7 @@ Diese Binaries werden als **GitHub Releases** veröffentlicht.
 
 ### 2. Download pre-built Binaries
 
-Wenn du ein Spiel baust, lädt Bakery automatisch die pre-built Binaries herunter:
+Wenn du ein Spiel baust, lädt Gemcore automatisch die pre-built Binaries herunter:
 
 ```bash
 # Automatisch beim Build
@@ -99,10 +99,10 @@ Nach dem Download:
 
 ```
 launcher/prebuilt/
-├── bakery-launcher-mac              ~500 KB (Universal)
-├── bakery-launcher-win.exe          ~300 KB
-├── bakery-launcher-linux-x64        ~2 MB (mit WebKitGTK)
-└── bakery-universal-launcher-linux  ~200 KB
+├── gemcore-launcher-mac              ~500 KB (Universal)
+├── gemcore-launcher-win.exe          ~300 KB
+├── gemcore-launcher-linux-x64        ~2 MB (mit WebKitGTK)
+└── gemcore-universal-launcher-linux  ~200 KB
 ```
 
 ## 🔄 Update-Workflow
@@ -116,7 +116,7 @@ launcher/prebuilt/
 
 ### Für App-Entwickler (Bunery)
 
-1. Bakery als Submodule updaten: `git submodule update --remote`
+1. Gemcore als Submodule updaten: `git submodule update --remote`
 2. Pre-built Binaries herunterladen: `bun scripts/download-prebuilt-binaries.ts`
 3. Fertig! Neue Version ist einsatzbereit
 
@@ -178,7 +178,7 @@ bun bake build --platform=linux
 
 ## 📚 Vergleich mit Neutralino.js
 
-| Feature | Neutralino.js | Bakery |
+| Feature | Neutralino.js | Gemcore |
 |---------|--------------|--------|
 | Cross-Platform Build | ✅ | ✅ |
 | Pre-built Binaries | ✅ | ✅ |

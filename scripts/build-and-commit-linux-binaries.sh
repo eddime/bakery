@@ -39,12 +39,12 @@ cd launcher
 mkdir -p build-linux-universal-embedded
 cd build-linux-universal-embedded
 cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-make bakery-universal-launcher-linux-embedded -j$(nproc)
-strip bakery-universal-launcher-linux-embedded
+make gemcore-universal-launcher-linux-embedded -j$(nproc)
+strip gemcore-universal-launcher-linux-embedded
 
 # Copy to bin/
 mkdir -p ../../bin/linux-universal
-cp bakery-universal-launcher-linux-embedded ../../bin/linux-universal/
+cp gemcore-universal-launcher-linux-embedded ../../bin/linux-universal/
 echo "✅ Universal launcher built and copied to bin/"
 
 # Build x64 launcher
@@ -54,12 +54,12 @@ cd ..
 mkdir -p build-linux-x64
 cd build-linux-x64
 cmake .. -DCMAKE_BUILD_TYPE=Release
-make bakery-launcher-linux -j$(nproc)
-strip bakery-launcher-linux
+make gemcore-launcher-linux -j$(nproc)
+strip gemcore-launcher-linux
 
 # Copy to bin/
 mkdir -p ../../bin/linux-x64
-cp bakery-launcher-linux ../../bin/linux-x64/
+cp gemcore-launcher-linux ../../bin/linux-x64/
 echo "✅ x64 launcher built and copied to bin/"
 
 # Go back to root
@@ -70,12 +70,12 @@ echo "━━━━━━━━━━━━━━━━━━━━━━━━�
 echo "✅ Linux binaries built successfully!"
 echo ""
 echo "📁 Binaries:"
-echo "   bin/linux-x64/bakery-launcher-linux"
-echo "   bin/linux-universal/bakery-universal-launcher-linux-embedded"
+echo "   bin/linux-x64/gemcore-launcher-linux"
+echo "   bin/linux-universal/gemcore-universal-launcher-linux-embedded"
 echo ""
 echo "📊 Sizes:"
-ls -lh bin/linux-x64/bakery-launcher-linux
-ls -lh bin/linux-universal/bakery-universal-launcher-linux-embedded
+ls -lh bin/linux-x64/gemcore-launcher-linux
+ls -lh bin/linux-universal/gemcore-universal-launcher-linux-embedded
 echo ""
 echo "💡 Commit these binaries to the repository:"
 echo "   git add bin/"

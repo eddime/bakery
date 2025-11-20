@@ -1,6 +1,6 @@
 /**
- * 🎮 Bakery Steamworks Integration
- * Native Steamworks SDK wrapper for Bakery games
+ * 🎮 Gemcore Steamworks Integration
+ * Native Steamworks SDK wrapper for Gemcore games
  * 
  * Pattern: Similar to webview-bun FFI bindings
  * - C++ wrapper around Steam API
@@ -8,8 +8,8 @@
  * - No Node.js required!
  */
 
-#ifndef BAKERY_STEAMWORKS_H
-#define BAKERY_STEAMWORKS_H
+#ifndef GEMCORE_STEAMWORKS_H
+#define GEMCORE_STEAMWORKS_H
 
 #include <string>
 #include <vector>
@@ -20,7 +20,7 @@
 class CSteamID;
 typedef uint32_t AppId_t;
 
-namespace bakery {
+namespace gemcore {
 namespace steamworks {
 
 /**
@@ -262,9 +262,9 @@ private:
 };
 
 } // namespace steamworks
-} // namespace bakery
+} // namespace gemcore
 
-#endif // BAKERY_STEAMWORKS_H
+#endif // GEMCORE_STEAMWORKS_H
 
 
 

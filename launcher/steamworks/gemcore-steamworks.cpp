@@ -1,9 +1,9 @@
 /**
- * 🎮 Bakery Steamworks Implementation
+ * 🎮 Gemcore Steamworks Implementation
  * Native Steamworks SDK wrapper implementation
  */
 
-#include "bakery-steamworks.h"
+#include "gemcore-steamworks.h"
 
 // Include Steam API headers
 #include "steam/steam_api.h"
@@ -18,7 +18,7 @@
 #include <unistd.h>  // for usleep
 #endif
 
-namespace bakery {
+namespace gemcore {
 namespace steamworks {
 
 // Static initialization
@@ -456,7 +456,7 @@ bool SteamworksManager::IsSteamDeck() {
 }
 
 } // namespace steamworks
-} // namespace bakery
+} // namespace gemcore
 
 
 

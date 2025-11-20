@@ -1,9 +1,9 @@
 /**
- * 🎮 Bakery Steamworks API
+ * 🎮 Gemcore Steamworks API
  * JavaScript facade for Steamworks integration
  * 
  * Usage:
- *   import { Steam } from './bakery-steamworks-api.js';
+ *   import { Steam } from './gemcore-steamworks-api.js';
  *   
  *   if (Steam.isAvailable()) {
  *     Steam.unlockAchievement('FIRST_WIN');
@@ -15,7 +15,7 @@
  * Check if Steamworks is available
  */
 function isAvailable() {
-    return window.Bakery && window.Bakery.steam === true;
+    return window.Gemcore && window.Gemcore.steam === true;
 }
 
 /**
@@ -280,6 +280,6 @@ export const Steam = {
 
 // Also expose globally for convenience
 if (typeof window !== 'undefined') {
-    window.BakerySteam = Steam;
+    window.GemcoreSteam = Steam;
 }
 

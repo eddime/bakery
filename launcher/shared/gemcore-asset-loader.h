@@ -1,13 +1,13 @@
 /**
- * 🥐 Bakery Asset Loader - SHARED ACROSS ALL PLATFORMS
+ * 🥐 Gemcore Asset Loader - SHARED ACROSS ALL PLATFORMS
  * 
  * Loads assets from:
  * 1. Embedded C++ arrays (embedded-assets.h)
- * 2. External binary file (bakery-assets) 🔒 WITH XOR DECRYPTION
+ * 2. External binary file (gemcore-assets) 🔒 WITH XOR DECRYPTION
  */
 
-#ifndef BAKERY_ASSET_LOADER_H
-#define BAKERY_ASSET_LOADER_H
+#ifndef GEMCORE_ASSET_LOADER_H
+#define GEMCORE_ASSET_LOADER_H
 
 #include <string>
 #include <vector>
@@ -15,7 +15,7 @@
 #include <iostream>
 #include <fstream>
 #include <cstring>
-#include "bakery-http-server.h"
+#include "gemcore-http-server.h"
 
 #ifdef __APPLE__
 #include <mach-o/dyld.h>
@@ -26,7 +26,7 @@
 #include <shlwapi.h>
 #endif
 
-namespace bakery {
+namespace gemcore {
 namespace assets {
 
 /**
@@ -163,7 +163,7 @@ public:
 };
 
 /**
- * Shared Asset Loader (from bakery-assets file)
+ * Shared Asset Loader (from gemcore-assets file)
  */
 class SharedAssetLoader {
 private:
@@ -171,24 +171,24 @@ private:
     
 public:
     /**
-     * Load from external bakery-assets file (with XOR decryption!)
+     * Load from external gemcore-assets file (with XOR decryption!)
      */
     bool load() {
         std::string execDir = getExecutableDir();
-        std::string assetsPath = execDir + "/bakery-assets";
+        std::string assetsPath = execDir + "/gemcore-assets";
         
         std::ifstream file(assetsPath, std::ios::binary);
         if (!file) {
-            std::cerr << "❌ Failed to open bakery-assets at: " << assetsPath << std::endl;
+            std::cerr << "❌ Failed to open gemcore-assets at: " << assetsPath << std::endl;
             return false;
         }
         
-        // 🔒 Read magic header (8 bytes: "BAKERY1\0")
-        char magicHeader[8];
-        file.read(magicHeader, 8);
+        // 🔒 Read magic header (9 bytes: "GEMCORE1\0")
+        char magicHeader[9];
+        file.read(magicHeader, 9);
         
-        if (std::memcmp(magicHeader, "BAKERY1\0", 8) != 0) {
-            std::cerr << "❌ Invalid bakery-assets file (wrong magic header)" << std::endl;
+        if (std::memcmp(magicHeader, "GEMCORE1\0", 9) != 0) {
+            std::cerr << "❌ Invalid gemcore-assets file (wrong magic header)" << std::endl;
             return false;
         }
         
@@ -205,7 +205,7 @@ public:
         file.read((char*)&fileCount, 4);
         
         #ifndef NDEBUG
-        std::cout << "📦 Loading " << fileCount << " assets from bakery-assets..." << std::endl;
+        std::cout << "📦 Loading " << fileCount << " assets from gemcore-assets..." << std::endl;
         #endif
         
         uint32_t loaded = 0;
@@ -350,7 +350,7 @@ public:
 };
 
 } // namespace assets
-} // namespace bakery
+} // namespace gemcore
 
-#endif // BAKERY_ASSET_LOADER_H
+#endif // GEMCORE_ASSET_LOADER_H
 

@@ -1,4 +1,4 @@
-// 🥐 Bakery Framework Config
+// 🥐 Gemcore Framework Config
 
 export default {
   // Default project to use when no --dir or --project is specified
@@ -9,7 +9,7 @@ export default {
     "hello-world": {
       path: "examples/hello-world-socket",
       window: {
-        title: "🥐 Bakery - Hello World",
+        title: "🥐 Gemcore - Hello World",
         width: 1280,
         height: 720,
       },
@@ -22,7 +22,7 @@ export default {
     "phaser": {
       path: "examples/phaser-steamworks",
       window: {
-        title: "🎮 Bakery Phaser + Steamworks Demo",
+        title: "🎮 Gemcore Phaser + Steamworks Demo",
         width: 1280,
         height: 720,
       },
@@ -35,7 +35,7 @@ export default {
     "candy": {
       path: "examples/candy-catch",
       window: {
-        title: "🍬 Candy Catch - Powered by Bakery",
+        title: "🍬 Candy Catch - Powered by Gemcore",
         width: 800,
         height: 600,
         resizable: false,

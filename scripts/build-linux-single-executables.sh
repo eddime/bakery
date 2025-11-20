@@ -32,13 +32,13 @@ mkdir -p "$BUILD_EMBEDDED"
 cd "$BUILD_EMBEDDED"
 
 # Check if pre-built binary is cached locally (like Neutralino!)
-PREBUILT_UNIVERSAL="$FRAMEWORK_DIR/launcher/prebuilt/bakery-universal-launcher-linux-embedded"
+PREBUILT_UNIVERSAL="$FRAMEWORK_DIR/launcher/prebuilt/gemcore-universal-launcher-linux-embedded"
 UNIVERSAL_CACHED=false
 
 if [ -f "$PREBUILT_UNIVERSAL" ]; then
     echo "💾 Using cached pre-built universal launcher"
-    cp "$PREBUILT_UNIVERSAL" "bakery-universal-launcher-linux-embedded"
-    chmod +x "bakery-universal-launcher-linux-embedded"
+    cp "$PREBUILT_UNIVERSAL" "gemcore-universal-launcher-linux-embedded"
+    chmod +x "gemcore-universal-launcher-linux-embedded"
     UNIVERSAL_CACHED=true
 fi
 
@@ -56,9 +56,9 @@ if [ "$UNIVERSAL_CACHED" = false ]; then
         cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
     fi
 
-    make bakery-universal-launcher-linux-embedded -j4
+    make gemcore-universal-launcher-linux-embedded -j4
 
-    if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
+    if [ ! -f "gemcore-universal-launcher-linux-embedded" ]; then
         echo "❌ Universal launcher build failed!"
         exit 1
     fi
@@ -77,23 +77,23 @@ cd "$BUILD_X64"
 
 # Check if pre-built binary is cached locally (like Neutralino!)
 PREBUILT_DIR="$FRAMEWORK_DIR/launcher/prebuilt"
-PREBUILT_BINARY="$PREBUILT_DIR/bakery-launcher-linux-x64"
+PREBUILT_BINARY="$PREBUILT_DIR/gemcore-launcher-linux-x64"
 DOWNLOADED=false
 
 if [ -f "$PREBUILT_BINARY" ]; then
     echo "💾 Using cached pre-built x64 binary (with WebKitGTK)"
-    cp "$PREBUILT_BINARY" "bakery-launcher-linux"
-    chmod +x "bakery-launcher-linux"
+    cp "$PREBUILT_BINARY" "gemcore-launcher-linux"
+    chmod +x "gemcore-launcher-linux"
     DOWNLOADED=true
 elif [[ $(uname) != "Linux" ]]; then
     # Try to download from GitHub if not cached
     echo "📥 Attempting to download pre-built x64 binary (with WebKitGTK)..."
-    GITHUB_REPO="eddime/bakery"
+    GITHUB_REPO="eddime/gemcore"
     VERSION="latest"
-    BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/bakery-launcher-linux-x64"
+    BINARY_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/gemcore-launcher-linux-x64"
     
-    if curl -L -f -o "bakery-launcher-linux" "${BINARY_URL}" 2>/dev/null; then
-        chmod +x "bakery-launcher-linux"
+    if curl -L -f -o "gemcore-launcher-linux" "${BINARY_URL}" 2>/dev/null; then
+        chmod +x "gemcore-launcher-linux"
         echo "✅ Downloaded pre-built x64 binary (with WebKitGTK)"
         DOWNLOADED=true
     else
@@ -105,14 +105,14 @@ if [ "$DOWNLOADED" = false ]; then
     if [[ $(uname) == "Linux" ]]; then
         # Native Linux build with WebKitGTK
         cmake .. -DCMAKE_BUILD_TYPE=Release
-        make bakery-launcher-linux -j4
+        make gemcore-launcher-linux -j4
     else
         # Cross-compile from macOS (without WebKitGTK - fallback)
         cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-x86_64.cmake
-        make bakery-launcher-linux -j4
+        make gemcore-launcher-linux -j4
     fi
     
-    if [ ! -f "bakery-launcher-linux" ]; then
+    if [ ! -f "gemcore-launcher-linux" ]; then
         echo "❌ x86_64 build failed!"
         exit 1
     fi
@@ -130,13 +130,13 @@ mkdir -p "$BUILD_ARM64"
 cd "$BUILD_ARM64"
 
 # Check if pre-built ARM64 binary with WebKitGTK is cached locally (like Neutralino!)
-PREBUILT_ARM64="$FRAMEWORK_DIR/launcher/prebuilt/bakery-launcher-linux-arm64"
+PREBUILT_ARM64="$FRAMEWORK_DIR/launcher/prebuilt/gemcore-launcher-linux-arm64"
 ARM64_CACHED=false
 
 if [ -f "$PREBUILT_ARM64" ]; then
     echo "💾 Using cached pre-built ARM64 binary (with WebKitGTK)"
-    cp "$PREBUILT_ARM64" "bakery-launcher-linux"
-    chmod +x "bakery-launcher-linux"
+    cp "$PREBUILT_ARM64" "gemcore-launcher-linux"
+    chmod +x "gemcore-launcher-linux"
     ARM64_CACHED=true
 fi
 
@@ -144,7 +144,7 @@ if [ "$ARM64_CACHED" = false ]; then
     if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
         # Native ARM64 Linux build with WebKitGTK
         cmake .. -DCMAKE_BUILD_TYPE=Release
-        make bakery-launcher-linux -j4
+        make gemcore-launcher-linux -j4
     else
         # Cross-compile from macOS or x86_64 Linux (without WebKitGTK - fallback)
         if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
@@ -153,9 +153,9 @@ if [ "$ARM64_CACHED" = false ]; then
             BUILD_ARM64=""
         else
             cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake
-            make bakery-launcher-linux -j4
+            make gemcore-launcher-linux -j4
             
-            if [ ! -f "bakery-launcher-linux" ]; then
+            if [ ! -f "gemcore-launcher-linux" ]; then
                 echo "⚠️  ARM64 build failed! Skipping."
                 BUILD_ARM64=""
             else
@@ -165,7 +165,7 @@ if [ "$ARM64_CACHED" = false ]; then
     fi
 fi
 
-if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/bakery-launcher-linux" ]; then
+if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/gemcore-launcher-linux" ]; then
     echo "✅ ARM64 launcher ready"
 fi
 
@@ -177,7 +177,7 @@ cd "$FRAMEWORK_DIR"
 # 3.5. Embed assets (needed for single executable)
 # ============================================
 echo "📦 Embedding assets..."
-ASSETS_PATH="$BUILD_X64/bakery-assets"
+ASSETS_PATH="$BUILD_X64/gemcore-assets"
 bun scripts/embed-assets-shared.ts "$PROJECT_DIR" "$ASSETS_PATH"
 
 if [ ! -f "$ASSETS_PATH" ]; then
@@ -196,7 +196,7 @@ echo "📦 Packing single executables..."
 # Check if Steamworks is enabled
 STEAM_SO_X64=""
 STEAM_SO_ARM64=""
-CONFIG_FILE="$PROJECT_DIR/bakery.config.js"
+CONFIG_FILE="$PROJECT_DIR/gemcore.config.js"
 if [ -f "$CONFIG_FILE" ]; then
     if grep -q "enabled: true" "$CONFIG_FILE" 2>/dev/null; then
         STEAM_SO_X64="$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux64/libsteam_api.so"
@@ -220,8 +220,8 @@ else
     echo "   ⚠️  Assets not found at: $ASSETS_PATH"
 fi
 bun scripts/pack-linux-single-exe.ts \
-    "$BUILD_EMBEDDED/bakery-universal-launcher-linux-embedded" \
-    "$BUILD_X64/bakery-launcher-linux" \
+    "$BUILD_EMBEDDED/gemcore-universal-launcher-linux-embedded" \
+    "$BUILD_X64/gemcore-launcher-linux" \
     "$OUTPUT_DIR/${APP_NAME}-x86_64" \
     ${STEAM_SO_X64:-""} \
     "$ASSETS_PATH"
@@ -230,7 +230,7 @@ echo "✅ x86_64 executable packed!"
 echo ""
 
 # Pack ARM64 executable if built
-if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/bakery-launcher-linux" ]; then
+if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/gemcore-launcher-linux" ]; then
     echo "📦 Packing ARM64 executable..."
     
     # Build ARM64 Universal Launcher (needed for ARM64 builds!)
@@ -239,13 +239,13 @@ if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/bakery-launcher-linux" ]; then
     cd "$BUILD_ARM64_UNIVERSAL"
     
     # Check if pre-built ARM64 universal launcher is cached locally
-    PREBUILT_ARM64_UNIVERSAL="$FRAMEWORK_DIR/launcher/prebuilt/bakery-universal-launcher-linux-embedded-arm64"
+    PREBUILT_ARM64_UNIVERSAL="$FRAMEWORK_DIR/launcher/prebuilt/gemcore-universal-launcher-linux-embedded-arm64"
     ARM64_UNIVERSAL_CACHED=false
     
     if [ -f "$PREBUILT_ARM64_UNIVERSAL" ]; then
         echo "💾 Using cached pre-built ARM64 universal launcher"
-        cp "$PREBUILT_ARM64_UNIVERSAL" "bakery-universal-launcher-linux-embedded"
-        chmod +x "bakery-universal-launcher-linux-embedded"
+        cp "$PREBUILT_ARM64_UNIVERSAL" "gemcore-universal-launcher-linux-embedded"
+        chmod +x "gemcore-universal-launcher-linux-embedded"
         ARM64_UNIVERSAL_CACHED=true
     fi
     
@@ -253,7 +253,7 @@ if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/bakery-launcher-linux" ]; then
         if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
             # Native ARM64 Linux build
             cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-            make bakery-universal-launcher-linux-embedded -j4
+            make gemcore-universal-launcher-linux-embedded -j4
         else
             # Cross-compile from macOS or x86_64 Linux
             if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
@@ -261,8 +261,8 @@ if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/bakery-launcher-linux" ]; then
                 BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
             else
                 cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-                make bakery-universal-launcher-linux-embedded -j4
-                if [ ! -f "bakery-universal-launcher-linux-embedded" ]; then
+                make gemcore-universal-launcher-linux-embedded -j4
+                if [ ! -f "gemcore-universal-launcher-linux-embedded" ]; then
                     echo "⚠️  ARM64 universal launcher build failed! Using x86-64 (won't work on ARM64)"
                     BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
                 fi
@@ -280,15 +280,15 @@ if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/bakery-launcher-linux" ]; then
     
     if [ -n "$STEAM_ARG" ]; then
         bun scripts/pack-linux-single-exe.ts \
-            "$BUILD_ARM64_UNIVERSAL/bakery-universal-launcher-linux-embedded" \
-            "$BUILD_ARM64/bakery-launcher-linux" \
+            "$BUILD_ARM64_UNIVERSAL/gemcore-universal-launcher-linux-embedded" \
+            "$BUILD_ARM64/gemcore-launcher-linux" \
             "$OUTPUT_DIR/${APP_NAME}-arm64" \
             "$STEAM_ARG" \
             "$ASSETS_PATH"
     else
         bun scripts/pack-linux-single-exe.ts \
-            "$BUILD_ARM64_UNIVERSAL/bakery-universal-launcher-linux-embedded" \
-            "$BUILD_ARM64/bakery-launcher-linux" \
+            "$BUILD_ARM64_UNIVERSAL/gemcore-universal-launcher-linux-embedded" \
+            "$BUILD_ARM64/gemcore-launcher-linux" \
             "$OUTPUT_DIR/${APP_NAME}-arm64" \
             "" \
             "$ASSETS_PATH"
@@ -321,7 +321,7 @@ echo ""
 echo "📝 Creating .desktop files for double-click support..."
 
 # Load config to get app name and icon
-CONFIG_PATH="$PROJECT_DIR/bakery.config.js"
+CONFIG_PATH="$PROJECT_DIR/gemcore.config.js"
 APP_TITLE="$APP_NAME"
 ICON_PATH=""
 ICON_FILE=""
@@ -552,7 +552,7 @@ set -e
 
 # Get script location
 SCRIPT="$0"
-APPDIR="/tmp/bakery_appimage_$$"
+APPDIR="/tmp/gemcore_appimage_$$"
 mkdir -p "$APPDIR"
 trap "rm -rf '$APPDIR'" EXIT
 

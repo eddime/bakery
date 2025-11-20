@@ -7,7 +7,7 @@ export default {
     debug: true  // Enable debug mode for testing
   },
   window: {
-    title: "🎮 Bakery Steamworks Demo",
+    title: "🎮 Gemcore Steamworks Demo",
     width: 1280,
     minWidth: 1280,
     minHeight: 720,

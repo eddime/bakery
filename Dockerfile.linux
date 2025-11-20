@@ -1,6 +1,6 @@
 # Dockerfile for native Linux builds (like Neutralino)
-# Build: docker build -f Dockerfile.linux -t bakery-linux .
-# Run: docker run --rm -v $(pwd):/work bakery-linux
+# Build: docker build -f Dockerfile.linux -t gemcore-linux .
+# Run: docker run --rm -v $(pwd):/work gemcore-linux
 
 FROM ubuntu:22.04
 

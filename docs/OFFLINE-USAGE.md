@@ -1,6 +1,6 @@
 # Offline Usage (wie Neutralino.js)
 
-Bakery kann **vollständig offline** verwendet werden, nachdem die pre-built Binaries einmal heruntergeladen wurden.
+Gemcore kann **vollständig offline** verwendet werden, nachdem die pre-built Binaries einmal heruntergeladen wurden.
 
 ## 🎯 Konzept
 
@@ -16,8 +16,8 @@ Genau wie Neutralino.js:
 
 ```bash
 # Clone Repository
-git clone https://github.com/eddime/bakery.git
-cd bakery
+git clone https://github.com/eddime/gemcore.git
+cd gemcore
 
 # Setup (lädt Binaries herunter)
 bun scripts/setup.ts
@@ -25,7 +25,7 @@ bun scripts/setup.ts
 
 **Output:**
 ```
-🥐 Bakery Setup
+🥐 Gemcore Setup
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 This will download pre-built binaries for all platforms.
@@ -34,7 +34,7 @@ After setup, you can build games offline for:
   • Windows (x64)
   • Linux (x64 with WebKitGTK)
 
-📦 Bakery Pre-built Binaries
+📦 Gemcore Pre-built Binaries
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ⬇️  Downloading pre-built binaries from GitHub...
@@ -43,20 +43,20 @@ After setup, you can build games offline for:
    ✅ Latest version: v1.0.0
 
 📥 Downloading 4 binaries...
-   ⬇️  Downloading: bakery-launcher-linux-x64
-   ✅ Downloaded: launcher/prebuilt/bakery-launcher-linux-x64
-   ⬇️  Downloading: bakery-universal-launcher-linux-embedded
-   ✅ Downloaded: launcher/prebuilt/bakery-universal-launcher-linux-embedded
-   ⬇️  Downloading: bakery-launcher-win.exe
-   ✅ Downloaded: launcher/prebuilt/bakery-launcher-win.exe
-   ⬇️  Downloading: bakery-launcher-mac
-   ✅ Downloaded: launcher/prebuilt/bakery-launcher-mac
+   ⬇️  Downloading: gemcore-launcher-linux-x64
+   ✅ Downloaded: launcher/prebuilt/gemcore-launcher-linux-x64
+   ⬇️  Downloading: gemcore-universal-launcher-linux-embedded
+   ✅ Downloaded: launcher/prebuilt/gemcore-universal-launcher-linux-embedded
+   ⬇️  Downloading: gemcore-launcher-win.exe
+   ✅ Downloaded: launcher/prebuilt/gemcore-launcher-win.exe
+   ⬇️  Downloading: gemcore-launcher-mac
+   ✅ Downloaded: launcher/prebuilt/gemcore-launcher-mac
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✅ Downloaded: 4/4 binaries
 
 💾 Binaries cached locally
-💡 Bakery can now be used offline!
+💡 Gemcore can now be used offline!
 
 🎯 You can now build games for all platforms from any OS:
    → bun bake build --platform=all
@@ -72,20 +72,20 @@ After setup, you can build games offline for:
    bun bake build --platform=all
 
 💡 Binaries are cached in launcher/prebuilt/
-   You can now use Bakery offline!
+   You can now use Gemcore offline!
 ```
 
 ### Als Submodule (für Bunery)
 
 ```bash
 # In deinem Projekt (z.B. Bunery)
-git submodule add https://github.com/eddime/bakery.git bakery
-cd bakery
+git submodule add https://github.com/eddime/gemcore.git gemcore
+cd gemcore
 
 # Setup
 bun scripts/setup.ts
 
-# Fertig! Bakery ist jetzt offline nutzbar
+# Fertig! Gemcore ist jetzt offline nutzbar
 ```
 
 ## 💾 Gecachte Binaries
@@ -93,14 +93,14 @@ bun scripts/setup.ts
 Nach dem Setup:
 
 ```
-bakery/
+gemcore/
 └── launcher/
     └── prebuilt/
         ├── .version                                    # v1.0.0
-        ├── bakery-launcher-mac                         # ~500 KB
-        ├── bakery-launcher-win.exe                     # ~300 KB
-        ├── bakery-launcher-linux-x64                   # ~2 MB (mit WebKitGTK)
-        └── bakery-universal-launcher-linux-embedded    # ~200 KB
+        ├── gemcore-launcher-mac                         # ~500 KB
+        ├── gemcore-launcher-win.exe                     # ~300 KB
+        ├── gemcore-launcher-linux-x64                   # ~2 MB (mit WebKitGTK)
+        └── gemcore-universal-launcher-linux-embedded    # ~200 KB
 ```
 
 **Total: ~3 MB** (einmalig)
@@ -130,7 +130,7 @@ bun bake build --platform=all
 ✅ Pre-built binaries already cached!
    Version: v1.0.0
 
-💡 Bakery can now be used offline
+💡 Gemcore can now be used offline
 
 🐧 Building Linux Single Executable (x86_64)
 💾 Using cached pre-built x64 binary (with WebKitGTK)
@@ -190,17 +190,17 @@ bun bake build --platform=all
 ### Als Submodule
 
 ```bash
-# Bakery updaten
-git submodule update --remote bakery
+# Gemcore updaten
+git submodule update --remote gemcore
 
 # Neue Binaries herunterladen
-cd bakery
+cd gemcore
 bun scripts/download-prebuilt-binaries.ts --force
 ```
 
 ## 📊 Vergleich mit Neutralino.js
 
-| Feature | Neutralino.js | Bakery |
+| Feature | Neutralino.js | Gemcore |
 |---------|--------------|--------|
 | Pre-built Binaries | ✅ | ✅ |
 | Offline Usage | ✅ | ✅ |
@@ -214,7 +214,7 @@ bun scripts/download-prebuilt-binaries.ts --force
 
 ## 🎯 Workflow
 
-### Für Framework-Entwickler (Bakery)
+### Für Framework-Entwickler (Gemcore)
 
 1. Code ändern
 2. `git tag v1.0.1 && git push origin v1.0.1`
@@ -223,14 +223,14 @@ bun scripts/download-prebuilt-binaries.ts --force
 
 ### Für App-Entwickler (Bunery)
 
-1. Bakery als Submodule einbinden
+1. Gemcore als Submodule einbinden
 2. Einmalig: `bun scripts/setup.ts`
 3. **Offline arbeiten!**
 4. Update: `git submodule update --remote`
 
 ### Für Spiele-Entwickler
 
-1. Bakery clonen oder als Submodule
+1. Gemcore clonen oder als Submodule
 2. Einmalig: `bun scripts/setup.ts`
 3. **Offline arbeiten!**
 4. `bun bake build --platform=all`
@@ -270,7 +270,7 @@ git push origin v1.0.0
 
 ### "Could not download pre-built binaries"
 
-→ Kein Problem! Bakery fällt automatisch auf lokale Compilation zurück.
+→ Kein Problem! Gemcore fällt automatisch auf lokale Compilation zurück.
 
 ### "No apps available" (Linux)
 

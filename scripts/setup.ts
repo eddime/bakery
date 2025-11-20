@@ -1,15 +1,15 @@
 #!/usr/bin/env bun
 /**
- * Bakery Setup Script
+ * Gemcore Setup Script
  * 
  * Downloads pre-built binaries for offline usage
- * Run this once after cloning the repository or adding Bakery as a submodule
+ * Run this once after cloning the repository or adding Gemcore as a submodule
  */
 
 import { downloadAllBinaries } from './download-prebuilt-binaries.ts';
 
 console.log('');
-console.log('🥐 Bakery Setup');
+console.log('🥐 Gemcore Setup');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log('');
 console.log('This will download pre-built binaries for all platforms.');
@@ -31,13 +31,13 @@ try {
   console.log('   bun bake build --platform=all');
   console.log('');
   console.log('💡 Binaries are cached in launcher/prebuilt/');
-  console.log('   You can now use Bakery offline!');
+  console.log('   You can now use Gemcore offline!');
   console.log('');
 } catch (error) {
   console.error('');
   console.error('❌ Setup failed:', error.message);
   console.error('');
-  console.error('💡 You can still use Bakery, but builds will compile locally');
+  console.error('💡 You can still use Gemcore, but builds will compile locally');
   console.error('   (requires CMake and platform-specific toolchains)');
   console.error('');
   process.exit(1);

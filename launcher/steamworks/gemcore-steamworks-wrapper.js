@@ -1,12 +1,12 @@
 /**
- * 🎮 Bakery Steamworks JavaScript Wrapper
+ * 🎮 Gemcore Steamworks JavaScript Wrapper
  * 
  * This wrapper provides a clean, Promise-based API for Steamworks.
  * Game developers can use this directly without worrying about JSON parsing.
  * 
  * Usage in your game:
  * 
- *   <script src="bakery-steamworks-wrapper.js"></script>
+ *   <script src="gemcore-steamworks-wrapper.js"></script>
  *   
  *   if (window.Steam.isAvailable()) {
  *     const name = await window.Steam.getPersonaName();
@@ -31,7 +31,7 @@
     
     // Check if Steamworks is available
     function isAvailable() {
-        return window.Bakery && window.Bakery.steam === true;
+        return window.Gemcore && window.Gemcore.steam === true;
     }
     
     // Steam API Wrapper

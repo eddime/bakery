@@ -14,10 +14,10 @@ fi
 cd "$(dirname "$0")/.."
 FRAMEWORK_DIR="$(pwd)"
 
-CONFIG_FILE="$PROJECT_DIR/bakery.config.js"
+CONFIG_FILE="$PROJECT_DIR/gemcore.config.js"
 
 if [ ! -f "$CONFIG_FILE" ]; then
-    echo "❌ bakery.config.js not found in $PROJECT_DIR"
+    echo "❌ gemcore.config.js not found in $PROJECT_DIR"
     exit 1
 fi
 
@@ -74,14 +74,14 @@ echo ""
 # 2. Build macOS (parallel with Windows)
 # ============================================
 echo "🍎 Building macOS..."
-./bake mac --dir "$PROJECT_DIR" > /tmp/bakery-build-mac.log 2>&1 &
+./bake mac --dir "$PROJECT_DIR" > /tmp/gemcore-build-mac.log 2>&1 &
 MAC_PID=$!
 
 # ============================================
 # 3. Build Windows (parallel with macOS)
 # ============================================
 echo "🪟 Building Windows..."
-./bake win --dir "$PROJECT_DIR" > /tmp/bakery-build-win.log 2>&1 &
+./bake win --dir "$PROJECT_DIR" > /tmp/gemcore-build-win.log 2>&1 &
 WIN_PID=$!
 
 # ============================================
@@ -97,7 +97,7 @@ if wait $MAC_PID; then
     echo "✅ macOS build complete!"
 else
     echo "❌ macOS build failed!"
-    cat /tmp/bakery-build-mac.log
+    cat /tmp/gemcore-build-mac.log
     exit 1
 fi
 
@@ -106,7 +106,7 @@ if wait $WIN_PID; then
     echo "✅ Windows build complete!"
 else
     echo "❌ Windows build failed!"
-    cat /tmp/bakery-build-win.log
+    cat /tmp/gemcore-build-win.log
     exit 1
 fi
 

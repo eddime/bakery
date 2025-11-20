@@ -3,7 +3,7 @@
 
 set -e
 
-GITHUB_REPO="eddime/bakery"
+GITHUB_REPO="eddime/gemcore"
 WORKFLOW_FILE="build-linux-binaries.yml"
 
 echo "🚀 Triggering GitHub Actions workflow..."

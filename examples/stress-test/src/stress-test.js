@@ -1,4 +1,4 @@
-// 🔥 Bakery Stress Test - Universal Performance Benchmark
+// 🔥 Gemcore Stress Test - Universal Performance Benchmark
 // Tests: Startup Time, Runtime Memory, FPS, CPU Usage
 
 class StressTestBenchmark {
@@ -27,16 +27,16 @@ class StressTestBenchmark {
         this.lastFrameTime = performance.now();
         this.frameStartTime = performance.now();
         
-        this.log(`🚀 Bakery Stress Test initialized on ${this.stats.os}`);
-        this.log(`📦 Bakery Version: ${window.Bakery?.version || 'Unknown'}`);
-        this.log(`🖥️  Platform: ${window.Bakery?.platform || 'Unknown'}`);
+        this.log(`🚀 Gemcore Stress Test initialized on ${this.stats.os}`);
+        this.log(`📦 Gemcore Version: ${window.Gemcore?.version || 'Unknown'}`);
+        this.log(`🖥️  Platform: ${window.Gemcore?.platform || 'Unknown'}`);
         
-        // 🔍 DEBUG: Check if BakeryGPU is available
-        if (typeof window.BakeryGPU === 'undefined') {
-            this.log(`❌ ERROR: window.BakeryGPU is UNDEFINED!`);
-            console.error('BakeryGPU not found! Script injection failed?');
+        // 🔍 DEBUG: Check if GemcoreGPU is available
+        if (typeof window.GemcoreGPU === 'undefined') {
+            this.log(`❌ ERROR: window.GemcoreGPU is UNDEFINED!`);
+            console.error('GemcoreGPU not found! Script injection failed?');
         } else {
-            this.log(`✅ BakeryGPU found:`, window.BakeryGPU.info);
+            this.log(`✅ GemcoreGPU found:`, window.GemcoreGPU.info);
         }
         
         // 🚀 Check WebGPU availability
@@ -44,8 +44,8 @@ class StressTestBenchmark {
     }
     
     detectGPU() {
-        if (window.BakeryGPU && window.BakeryGPU.info) {
-            const info = window.BakeryGPU.info;
+        if (window.GemcoreGPU && window.GemcoreGPU.info) {
+            const info = window.GemcoreGPU.info;
             this.stats.webgpuAvailable = info.hasWebGPU || false;
             this.stats.gpuAPI = info.preferredAPI || 'Unknown';
             
@@ -60,8 +60,8 @@ class StressTestBenchmark {
                 this.log(`🎮 WebGL: Available (Legacy)`);
             }
         } else {
-            // BakeryGPU not loaded yet - retry
-            this.log(`⏳ Waiting for BakeryGPU...`);
+            // GemcoreGPU not loaded yet - retry
+            this.log(`⏳ Waiting for GemcoreGPU...`);
             setTimeout(() => this.detectGPU(), 50);
         }
     }

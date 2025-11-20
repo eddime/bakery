@@ -1,6 +1,6 @@
 #!/usr/bin/env bun
 /**
- * 🥐 Bakery Dev Server
+ * 🥐 Gemcore Dev Server
  * Ultra-fast development server (no compilation needed!)
  * 
  * Features:
@@ -18,9 +18,9 @@ const srcDir = join(projectDir, 'src');
 const assetsDir = join(projectDir, 'assets');
 const nodeModulesDir = join(projectDir, 'node_modules');
 
-// Load bakery.config.js to get entrypoint
+// Load gemcore.config.js to get entrypoint
 let entrypoint = 'index.html';
-const configPath = join(projectDir, 'bakery.config.js');
+const configPath = join(projectDir, 'gemcore.config.js');
 if (existsSync(configPath)) {
   try {
     const config = await import(configPath);
@@ -30,11 +30,11 @@ if (existsSync(configPath)) {
       entrypoint = entrypoint.substring(4);
     }
   } catch (err) {
-    console.warn('⚠️  Could not load bakery.config.js, using default entrypoint');
+    console.warn('⚠️  Could not load gemcore.config.js, using default entrypoint');
   }
 }
 
-console.log('⚡ Bakery Dev Server');
+console.log('⚡ Gemcore Dev Server');
 console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
 console.log('📁 Project:', projectDir);
 console.log('🌐 Serving:', srcDir);
