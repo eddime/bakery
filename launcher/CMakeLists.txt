@@ -73,19 +73,10 @@ elseif(UNIX)
         # For cross-compilation, try to find cross-pkg-config
         if(IS_CROSS_COMPILING)
             if(CMAKE_C_COMPILER MATCHES "x86_64-linux-gnu")
-                # Set environment variables BEFORE finding pkg-config
-                set(ENV{PKG_CONFIG_PATH} "/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/share/pkgconfig")
-                set(ENV{PKG_CONFIG_LIBDIR} "/usr/lib/x86_64-linux-gnu/pkgconfig")
-                
-                find_program(PKG_CONFIG_EXECUTABLE NAMES x86_64-linux-gnu-pkg-config pkg-config PATHS /usr/bin)
-                if(PKG_CONFIG_EXECUTABLE)
-                    message(STATUS "🔧 Using pkg-config for x64: ${PKG_CONFIG_EXECUTABLE}")
-                    message(STATUS "   PKG_CONFIG_PATH: $ENV{PKG_CONFIG_PATH}")
-                    find_package(PkgConfig REQUIRED)
-                else()
-                    message(STATUS "⚠️  pkg-config not found")
-                    set(USE_PKG_CONFIG FALSE)
-                endif()
+                # SKIP pkg-config for x64 cross-compilation (it hangs on ARM64 hosts)
+                # Instead, manually set WebKitGTK paths below
+                message(STATUS "🔧 Skipping pkg-config for x64 cross-compilation (manual paths)")
+                set(USE_PKG_CONFIG FALSE)
             elseif(CMAKE_C_COMPILER MATCHES "aarch64-linux-gnu")
                 find_program(PKG_CONFIG_EXECUTABLE NAMES aarch64-linux-gnu-pkg-config PATHS /usr/bin)
                 if(PKG_CONFIG_EXECUTABLE)
@@ -213,12 +204,96 @@ elseif(UNIX)
             include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
         endif()
     else()
-        # pkg-config not available
-        message(STATUS "⚠️  pkg-config not available - using minimal build (system browser)")
-        message(STATUS "💡 For WebKitGTK support, install pkg-config")
-        set(WEBVIEW_LIBS "")
-        add_definitions(-DWEBVIEW_STATIC)
-        include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
+        # pkg-config not available - try manual WebKitGTK detection for x64 cross-compilation
+        if(IS_CROSS_COMPILING AND CMAKE_C_COMPILER MATCHES "x86_64-linux-gnu")
+            message(STATUS "🔧 Manually detecting WebKitGTK for x64 cross-compilation...")
+            
+            # Check if x64 WebKitGTK libraries exist
+            set(X64_WEBKIT_LIB_DIR "/usr/lib/x86_64-linux-gnu")
+            set(X64_WEBKIT_INCLUDE_BASE "/usr/include/x86_64-linux-gnu")
+            
+            if(EXISTS "${X64_WEBKIT_LIB_DIR}/libwebkit2gtk-4.1.so" OR EXISTS "${X64_WEBKIT_LIB_DIR}/libwebkit2gtk-4.0.so")
+                message(STATUS "✅ Found x64 WebKitGTK libraries - building with WebView support")
+                
+                # Manually set include directories
+                set(WEBVIEW_GTK_INCLUDES
+                    /usr/lib/x86_64-linux-gnu/glib-2.0/include
+                    ${X64_WEBKIT_INCLUDE_BASE}/gtk-3.0
+                    ${X64_WEBKIT_INCLUDE_BASE}/glib-2.0
+                    ${X64_WEBKIT_INCLUDE_BASE}/pango-1.0
+                    ${X64_WEBKIT_INCLUDE_BASE}/harfbuzz
+                    ${X64_WEBKIT_INCLUDE_BASE}/cairo
+                    ${X64_WEBKIT_INCLUDE_BASE}/gdk-pixbuf-2.0
+                    ${X64_WEBKIT_INCLUDE_BASE}/atk-1.0
+                    /usr/include/gtk-3.0
+                    /usr/include/glib-2.0
+                    /usr/include/pango-1.0
+                    /usr/include/harfbuzz
+                    /usr/include/cairo
+                    /usr/include/gdk-pixbuf-2.0
+                    /usr/include/atk-1.0
+                )
+                
+                # Check for webkit2gtk-4.1 or 4.0
+                if(EXISTS "${X64_WEBKIT_INCLUDE_BASE}/webkitgtk-4.1")
+                    list(APPEND WEBVIEW_GTK_INCLUDES ${X64_WEBKIT_INCLUDE_BASE}/webkitgtk-4.1)
+                    list(APPEND WEBVIEW_GTK_INCLUDES /usr/include/webkitgtk-4.1)
+                    set(WEBKIT_LIB "webkit2gtk-4.1")
+                elseif(EXISTS "${X64_WEBKIT_INCLUDE_BASE}/webkitgtk-4.0")
+                    list(APPEND WEBVIEW_GTK_INCLUDES ${X64_WEBKIT_INCLUDE_BASE}/webkitgtk-4.0)
+                    list(APPEND WEBVIEW_GTK_INCLUDES /usr/include/webkitgtk-4.0)
+                    set(WEBKIT_LIB "webkit2gtk-4.0")
+                else()
+                    message(WARNING "⚠️  WebKitGTK headers not found")
+                    set(WEBKIT_LIB "")
+                endif()
+                
+                if(WEBKIT_LIB)
+                    # Manually set libraries
+                    set(WEBVIEW_LIBS
+                        ${WEBKIT_LIB}
+                        gtk-3
+                        gdk-3
+                        gobject-2.0
+                        glib-2.0
+                        cairo
+                        pango-1.0
+                        pangocairo-1.0
+                        gdk_pixbuf-2.0
+                        atk-1.0
+                        xcb
+                        X11
+                        Xrandr
+                        pthread
+                        png
+                        stdc++fs
+                        dl
+                    )
+                    
+                    include_directories(${WEBVIEW_GTK_INCLUDES})
+                    add_definitions(-DWEBVIEW_GTK)
+                    message(STATUS "   Includes: ${WEBVIEW_GTK_INCLUDES}")
+                    message(STATUS "   Libraries: ${WEBVIEW_LIBS}")
+                else()
+                    message(STATUS "⚠️  WebKitGTK headers not found - using minimal build")
+                    set(WEBVIEW_LIBS "")
+                    add_definitions(-DWEBVIEW_STATIC)
+                    include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
+                endif()
+            else()
+                message(STATUS "⚠️  x64 WebKitGTK libraries not found - using minimal build")
+                message(STATUS "💡 Install: sudo apt-get install libwebkit2gtk-4.1-dev:amd64")
+                set(WEBVIEW_LIBS "")
+                add_definitions(-DWEBVIEW_STATIC)
+                include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
+            endif()
+        else()
+            message(STATUS "⚠️  pkg-config not available - using minimal build (system browser)")
+            message(STATUS "💡 For WebKitGTK support, install pkg-config")
+            set(WEBVIEW_LIBS "")
+            add_definitions(-DWEBVIEW_STATIC)
+            include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
+        endif()
     endif()
 endif()
 
