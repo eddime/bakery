@@ -362,11 +362,13 @@ if(UNIX AND NOT APPLE)
     # 🔧 Cross-compilation: Force x86_64 headers when cross-compiling from ARM64
     if(IS_CROSS_COMPILING AND CMAKE_C_COMPILER MATCHES "x86_64-linux-gnu")
         # With -nostdinc, we need to add x86_64 paths explicitly
+        # Order matters: C++ paths first, then C paths
         target_include_directories(gemcore-launcher-linux PRIVATE
-            /usr/x86_64-linux-gnu/include
-            /usr/include/x86_64-linux-gnu
             /usr/x86_64-linux-gnu/include/c++/15
             /usr/x86_64-linux-gnu/include/x86_64-linux-gnu/c++/15
+            /usr/x86_64-linux-gnu/include/c++/15/x86_64-linux-gnu
+            /usr/x86_64-linux-gnu/include
+            /usr/include/x86_64-linux-gnu
         )
         message(STATUS "🔧 Cross-compiling: Using x86_64 headers with -nostdinc")
     endif()
