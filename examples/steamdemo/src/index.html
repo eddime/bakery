@@ -171,17 +171,17 @@
 </head>
 <body>
     <div class="container">
-        <h1>🎮 Gemcore Steamworks - Full Feature Test</h1>
+        <h1> Gemcore Steamworks - Full Feature Test</h1>
         <p class="subtitle">Complete integration test for all Steamworks features</p>
         
         <div id="status" class="status">
-            <h2>⏳ Initializing Steamworks...</h2>
+            <h2> Initializing Steamworks...</h2>
         </div>
         
         <div class="grid">
             <!-- User Info -->
             <div class="card">
-                <h2>👤 User Information</h2>
+                <h2> User Information</h2>
                 <div class="info-row">
                     <span class="info-label">Steam ID:</span>
                     <span class="info-value" id="steamId">-</span>
@@ -198,7 +198,7 @@
             
             <!-- Platform Info -->
             <div class="card">
-                <h2>💻 Platform Detection</h2>
+                <h2> Platform Detection</h2>
                 <div class="info-row">
                     <span class="info-label">Language:</span>
                     <span class="info-value" id="language">-</span>
@@ -215,7 +215,7 @@
             
             <!-- Friends -->
             <div class="card">
-                <h2>👥 Friends</h2>
+                <h2> Friends</h2>
                 <div class="info-row">
                     <span class="info-label">Friend Count:</span>
                     <span class="info-value" id="friendCount">-</span>
@@ -225,7 +225,7 @@
             
             <!-- DLC -->
             <div class="card">
-                <h2>📦 DLC Management</h2>
+                <h2> DLC Management</h2>
                 <div class="info-row">
                     <span class="info-label">DLC Count:</span>
                     <span class="info-value" id="dlcCount">-</span>
@@ -236,7 +236,7 @@
             
             <!-- Overlay -->
             <div class="card">
-                <h2>🎨 Steam Overlay</h2>
+                <h2> Steam Overlay</h2>
                 <div class="info-row">
                     <span class="info-label">Overlay Enabled:</span>
                     <span class="info-value" id="overlayStatus">-</span>
@@ -247,7 +247,7 @@
             
             <!-- Screenshots -->
             <div class="card">
-                <h2>📸 Screenshots</h2>
+                <h2> Screenshots</h2>
                 <button onclick="takeScreenshot()">Take Screenshot</button>
                 <p style="margin-top: 10px; font-size: 12px; color: #666;">
                     Screenshot will be saved to Steam
@@ -258,7 +258,7 @@
         <div class="grid">
             <!-- Achievements -->
             <div class="card">
-                <h2>🏆 Achievements</h2>
+                <h2>� Achievements</h2>
                 <input type="text" id="achievementInput" placeholder="Achievement ID" value="ACH_WIN_ONE_GAME">
                 <button onclick="unlockAchievement()">Unlock Achievement</button>
                 <button class="secondary" onclick="checkAchievement()">Check Status</button>
@@ -266,7 +266,7 @@
             
             <!-- Stats -->
             <div class="card">
-                <h2>📊 Stats</h2>
+                <h2> Stats</h2>
                 <input type="text" id="statName" placeholder="Stat Name" value="NumGames">
                 <input type="number" id="statValue" placeholder="Value" value="1">
                 <button onclick="setStat()">Set Stat</button>
@@ -275,7 +275,7 @@
             
             <!-- Cloud Storage -->
             <div class="card">
-                <h2>☁️ Steam Cloud</h2>
+                <h2>� Steam Cloud</h2>
                 <input type="text" id="cloudFileName" placeholder="File Name" value="savegame.dat">
                 <input type="text" id="cloudData" placeholder="Data to save" value="Hello from Gemcore!">
                 <button onclick="saveToCloud()">Save to Cloud</button>
@@ -285,7 +285,7 @@
             
             <!-- Rich Presence -->
             <div class="card">
-                <h2>🎮 Rich Presence</h2>
+                <h2> Rich Presence</h2>
                 <input type="text" id="presenceKey" placeholder="Key" value="status">
                 <input type="text" id="presenceValue" placeholder="Value" value="Playing Gemcore Demo">
                 <button onclick="setRichPresence()">Update Presence</button>
@@ -293,7 +293,7 @@
         </div>
         
         <div class="card" style="margin-top: 20px;">
-            <h2>📝 Console Log</h2>
+            <h2> Console Log</h2>
             <button class="danger" onclick="clearLog()">Clear Log</button>
             <div class="log" id="log">
                 <div class="log-entry info">Initializing...</div>
@@ -323,13 +323,13 @@
                 // Check if Steamworks is available
                 if (!window.Steam || !window.Steam.isAvailable()) {
                     document.getElementById('status').className = 'status disabled';
-                    document.getElementById('status').innerHTML = '<h2>❌ Steamworks is NOT available</h2><p>Make sure Steam is running</p>';
+                    document.getElementById('status').innerHTML = '<h2> Steamworks is NOT available</h2><p>Make sure Steam is running</p>';
                     log('Steamworks is not available', 'error');
                     return;
                 }
                 
                 document.getElementById('status').className = 'status enabled';
-                document.getElementById('status').innerHTML = '<h2>✅ Steamworks is ACTIVE</h2>';
+                document.getElementById('status').innerHTML = '<h2> Steamworks is ACTIVE</h2>';
                 log('Steamworks initialized successfully!', 'success');
                 
                 // Load user info
@@ -362,8 +362,8 @@
                 const isBigPicture = await window.Steam.isSteamInBigPictureMode();
                 
                 document.getElementById('language').textContent = language;
-                document.getElementById('steamDeck').textContent = isSteamDeck ? '✅ Yes' : '❌ No';
-                document.getElementById('bigPicture').textContent = isBigPicture ? '✅ Yes' : '❌ No';
+                document.getElementById('steamDeck').textContent = isSteamDeck ? ' Yes' : ' No';
+                document.getElementById('bigPicture').textContent = isBigPicture ? ' Yes' : ' No';
                 
                 // Friends
                 const friendCount = await window.Steam.getFriendCount();
@@ -375,7 +375,7 @@
                 
                 // Overlay
                 const overlayEnabled = await window.Steam.isOverlayEnabled();
-                document.getElementById('overlayStatus').textContent = overlayEnabled ? '✅ Enabled' : '❌ Disabled';
+                document.getElementById('overlayStatus').textContent = overlayEnabled ? ' Enabled' : ' Disabled';
                 
             } catch (error) {
                 log(`Error loading user info: ${error.message}`, 'error');
@@ -388,9 +388,9 @@
                 const id = document.getElementById('achievementInput').value;
                 const success = await window.Steam.unlockAchievement(id);
                 if (success) {
-                    log(`✅ Achievement unlocked: ${id}`, 'success');
+                    log(` Achievement unlocked: ${id}`, 'success');
                 } else {
-                    log(`❌ Failed to unlock: ${id}`, 'error');
+                    log(` Failed to unlock: ${id}`, 'error');
                 }
             } catch (error) {
                 log(`Error: ${error.message}`, 'error');
@@ -401,7 +401,7 @@
             try {
                 const id = document.getElementById('achievementInput').value;
                 const unlocked = await window.Steam.getAchievement(id);
-                log(`Achievement ${id}: ${unlocked ? '✅ Unlocked' : '🔒 Locked'}`, unlocked ? 'success' : 'info');
+                log(`Achievement ${id}: ${unlocked ? ' Unlocked' : ' Locked'}`, unlocked ? 'success' : 'info');
             } catch (error) {
                 log(`Error: ${error.message}`, 'error');
             }
@@ -414,9 +414,9 @@
                 const value = parseInt(document.getElementById('statValue').value);
                 const success = await window.Steam.setStatInt(name, value);
                 if (success) {
-                    log(`✅ Stat set: ${name} = ${value}`, 'success');
+                    log(` Stat set: ${name} = ${value}`, 'success');
                 } else {
-                    log(`❌ Failed to set stat`, 'error');
+                    log(` Failed to set stat`, 'error');
                 }
             } catch (error) {
                 log(`Error: ${error.message}`, 'error');
@@ -427,7 +427,7 @@
             try {
                 const name = document.getElementById('statName').value;
                 const value = await window.Steam.getStatInt(name);
-                log(`📊 Stat ${name} = ${value}`, 'info');
+                log(` Stat ${name} = ${value}`, 'info');
             } catch (error) {
                 log(`Error: ${error.message}`, 'error');
             }
@@ -440,9 +440,9 @@
                 const data = document.getElementById('cloudData').value;
                 const success = await window.Steam.fileWrite(fileName, data);
                 if (success) {
-                    log(`✅ Saved to cloud: ${fileName}`, 'success');
+                    log(` Saved to cloud: ${fileName}`, 'success');
                 } else {
-                    log(`❌ Save failed`, 'error');
+                    log(` Save failed`, 'error');
                 }
             } catch (error) {
                 log(`Error: ${error.message}`, 'error');
@@ -454,10 +454,10 @@
                 const fileName = document.getElementById('cloudFileName').value;
                 const data = await window.Steam.fileRead(fileName);
                 if (data) {
-                    log(`✅ Loaded: ${data}`, 'success');
+                    log(` Loaded: ${data}`, 'success');
                     document.getElementById('cloudData').value = data;
                 } else {
-                    log(`❌ File not found`, 'error');
+                    log(` File not found`, 'error');
                 }
             } catch (error) {
                 log(`Error: ${error.message}`, 'error');
@@ -468,7 +468,7 @@
             try {
                 const fileName = document.getElementById('cloudFileName').value;
                 const exists = await window.Steam.fileExists(fileName);
-                log(`File ${fileName}: ${exists ? '✅ Exists' : '❌ Not found'}`, exists ? 'success' : 'error');
+                log(`File ${fileName}: ${exists ? ' Exists' : ' Not found'}`, exists ? 'success' : 'error');
             } catch (error) {
                 log(`Error: ${error.message}`, 'error');
             }
@@ -481,9 +481,9 @@
                 const value = document.getElementById('presenceValue').value;
                 const success = await window.Steam.setRichPresence(key, value);
                 if (success) {
-                    log(`✅ Rich Presence updated: ${key} = ${value}`, 'success');
+                    log(` Rich Presence updated: ${key} = ${value}`, 'success');
                 } else {
-                    log(`❌ Failed to update presence`, 'error');
+                    log(` Failed to update presence`, 'error');
                 }
             } catch (error) {
                 log(`Error: ${error.message}`, 'error');
@@ -495,7 +495,7 @@
             try {
                 log('Loading friends...', 'info');
                 const friends = await window.Steam.getFriends();
-                log(`✅ Found ${friends.length} friends:`, 'success');
+                log(` Found ${friends.length} friends:`, 'success');
                 friends.forEach((name, i) => {
                     log(`  ${i + 1}. ${name}`, 'info');
                 });
@@ -509,9 +509,9 @@
             try {
                 const success = await window.Steam.activateOverlay(dialog);
                 if (success) {
-                    log(`✅ Overlay opened: ${dialog}`, 'success');
+                    log(` Overlay opened: ${dialog}`, 'success');
                 } else {
-                    log(`❌ Failed to open overlay`, 'error');
+                    log(` Failed to open overlay`, 'error');
                 }
             } catch (error) {
                 log(`Error: ${error.message}`, 'error');
@@ -523,7 +523,7 @@
             try {
                 const dlcId = parseInt(document.getElementById('dlcId').value);
                 const owned = await window.Steam.isDlcInstalled(dlcId);
-                log(`DLC ${dlcId}: ${owned ? '✅ Owned' : '❌ Not owned'}`, owned ? 'success' : 'info');
+                log(`DLC ${dlcId}: ${owned ? ' Owned' : ' Not owned'}`, owned ? 'success' : 'info');
             } catch (error) {
                 log(`Error: ${error.message}`, 'error');
             }
@@ -534,9 +534,9 @@
             try {
                 const success = await window.Steam.triggerScreenshot();
                 if (success) {
-                    log(`✅ Screenshot taken!`, 'success');
+                    log(` Screenshot taken!`, 'success');
                 } else {
-                    log(`❌ Screenshot failed`, 'error');
+                    log(` Screenshot failed`, 'error');
                 }
             } catch (error) {
                 log(`Error: ${error.message}`, 'error');

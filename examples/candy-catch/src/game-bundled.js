@@ -1,5 +1,5 @@
-// 🍬 Candy Catch - Bundled Version (No ES6 Modules)
-console.log('🎮 Loading Candy Catch...');
+//  Candy Catch - Bundled Version (No ES6 Modules)
+console.log(' Loading Candy Catch...');
 
 // TitleScene
 class TitleScene extends Phaser.Scene {
@@ -8,7 +8,7 @@ class TitleScene extends Phaser.Scene {
     }
 
     preload() {
-        console.log('🎮 TitleScene: Loading assets...');
+        console.log(' TitleScene: Loading assets...');
         
         // Load assets
         this.load.image('background', 'assets/images/background.jpg');
@@ -19,16 +19,16 @@ class TitleScene extends Phaser.Scene {
         
         // Debug loading
         this.load.on('filecomplete', (key) => {
-            console.log('✅ Loaded:', key);
+            console.log(' Loaded:', key);
         });
         
         this.load.on('loaderror', (file) => {
-            console.error('❌ Failed to load:', file.src);
+            console.error(' Failed to load:', file.src);
         });
     }
 
     create() {
-        console.log('🎮 TitleScene: Creating scene...');
+        console.log(' TitleScene: Creating scene...');
         
         // create background
         this.add.image(0, 0, 'background').setOrigin(0, 0);
@@ -259,7 +259,7 @@ const config = {
     }
 };
 
-console.log('🎮 Creating Phaser Game...');
+console.log(' Creating Phaser Game...');
 new Phaser.Game(config);
-console.log('✅ Phaser Game created!');
+console.log(' Phaser Game created!');
 

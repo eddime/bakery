@@ -1,4 +1,4 @@
-// 🔥 Gemcore Stress Test - Universal Performance Benchmark
+//  Gemcore Stress Test - Universal Performance Benchmark
 // Tests: Startup Time, Runtime Memory, FPS, CPU Usage
 
 class StressTestBenchmark {
@@ -27,19 +27,19 @@ class StressTestBenchmark {
         this.lastFrameTime = performance.now();
         this.frameStartTime = performance.now();
         
-        this.log(`🚀 Gemcore Stress Test initialized on ${this.stats.os}`);
-        this.log(`📦 Gemcore Version: ${window.Gemcore?.version || 'Unknown'}`);
-        this.log(`🖥️  Platform: ${window.Gemcore?.platform || 'Unknown'}`);
+        this.log(` Gemcore Stress Test initialized on ${this.stats.os}`);
+        this.log(` Gemcore Version: ${window.Gemcore?.version || 'Unknown'}`);
+        this.log(`  Platform: ${window.Gemcore?.platform || 'Unknown'}`);
         
-        // 🔍 DEBUG: Check if GemcoreGPU is available
+        //  DEBUG: Check if GemcoreGPU is available
         if (typeof window.GemcoreGPU === 'undefined') {
-            this.log(`❌ ERROR: window.GemcoreGPU is UNDEFINED!`);
+            this.log(` ERROR: window.GemcoreGPU is UNDEFINED!`);
             console.error('GemcoreGPU not found! Script injection failed?');
         } else {
-            this.log(`✅ GemcoreGPU found:`, window.GemcoreGPU.info);
+            this.log(` GemcoreGPU found:`, window.GemcoreGPU.info);
         }
         
-        // 🚀 Check WebGPU availability
+        //  Check WebGPU availability
         this.detectGPU();
     }
     
@@ -53,15 +53,15 @@ class StressTestBenchmark {
             this.updateStatsUI();
             
             if (info.hasWebGPU) {
-                this.log(`🚀 WebGPU: AVAILABLE (${info.adapter?.vendor || 'Unknown'})`);
+                this.log(` WebGPU: AVAILABLE (${info.adapter?.vendor || 'Unknown'})`);
             } else if (info.hasWebGL2) {
-                this.log(`🎮 WebGL2: Available (WebGPU not supported)`);
+                this.log(` WebGL2: Available (WebGPU not supported)`);
             } else if (info.hasWebGL) {
-                this.log(`🎮 WebGL: Available (Legacy)`);
+                this.log(` WebGL: Available (Legacy)`);
             }
         } else {
             // GemcoreGPU not loaded yet - retry
-            this.log(`⏳ Waiting for GemcoreGPU...`);
+            this.log(` Waiting for GemcoreGPU...`);
             setTimeout(() => this.detectGPU(), 50);
         }
     }
@@ -149,11 +149,11 @@ class StressTestBenchmark {
                         this.stats.currentMemory < 250 ? 'stat-warn' : 'stat-bad';
         
         const gpuClass = this.stats.webgpuAvailable ? 'stat-webgpu' : 'stat-webgl';
-        const gpuIcon = this.stats.webgpuAvailable ? '🚀' : '🎮';
+        const gpuIcon = this.stats.webgpuAvailable ? '' : '';
         
         statsEl.innerHTML = `
             <div style="font-size: 16px; font-weight: bold; margin-bottom: 10px;">
-                📊 Performance Stats
+                 Performance Stats
             </div>
             <div><strong>OS:</strong> ${this.stats.os}</div>
             <div><strong>Framework:</strong> ${this.stats.framework}</div>
@@ -183,7 +183,7 @@ class StressTestBenchmark {
             userAgent: navigator.userAgent,
         };
         
-        this.log('📋 Results exported to console');
+        this.log(' Results exported to console');
         console.log('=== STRESS TEST RESULTS ===');
         console.log(JSON.stringify(results, null, 2));
         console.log('=========================');
@@ -198,7 +198,7 @@ let benchmark = new StressTestBenchmark();
 // Framework Tests
 function startTest(framework) {
     benchmark.stats.framework = framework;
-    benchmark.log(`🎯 Starting ${framework} stress test...`);
+    benchmark.log(` Starting ${framework} stress test...`);
     
     document.getElementById('menu').style.display = 'none';
     document.getElementById('game-container').style.display = 'block';
@@ -230,8 +230,8 @@ function startTest(framework) {
     benchmark.stats.startupTime = Math.round(loadEnd - loadStart);
     benchmark.stats.initialMemory = benchmark.getMemoryUsage();
     
-    benchmark.log(`✅ ${framework} loaded in ${benchmark.stats.startupTime}ms`);
-    benchmark.log(`💾 Initial memory: ${benchmark.stats.initialMemory}MB`);
+    benchmark.log(` ${framework} loaded in ${benchmark.stats.startupTime}ms`);
+    benchmark.log(` Initial memory: ${benchmark.stats.initialMemory}MB`);
     
     // Export results every 10 seconds
     setInterval(() => {
@@ -270,7 +270,7 @@ function startVanillaTest() {
     }
     
     benchmark.stats.particleCount = particles.length;
-    benchmark.log(`🎨 Created ${particles.length} particles`);
+    benchmark.log(` Created ${particles.length} particles`);
     
     function animate() {
         benchmark.updateStats();
@@ -311,7 +311,7 @@ function loadPixiJS(callback) {
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.3.2/pixi.min.js';
     script.onload = callback;
     document.head.appendChild(script);
-    benchmark.log('📦 Loading PixiJS from CDN...');
+    benchmark.log(' Loading PixiJS from CDN...');
 }
 
 function startPixiTest() {
@@ -343,7 +343,7 @@ function startPixiTest() {
     }
     
     benchmark.stats.particleCount = particles.length;
-    benchmark.log(`🎨 Created ${particles.length} PixiJS sprites`);
+    benchmark.log(` Created ${particles.length} PixiJS sprites`);
     
     app.ticker.add(() => {
         benchmark.updateStats();
@@ -367,7 +367,7 @@ function loadThreeJS(callback) {
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
     script.onload = callback;
     document.head.appendChild(script);
-    benchmark.log('📦 Loading Three.js from CDN...');
+    benchmark.log(' Loading Three.js from CDN...');
 }
 
 function startThreeTest() {
@@ -403,7 +403,7 @@ function startThreeTest() {
     }
     
     benchmark.stats.particleCount = particles.length;
-    benchmark.log(`🎲 Created ${particles.length} 3D spheres`);
+    benchmark.log(` Created ${particles.length} 3D spheres`);
     
     function animate() {
         benchmark.updateStats();
@@ -437,7 +437,7 @@ function loadPhaserJS(callback) {
     script.src = 'https://cdn.jsdelivr.net/npm/phaser@3.70.0/dist/phaser.min.js';
     script.onload = callback;
     document.head.appendChild(script);
-    benchmark.log('📦 Loading Phaser 3 from CDN...');
+    benchmark.log(' Loading Phaser 3 from CDN...');
 }
 
 function loadKaplayJS(callback) {
@@ -445,7 +445,7 @@ function loadKaplayJS(callback) {
     script.src = 'https://unpkg.com/kaplay@3001.0.0/dist/kaplay.js';
     script.onload = callback;
     document.head.appendChild(script);
-    benchmark.log('📦 Loading Kaplay from CDN...');
+    benchmark.log(' Loading Kaplay from CDN...');
 }
 
 function startPhaserTest() {
@@ -494,7 +494,7 @@ function startPhaserTest() {
         }
         
         benchmark.stats.particleCount = particles.getChildren().length;
-        benchmark.log(`🎮 Created ${benchmark.stats.particleCount} Phaser sprites`);
+        benchmark.log(` Created ${benchmark.stats.particleCount} Phaser sprites`);
     }
     
     function update() {
@@ -540,7 +540,7 @@ function startKaplayTest() {
     }
     
     benchmark.stats.particleCount = particleCount;
-    benchmark.log(`🕹️ Created ${particleCount} Kaplay particles`);
+    benchmark.log(`� Created ${particleCount} Kaplay particles`);
     
     // Game loop
     k.onUpdate(() => {
@@ -578,6 +578,6 @@ function startKaplayTest() {
 // Log when page fully loaded
 window.addEventListener('load', () => {
     const loadTime = Date.now() - benchmark.startTime;
-    benchmark.log(`✅ Page fully loaded in ${loadTime}ms`);
+    benchmark.log(` Page fully loaded in ${loadTime}ms`);
 });
 
