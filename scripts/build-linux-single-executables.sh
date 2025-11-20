@@ -466,6 +466,18 @@ create_proper_appimage() {
     cp "$OUTPUT_DIR/$BINARY_NAME" "$APPDIR_TMP/usr/bin/${APP_NAME}"
     chmod +x "$APPDIR_TMP/usr/bin/${APP_NAME}"
     
+    # Copy assets (required by launcher)
+    if [ -f "$OUTPUT_DIR/gemcore-assets" ]; then
+        echo "   📦 Copying assets ($(du -h "$OUTPUT_DIR/gemcore-assets" | awk '{print $1}'))..."
+        cp "$OUTPUT_DIR/gemcore-assets" "$APPDIR_TMP/usr/bin/gemcore-assets"
+    fi
+    
+    # Copy Steam SDK if available
+    if [ -f "$OUTPUT_DIR/libsteam_api.so" ]; then
+        echo "   🎮 Copying Steam SDK..."
+        cp "$OUTPUT_DIR/libsteam_api.so" "$APPDIR_TMP/usr/bin/libsteam_api.so"
+    fi
+    
     # Copy icon if available
     if [ -n "$ICON_FILE" ] && [ -f "$OUTPUT_DIR/$ICON_FILE" ]; then
         cp "$OUTPUT_DIR/$ICON_FILE" "$APPDIR_TMP/usr/share/icons/hicolor/256x256/apps/${APP_NAME}.png"
@@ -673,9 +685,11 @@ rm -rf "$OUTPUT_DIR/${APP_NAME}.app" "$OUTPUT_DIR/${APP_NAME}-arm64.app" 2>/dev/
 rm -f "$OUTPUT_DIR/${APP_NAME}.app.desktop" "$OUTPUT_DIR/${APP_NAME}-arm64.app.desktop" 2>/dev/null || true
 rm -f "$OUTPUT_DIR/${APP_NAME}-x86_64.AppImage.desktop" "$OUTPUT_DIR/${APP_NAME}-arm64.AppImage.desktop" 2>/dev/null || true
 rm -f "$OUTPUT_DIR/$ICON_FILE" 2>/dev/null || true  # Icon is embedded in AppImage
+rm -f "$OUTPUT_DIR/gemcore-assets" 2>/dev/null || true  # Assets are embedded in AppImage
+rm -f "$OUTPUT_DIR/libsteam_api.so" 2>/dev/null || true  # Steam SDK is embedded in AppImage
 rm -f "$OUTPUT_DIR/install-${APP_NAME}.sh" 2>/dev/null || true
 rm -f "$OUTPUT_DIR/README.txt" 2>/dev/null || true
-echo "✅ Cleanup complete (only AppImage files remain - icon embedded!)"
+echo "✅ Cleanup complete (only AppImage files remain - everything embedded!)"
 
 # No additional files needed - everything is in the AppImage!
 
