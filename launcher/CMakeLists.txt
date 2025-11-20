@@ -129,8 +129,30 @@ elseif(UNIX)
                 stdc++fs
                 dl
             )
-            include_directories(${WEBVIEW_GTK_INCLUDE_DIRS})
-            include_directories(${WEBVIEW_WEBKIT_INCLUDE_DIRS})
+            
+            # Filter out ARM64 include paths when cross-compiling for x86_64
+            if(IS_CROSS_COMPILING AND CMAKE_C_COMPILER MATCHES "x86_64-linux-gnu")
+                # Remove ARM64 paths from include directories
+                set(FILTERED_GTK_INCLUDES "")
+                foreach(inc ${WEBVIEW_GTK_INCLUDE_DIRS})
+                    if(NOT inc MATCHES "aarch64")
+                        list(APPEND FILTERED_GTK_INCLUDES ${inc})
+                    endif()
+                endforeach()
+                set(FILTERED_WEBKIT_INCLUDES "")
+                foreach(inc ${WEBVIEW_WEBKIT_INCLUDE_DIRS})
+                    if(NOT inc MATCHES "aarch64")
+                        list(APPEND FILTERED_WEBKIT_INCLUDES ${inc})
+                    endif()
+                endforeach()
+                include_directories(${FILTERED_GTK_INCLUDES})
+                include_directories(${FILTERED_WEBKIT_INCLUDES})
+                message(STATUS "🔧 Filtered ARM64 paths from pkg-config includes")
+            else()
+                include_directories(${WEBVIEW_GTK_INCLUDE_DIRS})
+                include_directories(${WEBVIEW_WEBKIT_INCLUDE_DIRS})
+            endif()
+            
             add_definitions(${WEBVIEW_GTK_CFLAGS_OTHER})
             add_definitions(${WEBVIEW_WEBKIT_CFLAGS_OTHER})
             add_definitions(-DWEBVIEW_GTK)  # Enable WebView support
