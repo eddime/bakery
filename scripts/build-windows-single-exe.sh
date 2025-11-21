@@ -40,19 +40,21 @@ if [ -f "$CONFIG_FILE" ]; then
     fi
 fi
 
-BUILD_DIR="$FRAMEWORK_DIR/launcher/build-windows-x64"
-mkdir -p "$BUILD_DIR"
-cd "$BUILD_DIR"
+# Use prebuilt launcher (always with Steamworks)
+echo " Using prebuilt Windows launcher (x64 with Steamworks)..."
+PREBUILT_LAUNCHER="$FRAMEWORK_DIR/launcher/prebuilt/windows/gemcore-launcher-win-x64.exe"
 
-cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/mingw-w64.cmake -DENABLE_STEAMWORKS=$STEAMWORKS_ENABLED
-make gemcore-launcher-win -j4
-
-if [ ! -f "gemcore-launcher-win.exe" ]; then
-    echo " x64 launcher build failed!"
+if [ ! -f "$PREBUILT_LAUNCHER" ]; then
+    echo " ERROR: Prebuilt launcher not found: $PREBUILT_LAUNCHER"
+    echo " Please rebuild launchers with: cd launcher && ./rebuild-prebuilt.sh"
     exit 1
 fi
 
-echo " x64 launcher: $(du -h gemcore-launcher-win.exe | awk '{print $1}')"
+BUILD_DIR="$FRAMEWORK_DIR/launcher/build-windows-x64"
+mkdir -p "$BUILD_DIR"
+cp "$PREBUILT_LAUNCHER" "$BUILD_DIR/gemcore-launcher-win.exe"
+
+echo " x64 launcher: $(du -h "$BUILD_DIR/gemcore-launcher-win.exe" | awk '{print $1}') (from prebuilt)"
 echo ""
 
 # ============================================
@@ -113,9 +115,9 @@ echo " Size: $(du -h "$PROJECT_DIR/dist/windows/${APP_NAME}.exe" | awk '{print $
 echo " Assets encrypted with XOR + multi-key rotation"
 echo ""
 echo " User experience:"
-echo "   † Double-click ${APP_NAME}.exe"
-echo "   † Everything embedded (launcher + assets)"
-echo "   † Instant launch with encryption!"
+echo "   ï¿½ Double-click ${APP_NAME}.exe"
+echo "   ï¿½ Everything embedded (launcher + assets)"
+echo "   ï¿½ Instant launch with encryption!"
 echo ""
 
 

@@ -33,13 +33,18 @@ launcher/bakery-assets
 launcher/build-*/
 examples/*/dist/
 
-# Pre-built binaries (cached locally, like Neutralino)
+# Pre-built binaries (all platforms, always with Steamworks)
 launcher/prebuilt/
 !launcher/prebuilt/.gitkeep
-# Exception: Linux launchers (for cross-compilation from macOS/Windows)
+# Exception: All prebuilt launchers (for builds without CMake)
+!launcher/prebuilt/macos/
+!launcher/prebuilt/macos/gemcore-launcher-mac-universal
+!launcher/prebuilt/windows/
+!launcher/prebuilt/windows/gemcore-launcher-win-x64.exe
 !launcher/prebuilt/linux/
 !launcher/prebuilt/linux/gemcore-launcher-linux-arm64
 !launcher/prebuilt/linux/gemcore-launcher-linux-x64
+!launcher/prebuilt/linux/README.md
 
 # IDE
 .vscode/
