@@ -33,6 +33,13 @@ bool SteamworksManager::Init() {
         return true; // Already initialized
     }
     
+    #if defined(__linux__) && (defined(__aarch64__) || defined(__arm64__))
+    // ARM64 Linux: Valve doesn't provide Steamworks library
+    // Stubs are available but Init will fail - skip to avoid segfault
+    std::cerr << " Steamworks not available on ARM64 Linux (Valve doesn't provide library)" << std::endl;
+    return false;
+    #endif
+    
     // Initialize Steam API
     // This will look for steam_appid.txt in the current directory
     // or use the app ID from the Steam client if running through Steam
@@ -133,7 +140,7 @@ bool SteamworksManager::UnlockAchievement(const std::string& achievementId) {
     
     #ifndef NDEBUG
     if (success) {
-        std::cout << "† Achievement unlocked: " << achievementId << std::endl;
+        std::cout << "ï¿½ Achievement unlocked: " << achievementId << std::endl;
     }
     #endif
     
