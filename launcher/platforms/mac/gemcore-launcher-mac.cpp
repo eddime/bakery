@@ -27,6 +27,7 @@
 #include "gemcore-http-server.h"
 #include "gemcore-asset-loader.h"
 #include "gemcore-cache-buster.h"
+#include "gemcore-window-helper.h"
 
 #ifdef ENABLE_STEAMWORKS
 #include "gemcore-steamworks-bindings.h"    //  Steamworks integration
@@ -301,8 +302,8 @@ int main(int argc, char* argv[]) {
         #ifndef NDEBUG
     auto end = std::chrono::high_resolution_clock::now();
     auto ms = std::chrono::duration_cast<std::chrono::microseconds>(end - start).count();
-    std::cout << " Pre-cached " << server.getCacheSize() << " responses in " << ms << "Îs" << std::endl;
-        std::cout << "   † Critical assets (entrypoint, main.js) cached FIRST" << std::endl;
+    std::cout << " Pre-cached " << server.getCacheSize() << " responses in " << ms << "ï¿½s" << std::endl;
+        std::cout << "   ï¿½ Critical assets (entrypoint, main.js) cached FIRST" << std::endl;
         #endif
         
         cacheReady = true;
@@ -390,8 +391,15 @@ int main(int argc, char* argv[]) {
         std::cout << "  Fullscreen mode: ENABLED (better performance)" << std::endl;
         #endif
         
-        // Set fullscreen via JavaScript after WebView is ready
-        // (WebView C++ API doesn't have direct fullscreen support)
+        // Use native macOS fullscreen (from helper)
+        auto window_result = w.window();
+        if (window_result.has_value()) {
+            gemcore::window::toggleFullscreen(window_result.value());
+            
+            #ifndef NDEBUG
+            std::cout << " Native fullscreen activated" << std::endl;
+            #endif
+        }
     }
     
     // DISABLED: Performance optimizations causing issues with some games
@@ -431,94 +439,39 @@ int main(int argc, char* argv[]) {
     }
     jsInit += R"JS(
       
-      //  ANTI-STUTTER: Aggressive optimizations for smooth 60 FPS in window mode
-      (function() {
-          // 1. Force GPU acceleration on EVERYTHING
-          const style = document.createElement('style');
-          style.textContent = `
-              * {
-                  -webkit-transform: translateZ(0);
-                  -webkit-backface-visibility: hidden;
-                  -webkit-perspective: 1000px;
-                  will-change: transform;
-              }
-              body, html {
-                  -webkit-font-smoothing: antialiased;
-                  -moz-osx-font-smoothing: grayscale;
-              }
-              canvas, video, img {
-                  -webkit-transform: translate3d(0,0,0);
-                  transform: translate3d(0,0,0);
-                  image-rendering: -webkit-optimize-contrast;
-                  image-rendering: crisp-edges;
-              }
-              /* Disable all animations that could cause jank */
-              *, *::before, *::after {
-                  animation-duration: 0s !important;
-                  transition-duration: 0s !important;
-              }
-          `;
-          if (document.head) {
-              document.head.appendChild(style);
-          } else {
-              // Wait for DOM to be ready
-              document.addEventListener('DOMContentLoaded', () => {
-                  if (document.head) {
-                      document.head.appendChild(style);
+      //  GPU ACCELERATION: Optimized for canvas-based games (Pixi.js, Phaser, etc.)
+      // Only apply to game pages, not splash screen (splash.html has its own animations)
+      if (!window.location.pathname.includes('splash.html')) {
+          (function() {
+              // Lightweight GPU acceleration for canvas games
+              const style = document.createElement('style');
+              style.textContent = `
+                  body, html {
+                      -webkit-font-smoothing: antialiased;
+                      -moz-osx-font-smoothing: grayscale;
                   }
-              });
-          }
+                  canvas {
+                      -webkit-transform: translate3d(0,0,0);
+                      transform: translate3d(0,0,0);
+                  }
+              `;
+              if (document.head) {
+                  document.head.appendChild(style);
+              } else {
+                  document.addEventListener('DOMContentLoaded', () => {
+                      if (document.head) {
+                          document.head.appendChild(style);
+                      }
+                  });
+              }
+          })();
           
-          // 2. Disable smooth scrolling (causes jank)
+          // Disable smooth scrolling (causes jank)
           document.documentElement.style.scrollBehavior = 'auto';
-          
-          // 3. Aggressive requestAnimationFrame optimization
-          let lastFrame = performance.now();
-          let frameCount = 0;
-          let droppedFrames = 0;
-          const targetFrameTime = 16.666; // 60 FPS
-          const minFrameTime = 15; // Don't go faster than ~66 FPS
-          const maxFrameTime = 18; // Don't go slower than ~55 FPS
-          
-          const originalRAF = window.requestAnimationFrame;
-          window.requestAnimationFrame = function(callback) {
-              return originalRAF.call(window, function(timestamp) {
-                  const delta = timestamp - lastFrame;
-                  
-                  // Skip frame if too soon (prevents double-frames)
-                  if (delta < minFrameTime) {
-                      droppedFrames++;
-                      return originalRAF.call(window, callback);
-                  }
-                  
-                  // Warn if frame took too long
-                  if (delta > maxFrameTime && frameCount > 60) {
-                      // Frame drop detected, but continue
-                  }
-                  
-                  lastFrame = timestamp;
-                  frameCount++;
-                  callback(timestamp);
-              });
-          };
-          
-          // 4. Prevent compositor stalls
-          setInterval(() => {
-              // Force a repaint to keep compositor active
-              document.body.style.transform = 'translateZ(0)';
-          }, 1000);
-          
-          // 5. Log performance stats
-          setInterval(() => {
-              if (droppedFrames > 0) {
-                  console.log(' Frame stats: ' + frameCount + ' frames, ' + droppedFrames + ' skipped (good!)');
-                  droppedFrames = 0;
-                  frameCount = 0;
-              }
-          }, 5000);
-          
-          console.log(' Anti-Stutter: ENABLED (Aggressive mode for window)');
-      })();
+      } else {
+          // Splash screen: Allow animations but still optimize rendering
+          console.log(' Splash screen: Animations enabled');
+      }
       
       //  RUNTIME OPTIMIZATION 1: Passive Event Listeners (less overhead)
     (function() {
@@ -553,24 +506,8 @@ int main(int argc, char* argv[]) {
     }
     
     //  FULLSCREEN: Auto-enable if configured (better performance)
-    window.addEventListener('load', () => {
-        const fullscreenEnabled = )JS";
-    jsInit += (config.window.fullscreen ? "true" : "false");
-    jsInit += R"JS(;
-        
-        if (fullscreenEnabled) {
-            // Request fullscreen on document element
-            const elem = document.documentElement;
-            if (elem.requestFullscreen) {
-                elem.requestFullscreen().catch(err => {
-                    console.warn(' Fullscreen request failed:', err);
-                });
-            } else if (elem.webkitRequestFullscreen) {
-                elem.webkitRequestFullscreen();
-            }
-            console.log('  Fullscreen: ENABLED (better FPS)');
-        }
-    });
+    // Note: Browser fullscreen doesn't work due to security restrictions
+    // Native fullscreen is handled by the launcher after window is ready
     
     //  RUNTIME OPTIMIZATION 3: Smart GC (only when needed)
     let gameLoaded = false;

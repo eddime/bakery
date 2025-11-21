@@ -23,7 +23,7 @@ const ICNS_TYPES = {
 const ICO_SIZES = [16, 32, 48, 64, 128, 256];
 
 /**
- * Convert PNG to ICNS (macOS)
+ * Convert PNG to ICNS (macOS) using native macOS tools (like Godot does)
  */
 export async function convertPngToIcns(pngPath: string, outputPath: string): Promise<void> {
   console.log(' Converting PNG to ICNS...');
@@ -32,39 +32,67 @@ export async function convertPngToIcns(pngPath: string, outputPath: string): Pro
     throw new Error(`PNG file not found: ${pngPath}`);
   }
   
-  // Load PNG with sharp
-  const img = sharp(pngPath);
-  const metadata = await img.metadata();
+  // Use macOS native iconutil (like Godot) for best quality
+  const { tmpdir } = await import('os');
+  const { join } = await import('path');
+  const { mkdirSync, rmSync } = await import('fs');
+  const { spawnSync } = await import('child_process');
   
-  console.log(`    Source: ${metadata.width}x${metadata.height}`);
+  const iconsetPath = join(tmpdir(), `icon_${Date.now()}.iconset`);
+  mkdirSync(iconsetPath, { recursive: true });
   
-  // Generate all required sizes
-  const sizes = [16, 32, 128, 256, 512, 1024];
-  const icons: { size: number; data: Uint8Array }[] = [];
-  
-  for (const size of sizes) {
-    console.log(`    Generating ${size}x${size}...`);
+  try {
+    // Generate all required sizes using sips (native macOS tool)
+    const sizes = [
+      { size: 16, name: 'icon_16x16.png' },
+      { size: 32, name: 'icon_16x16@2x.png' },
+      { size: 32, name: 'icon_32x32.png' },
+      { size: 64, name: 'icon_32x32@2x.png' },
+      { size: 128, name: 'icon_128x128.png' },
+      { size: 256, name: 'icon_128x128@2x.png' },
+      { size: 256, name: 'icon_256x256.png' },
+      { size: 512, name: 'icon_256x256@2x.png' },
+      { size: 512, name: 'icon_512x512.png' },
+      { size: 1024, name: 'icon_512x512@2x.png' },
+    ];
     
-    // Resize image with sharp
-    const resized = await sharp(pngPath)
-      .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-      .png()
-      .toBuffer();
+    console.log(`    Generating ${sizes.length} icon sizes...`);
     
-    icons.push({ size, data: new Uint8Array(resized) });
+    for (const { size, name } of sizes) {
+      const outPath = join(iconsetPath, name);
+      const result = spawnSync('sips', [
+        '-z', size.toString(), size.toString(),
+        pngPath,
+        '--out', outPath
+      ], { encoding: 'utf-8' });
+      
+      if (result.error || result.status !== 0) {
+        throw new Error(`Failed to generate ${name}: ${result.stderr}`);
+      }
+    }
+    
+    // Use iconutil to create ICNS (native macOS tool)
+    console.log('    Creating ICNS with iconutil...');
+    const result = spawnSync('iconutil', [
+      '-c', 'icns',
+      iconsetPath,
+      '-o', outputPath
+    ], { encoding: 'utf-8' });
+    
+    if (result.error || result.status !== 0) {
+      throw new Error(`iconutil failed: ${result.stderr}`);
+    }
+    
+    const stats = await Bun.file(outputPath).stat();
+    console.log(` ICNS created: ${(stats.size / 1024).toFixed(1)} KB`);
+  } finally {
+    // Cleanup
+    rmSync(iconsetPath, { recursive: true, force: true });
   }
-  
-  // Write ICNS file
-  console.log('    Writing ICNS file...');
-  const icnsData = createIcnsFile(icons);
-  writeFileSync(outputPath, icnsData);
-  
-  const stats = await Bun.file(outputPath).stat();
-  console.log(` ICNS created: ${(stats.size / 1024).toFixed(1)} KB`);
 }
 
 /**
- * Convert PNG to ICO (Windows)
+ * Convert PNG to ICO (Windows) using sips (like Godot does)
  */
 export async function convertPngToIco(pngPath: string, outputPath: string): Promise<void> {
   console.log(' Converting PNG to ICO...');
@@ -73,33 +101,50 @@ export async function convertPngToIco(pngPath: string, outputPath: string): Prom
     throw new Error(`PNG file not found: ${pngPath}`);
   }
   
-  // Load PNG with sharp
-  const img = sharp(pngPath);
-  const metadata = await img.metadata();
-  console.log(`    Source: ${metadata.width}x${metadata.height}`);
+  const { tmpdir } = await import('os');
+  const { join } = await import('path');
+  const { mkdirSync, rmSync, readFileSync } = await import('fs');
+  const { spawnSync } = await import('child_process');
   
-  // Generate all required sizes
-  const icons: { size: number; data: Uint8Array }[] = [];
+  const tempDir = join(tmpdir(), `ico_${Date.now()}`);
+  mkdirSync(tempDir, { recursive: true });
   
-  for (const size of ICO_SIZES) {
-    console.log(`    Generating ${size}x${size}...`);
+  try {
+    // Generate all required sizes using sips (like Godot)
+    const icons: { size: number; data: Uint8Array }[] = [];
     
-    // Resize image with sharp
-    const resized = await sharp(pngPath)
-      .resize(size, size, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } })
-      .png()
-      .toBuffer();
+    console.log(`    Generating ${ICO_SIZES.length} icon sizes...`);
     
-    icons.push({ size, data: new Uint8Array(resized) });
+    for (const size of ICO_SIZES) {
+      const tempPath = join(tempDir, `icon_${size}.png`);
+      
+      // Use sips for high-quality resizing
+      const result = spawnSync('sips', [
+        '-z', size.toString(), size.toString(),
+        pngPath,
+        '--out', tempPath
+      ], { encoding: 'utf-8' });
+      
+      if (result.error || result.status !== 0) {
+        throw new Error(`Failed to generate ${size}x${size}: ${result.stderr}`);
+      }
+      
+      // Read the resized PNG
+      const pngData = readFileSync(tempPath);
+      icons.push({ size, data: new Uint8Array(pngData) });
+    }
+    
+    // Write ICO file
+    console.log('    Writing ICO file...');
+    const icoData = createIcoFile(icons);
+    writeFileSync(outputPath, icoData);
+    
+    const stats = await Bun.file(outputPath).stat();
+    console.log(` ICO created: ${(stats.size / 1024).toFixed(1)} KB`);
+  } finally {
+    // Cleanup
+    rmSync(tempDir, { recursive: true, force: true });
   }
-  
-  // Write ICO file
-  console.log('    Writing ICO file...');
-  const icoData = createIcoFile(icons);
-  writeFileSync(outputPath, icoData);
-  
-  const stats = await Bun.file(outputPath).stat();
-  console.log(` ICO created: ${(stats.size / 1024).toFixed(1)} KB`);
 }
 
 /**
@@ -188,11 +233,18 @@ export async function autoConvertIcon(
   projectDir: string,
   iconPath: string
 ): Promise<{ icns?: string; ico?: string; png: string }> {
-  const fullIconPath = join(projectDir, iconPath);
+  // Try to find icon in multiple locations (like Godot does)
+  let fullIconPath = join(projectDir, iconPath);
   
+  // If not found in root, try assets/ directory
   if (!existsSync(fullIconPath)) {
-    console.warn(`  Icon not found: ${iconPath}`);
-    return { png: iconPath };
+    const assetsPath = join(projectDir, 'assets', iconPath);
+    if (existsSync(assetsPath)) {
+      fullIconPath = assetsPath;
+    } else {
+      console.warn(`  Icon not found: ${iconPath} (tried root and assets/)`);
+      return { png: iconPath };
+    }
   }
   
   // Check if it's a PNG
@@ -214,10 +266,36 @@ export async function autoConvertIcon(
   const pngPath = join(assetsDir, 'icon.png');  // Linux uses PNG directly
   
   try {
-    // Copy PNG for Linux (no conversion needed)
+    // Optimize PNG for Linux (like Godot does - ensure it's high quality)
+    const { spawnSync } = await import('child_process');
     const { cpSync } = await import('fs');
-    cpSync(fullIconPath, pngPath);
-    console.log(' PNG copied for Linux');
+    
+    // Check source size
+    const result = spawnSync('sips', ['-g', 'pixelWidth', fullIconPath], { encoding: 'utf-8' });
+    const match = result.stdout.match(/pixelWidth: (\d+)/);
+    const sourceSize = match ? parseInt(match[1]) : 1024;
+    
+    if (sourceSize >= 512) {
+      // Source is good quality, just copy it
+      cpSync(fullIconPath, pngPath);
+      console.log(` PNG copied for Linux (${sourceSize}x${sourceSize})`);
+    } else {
+      // Source is small, upscale it to 512x512 for better quality
+      console.log(` PNG upscaling to 512x512 for Linux...`);
+      const upscaleResult = spawnSync('sips', [
+        '-z', '512', '512',
+        fullIconPath,
+        '--out', pngPath
+      ], { encoding: 'utf-8' });
+      
+      if (upscaleResult.error || upscaleResult.status !== 0) {
+        // Fallback: just copy
+        cpSync(fullIconPath, pngPath);
+        console.log(' PNG copied for Linux (fallback)');
+      } else {
+        console.log(' PNG created for Linux (512x512)');
+      }
+    }
     
     // Convert to ICNS (macOS)
     await convertPngToIcns(fullIconPath, icnsPath);

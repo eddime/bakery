@@ -334,11 +334,7 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
     if (existsSync(steamDll)) {
       cpSync(steamDll, join(macOSDir, 'libsteam_api.dylib'));
       console.log(' Copied Steam SDK (libsteam_api.dylib)');
-      
-      // Copy steam_appid.txt for testing
-      const steamAppId = projectConfig.default?.steamworks?.appId || 480;
-      writeFileSync(join(macOSDir, 'steam_appid.txt'), steamAppId.toString());
-      console.log(` Created steam_appid.txt (${steamAppId})`);
+      console.log(' Note: steam_appid.txt will be created by launcher from encrypted config');
     } else {
       console.warn('  Steam SDK not found at:', steamDll);
     }

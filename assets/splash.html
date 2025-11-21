@@ -34,7 +34,7 @@
         <p class="tagline">Ditch the Bloat. Ship lean desktop games.</p>
     </div>
     <script>
-        // 🎬 Simple redirect after 2 seconds
+        // Simple redirect after 2.5 seconds
         function getQueryParam(name) {
             const urlParams = new URLSearchParams(window.location.search);
             return urlParams.get(name);
@@ -44,7 +44,7 @@
         if (redirectTarget) {
             setTimeout(() => {
                 window.location.href = redirectTarget + window.location.search.replace(/[?&]redirect=[^&]*/, '');
-            }, 2000);
+            }, 2500);
         }
     </script>
 </body>

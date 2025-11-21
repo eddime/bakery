@@ -4,6 +4,7 @@ export default {
     version: "4.2.0",  // Testing with updated fast launcher
     entrypoint: "index.html",
     icon: "icon.png",  //  PNG will be auto-converted to ICNS/ICO
+    splash: true,  // Enable splash screen
     debug: true  // Enable debug mode for testing
   },
   window: {
@@ -13,7 +14,7 @@ export default {
     minHeight: 720,
     height: 720,
     resizable: true,
-    startFullscreen: true,  // † Enable for Game Mode notification!
+    startFullscreen: true,  // ï¿½ Enable for Game Mode notification!
     alwaysOnTop: false,
     frameless: false
   },
