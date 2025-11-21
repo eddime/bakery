@@ -100,6 +100,19 @@ extern "C" {
     void* SteamInternal_ContextInit(void* a) {
         return SteamInternal_ContextInit_ptr ? SteamInternal_ContextInit_ptr(a) : nullptr;
     }
+    
+    // Additional stubs for Steamworks API functions
+    void* SteamAPI_SteamFriends_v018() {
+        return nullptr;
+    }
+    
+    void* SteamAPI_ISteamFriends_GetFriendByIndex(void* self, int index, int flags) {
+        return nullptr;
+    }
+    
+    const char* SteamAPI_ISteamFriends_GetFriendPersonaName(void* self, void* steamID) {
+        return "";
+    }
 }
 
 #endif // __linux__
