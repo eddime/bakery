@@ -515,6 +515,21 @@ if(UNIX AND NOT APPLE)
         dl
     )
     
+    # Link Steamworks only if enabled
+    if(ENABLE_STEAMWORKS)
+        # Determine architecture for Steamworks library path
+        if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
+            set(STEAM_ARCH "linux64")  # ARM64 uses linux64 folder
+        else()
+            set(STEAM_ARCH "linux64")  # x64 also uses linux64 folder
+        endif()
+        
+        target_link_libraries(gemcore-launcher-linux 
+            ${CMAKE_SOURCE_DIR}/../deps/steamworks/sdk/redistributable_bin/${STEAM_ARCH}/libsteam_api.so
+        )
+        message(STATUS "   Linking Steamworks: ${STEAM_ARCH}/libsteam_api.so")
+    endif()
+    
     # 🔧 Cross-compilation: Force x86_64 headers when cross-compiling from ARM64
     if(IS_CROSS_COMPILING AND CMAKE_C_COMPILER MATCHES "x86_64-linux-gnu")
         # With -nostdinc, we need to add x86_64 paths explicitly
