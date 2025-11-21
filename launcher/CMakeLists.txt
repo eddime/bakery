@@ -63,37 +63,10 @@ elseif(UNIX)
         set(IS_CROSS_COMPILING TRUE)
     endif()
     
-    # Use pkg-config for native Linux builds OR cross-compilation with multiarch
+    # SKIP pkg-config entirely - it hangs on some systems
+    # Use manual WebKitGTK detection instead (faster and more reliable)
     set(USE_PKG_CONFIG FALSE)
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux" AND NOT APPLE)
-        set(USE_PKG_CONFIG TRUE)
-    endif()
-    
-    if(USE_PKG_CONFIG)
-        # For cross-compilation, try to find cross-pkg-config
-        if(IS_CROSS_COMPILING)
-            if(CMAKE_C_COMPILER MATCHES "x86_64-linux-gnu")
-                # SKIP pkg-config for x64 cross-compilation (it hangs on ARM64 hosts)
-                # Instead, manually set WebKitGTK paths below
-                message(STATUS "🔧 Skipping pkg-config for x64 cross-compilation (manual paths)")
-                set(USE_PKG_CONFIG FALSE)
-            elseif(CMAKE_C_COMPILER MATCHES "aarch64-linux-gnu")
-                find_program(PKG_CONFIG_EXECUTABLE NAMES aarch64-linux-gnu-pkg-config PATHS /usr/bin)
-                if(PKG_CONFIG_EXECUTABLE)
-                    set(PKG_CONFIG_PATH "/usr/lib/aarch64-linux-gnu/pkgconfig")
-                    message(STATUS "🔧 Using cross-pkg-config for ARM64: ${PKG_CONFIG_EXECUTABLE}")
-                else()
-                    set(ENV{PKG_CONFIG_PATH} "/usr/lib/aarch64-linux-gnu/pkgconfig")
-                    find_package(PkgConfig REQUIRED)
-                endif()
-            else()
-                find_package(PkgConfig REQUIRED)
-            endif()
-        else()
-            # Native build
-        find_package(PkgConfig REQUIRED)
-        endif()
-    endif()
+    message(STATUS "🔧 Skipping pkg-config (using manual WebKitGTK detection)")
     
     if(USE_PKG_CONFIG AND PkgConfig_FOUND)
         # Try webkit2gtk-4.1 first (newer), then fallback to 4.0
@@ -205,8 +178,8 @@ elseif(UNIX)
             include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
         endif()
     else()
-        # pkg-config not available - try manual WebKitGTK detection for x64 cross-compilation
-        if(IS_CROSS_COMPILING AND CMAKE_C_COMPILER MATCHES "x86_64-linux-gnu")
+        # pkg-config not available - use manual WebKitGTK detection for ALL Linux builds
+        if(CMAKE_C_COMPILER MATCHES "x86_64-linux-gnu")
             message(STATUS "🔧 Manually detecting WebKitGTK for x64 cross-compilation...")
             
             # Check if x64 WebKitGTK libraries exist
