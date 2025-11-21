@@ -91,16 +91,17 @@ elseif(UNIX)
             endif()
         else()
             # Native build
-            find_package(PkgConfig REQUIRED)
+        find_package(PkgConfig REQUIRED)
         endif()
     endif()
     
     if(USE_PKG_CONFIG AND PkgConfig_FOUND)
         # Try webkit2gtk-4.1 first (newer), then fallback to 4.0
-        pkg_check_modules(WEBVIEW_GTK gtk+-3.0 glib-2.0 xcb x11 xrandr)
-        pkg_check_modules(WEBVIEW_WEBKIT webkit2gtk-4.1)
+        # Use QUIET to avoid hanging on some systems
+        pkg_check_modules(WEBVIEW_GTK QUIET gtk+-3.0 glib-2.0 xcb x11 xrandr)
+        pkg_check_modules(WEBVIEW_WEBKIT QUIET webkit2gtk-4.1)
         if(NOT WEBVIEW_WEBKIT_FOUND)
-            pkg_check_modules(WEBVIEW_WEBKIT webkit2gtk-4.0)
+            pkg_check_modules(WEBVIEW_WEBKIT QUIET webkit2gtk-4.0)
         endif()
         
         if(WEBVIEW_GTK_FOUND AND WEBVIEW_WEBKIT_FOUND)
@@ -182,8 +183,8 @@ elseif(UNIX)
                 include_directories(${FILTERED_WEBKIT_INCLUDES})
                 message(STATUS "🔧 Filtered ARM64 paths from pkg-config includes")
             else()
-                include_directories(${WEBVIEW_GTK_INCLUDE_DIRS})
-                include_directories(${WEBVIEW_WEBKIT_INCLUDE_DIRS})
+            include_directories(${WEBVIEW_GTK_INCLUDE_DIRS})
+            include_directories(${WEBVIEW_WEBKIT_INCLUDE_DIRS})
             endif()
             
             add_definitions(${WEBVIEW_GTK_CFLAGS_OTHER})
@@ -197,7 +198,7 @@ elseif(UNIX)
             if(IS_CROSS_COMPILING)
                 message(STATUS "💡 Install x64 libraries: sudo apt-get install libgtk-3-dev:amd64 libwebkit2gtk-4.1-dev:amd64")
             else()
-                message(STATUS "💡 Install: sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev")
+            message(STATUS "💡 Install: sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev")
             endif()
             set(WEBVIEW_LIBS "")
             add_definitions(-DWEBVIEW_STATIC)
@@ -305,11 +306,97 @@ elseif(UNIX)
                 include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
             endif()
         else()
-            message(STATUS "⚠️  pkg-config not available - using minimal build (system browser)")
-            message(STATUS "💡 For WebKitGTK support, install pkg-config")
-            set(WEBVIEW_LIBS "")
-            add_definitions(-DWEBVIEW_STATIC)
-            include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
+            # Native ARM64 build - try manual detection (pkg-config failed or not available)
+            message(STATUS "🔧 Manually detecting WebKitGTK for native build (pkg-config failed)...")
+            
+            # Check if native WebKitGTK libraries exist
+            set(NATIVE_WEBKIT_LIB_DIR "/usr/lib/aarch64-linux-gnu")
+            set(NATIVE_WEBKIT_INCLUDE_BASE "/usr/include/aarch64-linux-gnu")
+            
+            # Also check standard lib path
+            if(NOT EXISTS "${NATIVE_WEBKIT_LIB_DIR}")
+                set(NATIVE_WEBKIT_LIB_DIR "/usr/lib")
+            endif()
+            
+            if(EXISTS "${NATIVE_WEBKIT_LIB_DIR}/libwebkit2gtk-4.1.so" OR EXISTS "${NATIVE_WEBKIT_LIB_DIR}/libwebkit2gtk-4.0.so" OR 
+               EXISTS "/usr/lib/libwebkit2gtk-4.1.so" OR EXISTS "/usr/lib/libwebkit2gtk-4.0.so")
+                message(STATUS "✅ Found native WebKitGTK libraries - building with WebView support")
+                
+                # Manually set include directories
+                set(WEBVIEW_GTK_INCLUDES
+                    /usr/lib/aarch64-linux-gnu/glib-2.0/include
+                    ${NATIVE_WEBKIT_INCLUDE_BASE}/gtk-3.0
+                    ${NATIVE_WEBKIT_INCLUDE_BASE}/glib-2.0
+                    ${NATIVE_WEBKIT_INCLUDE_BASE}/pango-1.0
+                    ${NATIVE_WEBKIT_INCLUDE_BASE}/harfbuzz
+                    ${NATIVE_WEBKIT_INCLUDE_BASE}/cairo
+                    ${NATIVE_WEBKIT_INCLUDE_BASE}/gdk-pixbuf-2.0
+                    ${NATIVE_WEBKIT_INCLUDE_BASE}/atk-1.0
+                    ${NATIVE_WEBKIT_INCLUDE_BASE}/libsoup-3.0
+                    /usr/include/gtk-3.0
+                    /usr/include/glib-2.0
+                    /usr/include/pango-1.0
+                    /usr/include/harfbuzz
+                    /usr/include/cairo
+                    /usr/include/gdk-pixbuf-2.0
+                    /usr/include/atk-1.0
+                    /usr/include/libsoup-3.0
+                )
+                
+                # Check for webkit2gtk-4.1 or 4.0
+                if(EXISTS "/usr/include/webkitgtk-4.1")
+                    list(APPEND WEBVIEW_GTK_INCLUDES /usr/include/webkitgtk-4.1)
+                    set(WEBKIT_LIB "webkit2gtk-4.1")
+                    message(STATUS "   Found WebKitGTK 4.1 headers in /usr/include/webkitgtk-4.1")
+                elseif(EXISTS "/usr/include/webkitgtk-4.0")
+                    list(APPEND WEBVIEW_GTK_INCLUDES /usr/include/webkitgtk-4.0)
+                    set(WEBKIT_LIB "webkit2gtk-4.0")
+                    message(STATUS "   Found WebKitGTK 4.0 headers in /usr/include/webkitgtk-4.0")
+                else()
+                    message(WARNING "⚠️  WebKitGTK headers not found in /usr/include")
+                    set(WEBKIT_LIB "")
+                endif()
+                
+                if(WEBKIT_LIB)
+                    # Manually set libraries
+                    set(WEBVIEW_LIBS
+                        ${WEBKIT_LIB}
+                        javascriptcoregtk-4.1
+                        gtk-3
+                        gdk-3
+                        gobject-2.0
+                        glib-2.0
+                        cairo
+                        pango-1.0
+                        pangocairo-1.0
+                        gdk_pixbuf-2.0
+                        atk-1.0
+                        xcb
+                        X11
+                        Xrandr
+                        pthread
+                        png
+                        stdc++fs
+                        dl
+                    )
+                    
+                    include_directories(${WEBVIEW_GTK_INCLUDES})
+                    add_definitions(-DWEBVIEW_GTK)
+                    message(STATUS "   Includes: ${WEBVIEW_GTK_INCLUDES}")
+                    message(STATUS "   Libraries: ${WEBVIEW_LIBS}")
+                else()
+                    message(STATUS "⚠️  WebKitGTK headers not found - using minimal build")
+                    set(WEBVIEW_LIBS "")
+                    add_definitions(-DWEBVIEW_STATIC)
+                    include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
+                endif()
+            else()
+                message(STATUS "⚠️  WebKitGTK libraries not found - using minimal build")
+                message(STATUS "💡 Install: sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev")
+        set(WEBVIEW_LIBS "")
+        add_definitions(-DWEBVIEW_STATIC)
+        include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
+            endif()
         endif()
     endif()
 endif()
