@@ -89,7 +89,8 @@ echo " Structure in .app:"
 echo "   Contents/MacOS/app-name       � Universal Launcher"
 echo "   Contents/MacOS/app-name-arm64 � ARM64 Launcher"
 echo "   Contents/MacOS/app-name-x86_64� x64 Launcher"
-echo "   Contents/MacOS/gemcore-assets  � Shared Assets (8.8 MB)"
+ASSETS_SIZE=$(du -sh "$BUILD_DIR/gemcore-assets" | awk '{print $1}')
+echo "   Contents/MacOS/gemcore-assets  � Shared Assets ($ASSETS_SIZE)"
 echo ""
 
 

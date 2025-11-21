@@ -423,7 +423,13 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
 
   console.log(' Build complete!\n');
   console.log(' Output:', appBundle);
-  console.log(' Size: ~9.2 MB (3 launchers + 1 shared assets file)');
+  
+  // Calculate actual size
+  const appSize = await Bun.spawn(['du', '-sh', appBundle], { stdout: 'pipe' }).text();
+  const sizeMatch = appSize.match(/^(\S+)/);
+  const actualSize = sizeMatch ? sizeMatch[1] : '~1.5M';
+  
+  console.log(` Size: ${actualSize} (3 launchers + 1 shared assets file)`);
   console.log(' Assets shared between ARM64 and x64 = 50% smaller!');
   console.log('');
   
