@@ -579,15 +579,17 @@ if(UNIX AND NOT APPLE)
     if(ENABLE_STEAMWORKS)
         # Determine architecture for Steamworks library path
         if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
-            set(STEAM_ARCH "linux64")  # ARM64 uses linux64 folder
+            # ARM64: Valve doesn't provide ARM64 Steamworks library
+            # Use stubs only (API calls will be no-ops)
+            message(STATUS "   Steamworks: Using stubs only (ARM64 not officially supported by Valve)")
         else()
-            set(STEAM_ARCH "linux64")  # x64 also uses linux64 folder
+            # x64: Link the real Steamworks library
+            set(STEAM_ARCH "linux64")
+            target_link_libraries(gemcore-launcher-linux 
+                ${CMAKE_SOURCE_DIR}/../deps/steamworks/sdk/redistributable_bin/${STEAM_ARCH}/libsteam_api.so
+            )
+            message(STATUS "   Linking Steamworks: ${STEAM_ARCH}/libsteam_api.so")
         endif()
-        
-        target_link_libraries(gemcore-launcher-linux 
-            ${CMAKE_SOURCE_DIR}/../deps/steamworks/sdk/redistributable_bin/${STEAM_ARCH}/libsteam_api.so
-        )
-        message(STATUS "   Linking Steamworks: ${STEAM_ARCH}/libsteam_api.so")
     endif()
     
     # 🔧 Cross-compilation: Force x86_64 headers when cross-compiling from ARM64
