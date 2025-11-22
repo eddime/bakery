@@ -60,11 +60,17 @@ inline std::string getExecutableDirectory() {
 }
 
 /**
- * Create steam_appid.txt in the executable directory
+ * Create steam_appid.txt in the current working directory
+ * 
+ * This works for all scenarios:
+ * 1. macOS .app: Creates in MacOS/ directory (where binary runs)
+ * 2. Windows .exe: Creates in exe directory (where binary runs)
+ * 3. Linux AppImage: Creates in /tmp/gemcore_appimage_$$ (where AppRun sets cwd)
+ * 4. Linux native: Creates in current directory
  */
 inline void createSteamAppIdFile(uint32_t appId) {
-    std::string exeDir = getExecutableDirectory();
-    std::string steamAppIdPath = exeDir + "/steam_appid.txt";
+    // Try current working directory first (works for AppImage)
+    std::string steamAppIdPath = "steam_appid.txt";
     
     std::ofstream steamAppId(steamAppIdPath);
     if (steamAppId.is_open()) {
@@ -74,6 +80,26 @@ inline void createSteamAppIdFile(uint32_t appId) {
         #ifndef NDEBUG
         std::cout << " Created steam_appid.txt at: " << steamAppIdPath << std::endl;
         std::cout << "   App ID: " << appId << std::endl;
+        #endif
+        return;
+    }
+    
+    // Fallback: Try executable directory (for cases where cwd is not writable)
+    std::string exeDir = getExecutableDirectory();
+    steamAppIdPath = exeDir + "/steam_appid.txt";
+    
+    std::ofstream steamAppIdFallback(steamAppIdPath);
+    if (steamAppIdFallback.is_open()) {
+        steamAppIdFallback << appId;
+        steamAppIdFallback.close();
+        
+        #ifndef NDEBUG
+        std::cout << " Created steam_appid.txt at: " << steamAppIdPath << std::endl;
+        std::cout << "   App ID: " << appId << std::endl;
+        #endif
+    } else {
+        #ifndef NDEBUG
+        std::cerr << "  Failed to create steam_appid.txt" << std::endl;
         #endif
     }
 }
@@ -133,8 +159,8 @@ inline bool initSteamworks(const ConfigType& config) {
         std::cout << " Steamworks: INITIALIZED" << std::endl;
     } else {
         std::cerr << " Steamworks: FAILED" << std::endl;
-        std::cerr << "   † Is Steam client running?" << std::endl;
-        std::cerr << "   † Is App ID valid? (" << config.steamworks.appId << ")" << std::endl;
+        std::cerr << "   ï¿½ Is Steam client running?" << std::endl;
+        std::cerr << "   ï¿½ Is App ID valid? (" << config.steamworks.appId << ")" << std::endl;
     }
     
     return success;

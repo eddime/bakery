@@ -206,6 +206,50 @@ int main(int argc, char* argv[]) {
             setenv("LD_LIBRARY_PATH", ldPath.c_str(), 1);
             
             std::cout << " Set LD_LIBRARY_PATH=" << ldPath << std::endl;
+            
+            // CRITICAL FIX: Create steam_appid.txt in the temp directory
+            // The launcher needs this file to initialize Steamworks
+            // We extract it from the embedded config (gemcore.config.json)
+            if (data.configSize > 0) {
+                // Try to read appId from config
+                std::ifstream configFile(configPath);
+                if (configFile.is_open()) {
+                    std::string configContent((std::istreambuf_iterator<char>(configFile)),
+                                             std::istreambuf_iterator<char>());
+                    
+                    // Simple JSON parsing - look for "appId": <number>
+                    size_t appIdPos = configContent.find("\"appId\"");
+                    if (appIdPos != std::string::npos) {
+                        size_t colonPos = configContent.find(":", appIdPos);
+                        if (colonPos != std::string::npos) {
+                            size_t numStart = colonPos + 1;
+                            // Skip whitespace
+                            while (numStart < configContent.size() && 
+                                   (configContent[numStart] == ' ' || configContent[numStart] == '\t')) {
+                                numStart++;
+                            }
+                            
+                            // Read number
+                            std::string appIdStr;
+                            while (numStart < configContent.size() && 
+                                   isdigit(configContent[numStart])) {
+                                appIdStr += configContent[numStart++];
+                            }
+                            
+                            if (!appIdStr.empty()) {
+                                // Write steam_appid.txt to temp dir
+                                std::string steamAppIdPath = tempDir + "/steam_appid.txt";
+                                std::ofstream steamAppId(steamAppIdPath);
+                                if (steamAppId.is_open()) {
+                                    steamAppId << appIdStr;
+                                    steamAppId.close();
+                                    std::cout << " Created steam_appid.txt with App ID: " << appIdStr << std::endl;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
     
@@ -227,6 +271,13 @@ int main(int argc, char* argv[]) {
         #ifndef NDEBUG
         std::cout << " Launching " << arch << " binary: " << binaryPath << std::endl;
         #endif
+        
+        // CRITICAL FIX: Change working directory to temp dir
+        // This ensures steam_appid.txt and libsteam_api.so are found
+        if (chdir(tempDir.c_str()) != 0) {
+            std::cerr << "  Failed to change to temp directory: " << strerror(errno) << std::endl;
+        }
+        
         execv(binaryPath.c_str(), args);
         
         // If we get here, exec failed

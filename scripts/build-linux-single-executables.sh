@@ -510,16 +510,36 @@ EOF
     cp "$APPDIR_TMP/usr/share/applications/${APP_NAME}.desktop" "$APPDIR_TMP/${APP_NAME}.desktop"
     
     # Create AppRun script (required for AppImage)
-    cat > "$APPDIR_TMP/AppRun" << APPRUN_EOF
+    cat > "$APPDIR_TMP/AppRun" << 'APPRUN_EOF'
 #!/bin/bash
 # AppRun - Entry point for AppImage
 # Based on AppImage spec: https://docs.appimage.org/
 
-HERE="\$(dirname "\$(readlink -f "\${0}")")"
-export PATH="\${HERE}/usr/bin:\${PATH}"
-export LD_LIBRARY_PATH="\${HERE}/usr/lib:\${LD_LIBRARY_PATH}"
+HERE="$(dirname "$(readlink -f "${0}")")"
+export PATH="${HERE}/usr/bin:${PATH}"
 
-exec "\${HERE}/usr/bin/${APP_NAME}" "\$@"
+# CRITICAL FIX: Set LD_LIBRARY_PATH to find libsteam_api.so
+# AppImage binaries are in /usr/bin inside the AppImage
+export LD_LIBRARY_PATH="${HERE}/usr/bin:${LD_LIBRARY_PATH}"
+
+# CRITICAL FIX: Create writable temp directory for Steamworks
+# AppImage filesystem is read-only, so we need a temp dir for:
+# 1. steam_appid.txt (created by launcher from encrypted config)
+# 2. Steam IPC sockets and shared memory
+TEMP_DIR="/tmp/gemcore_appimage_$$"
+mkdir -p "$TEMP_DIR"
+
+# Change to temp directory so launcher can write steam_appid.txt
+cd "$TEMP_DIR"
+
+# Cleanup temp dir on exit
+cleanup() {
+    rm -rf "$TEMP_DIR"
+}
+trap cleanup EXIT
+
+# Launch the game
+exec "${HERE}/usr/bin/${APP_NAME}" "$@"
 APPRUN_EOF
     
     chmod +x "$APPDIR_TMP/AppRun"
@@ -706,10 +726,10 @@ echo " Cleanup complete (only AppImage files remain - everything embedded!)"
 echo ""
 echo " User experience:"
 echo "    AppImage (single file, like macOS .app):"
-echo "      † Download: ${APP_NAME}-x86_64.AppImage"
-echo "      † Make executable: chmod +x ${APP_NAME}-x86_64.AppImage"
-echo "      † Run: ./${APP_NAME}-x86_64.AppImage"
-echo "      † Icon embedded, works on any Linux!"
+echo "      ï¿½ Download: ${APP_NAME}-x86_64.AppImage"
+echo "      ï¿½ Make executable: chmod +x ${APP_NAME}-x86_64.AppImage"
+echo "      ï¿½ Run: ./${APP_NAME}-x86_64.AppImage"
+echo "      ï¿½ Icon embedded, works on any Linux!"
 echo ""
 if [[ $(uname) != "Linux" ]]; then
     echo "    Note: Built from $(uname) (self-extracting AppImage format)"
@@ -719,8 +739,8 @@ fi
 echo "    Everything embedded in ONE file!"
 echo ""
 echo "    For double-click support on Ubuntu:"
-echo "      † Right-click AppImage † Properties † Permissions"
-echo "      † Enable 'Allow executing file as program'"
-echo "      † Or use: chmod +x ${APP_NAME}-x86_64.AppImage"
+echo "      ï¿½ Right-click AppImage ï¿½ Properties ï¿½ Permissions"
+echo "      ï¿½ Enable 'Allow executing file as program'"
+echo "      ï¿½ Or use: chmod +x ${APP_NAME}-x86_64.AppImage"
 
 
