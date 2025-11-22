@@ -8,6 +8,7 @@
 
 #include <dlfcn.h>
 #include <cstdint>
+#include <cstdlib>  // for getenv
 #include <iostream>
 
 // Function pointer types
@@ -44,14 +45,18 @@ static void load_steam_library() {
     for (const char* path : paths) {
         g_steamLib = dlopen(path, RTLD_LAZY | RTLD_GLOBAL);
         if (g_steamLib) {
+            // Always log (even in release mode) for debugging
             std::cout << " Loaded Steam library from: " << path << std::endl;
             break;
         }
     }
     
     if (!g_steamLib) {
+        // Always log errors (even in release mode)
         std::cerr << "  Steam library not found. Steamworks disabled." << std::endl;
         std::cerr << "   Error: " << dlerror() << std::endl;
+        std::cerr << "   Tried paths: libsteam_api.so, ./libsteam_api.so, /tmp/libsteam_api.so" << std::endl;
+        std::cerr << "   LD_LIBRARY_PATH: " << (getenv("LD_LIBRARY_PATH") ? getenv("LD_LIBRARY_PATH") : "(not set)") << std::endl;
         return;
     }
     
@@ -65,8 +70,10 @@ static void load_steam_library() {
     SteamInternal_ContextInit_ptr = (SteamInternal_ContextInit_t)dlsym(g_steamLib, "SteamInternal_ContextInit");
     
     if (SteamAPI_Init_ptr && SteamAPI_Shutdown_ptr && SteamAPI_RunCallbacks_ptr) {
+        // Always log (even in release mode) for debugging
         std::cout << " Steam API functions loaded successfully!" << std::endl;
     } else {
+        // Always log errors (even in release mode)
         std::cerr << "  Failed to load Steam API functions" << std::endl;
     }
 }

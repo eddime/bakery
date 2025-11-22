@@ -77,10 +77,8 @@ inline void createSteamAppIdFile(uint32_t appId) {
         steamAppId << appId;
         steamAppId.close();
         
-        #ifndef NDEBUG
-        std::cout << " Created steam_appid.txt at: " << steamAppIdPath << std::endl;
-        std::cout << "   App ID: " << appId << std::endl;
-        #endif
+        // Always log in release mode for debugging
+        std::cout << " Created steam_appid.txt with App ID: " << appId << std::endl;
         return;
     }
     
@@ -93,14 +91,12 @@ inline void createSteamAppIdFile(uint32_t appId) {
         steamAppIdFallback << appId;
         steamAppIdFallback.close();
         
-        #ifndef NDEBUG
+        // Always log in release mode for debugging
         std::cout << " Created steam_appid.txt at: " << steamAppIdPath << std::endl;
         std::cout << "   App ID: " << appId << std::endl;
-        #endif
     } else {
-        #ifndef NDEBUG
+        // Always log errors
         std::cerr << "  Failed to create steam_appid.txt" << std::endl;
-        #endif
     }
 }
 
