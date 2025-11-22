@@ -526,7 +526,8 @@ export LD_LIBRARY_PATH="${HERE}/usr/bin:${LD_LIBRARY_PATH}"
 # AppImage filesystem is read-only, so we need a temp dir for:
 # 1. steam_appid.txt (created by launcher from encrypted config)
 # 2. Steam IPC sockets and shared memory
-TEMP_DIR="/tmp/gemcore_appimage_$$"
+# Note: Use unique name to avoid conflicts with self-extracting AppImage temp dir
+TEMP_DIR="/tmp/gemcore_runtime_$$"
 mkdir -p "$TEMP_DIR"
 
 # Change to temp directory so launcher can write steam_appid.txt
