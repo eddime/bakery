@@ -510,37 +510,38 @@ EOF
     cp "$APPDIR_TMP/usr/share/applications/${APP_NAME}.desktop" "$APPDIR_TMP/${APP_NAME}.desktop"
     
     # Create AppRun script (required for AppImage)
-    cat > "$APPDIR_TMP/AppRun" << 'APPRUN_EOF'
+    # Note: We use double quotes to expand APP_NAME, but escape $ for runtime variables
+    cat > "$APPDIR_TMP/AppRun" << APPRUN_EOF
 #!/bin/bash
 # AppRun - Entry point for AppImage
 # Based on AppImage spec: https://docs.appimage.org/
 
-HERE="$(dirname "$(readlink -f "${0}")")"
-export PATH="${HERE}/usr/bin:${PATH}"
+HERE="\$(dirname "\$(readlink -f "\${0}")")"
+export PATH="\${HERE}/usr/bin:\${PATH}"
 
 # CRITICAL FIX: Set LD_LIBRARY_PATH to find libsteam_api.so
 # AppImage binaries are in /usr/bin inside the AppImage
-export LD_LIBRARY_PATH="${HERE}/usr/bin:${LD_LIBRARY_PATH}"
+export LD_LIBRARY_PATH="\${HERE}/usr/bin:\${LD_LIBRARY_PATH}"
 
 # CRITICAL FIX: Create writable temp directory for Steamworks
 # AppImage filesystem is read-only, so we need a temp dir for:
 # 1. steam_appid.txt (created by launcher from encrypted config)
 # 2. Steam IPC sockets and shared memory
 # Note: Use unique name to avoid conflicts with self-extracting AppImage temp dir
-TEMP_DIR="/tmp/gemcore_runtime_$$"
-mkdir -p "$TEMP_DIR"
+TEMP_DIR="/tmp/gemcore_runtime_\$\$"
+mkdir -p "\$TEMP_DIR"
 
 # Change to temp directory so launcher can write steam_appid.txt
-cd "$TEMP_DIR"
+cd "\$TEMP_DIR"
 
 # Cleanup temp dir on exit
 cleanup() {
-    rm -rf "$TEMP_DIR"
+    rm -rf "\$TEMP_DIR"
 }
 trap cleanup EXIT
 
 # Launch the game
-exec "${HERE}/usr/bin/${APP_NAME}" "$@"
+exec "\${HERE}/usr/bin/${APP_NAME}" "\$@"
 APPRUN_EOF
     
     chmod +x "$APPDIR_TMP/AppRun"
