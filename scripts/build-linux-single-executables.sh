@@ -1,6 +1,7 @@
 #!/bin/bash
 # Build Linux Single Executable with Embedded Resources
 # Embeds launcher + binary + assets + Steam .so into ONE file
+# x86_64 ONLY - ARM64 support discontinued
 
 set -e
 
@@ -12,7 +13,7 @@ if [ -z "$PROJECT_DIR" ] || [ -z "$APP_NAME" ]; then
     exit 1
 fi
 
-echo " Building Linux Single Executables (x86_64 + ARM64)"
+echo " Building Linux Single Executable (x86_64 only)"
 echo ""
 echo ""
 
@@ -136,54 +137,9 @@ fi
 echo " x86_64 launcher ready"
 echo ""
 
-# ============================================
-# 3. Build ARM64 launcher binary
-# ============================================
-echo " Building ARM64 launcher binary..."
-BUILD_ARM64="$FRAMEWORK_DIR/launcher/build-linux-arm64-embedded"
-mkdir -p "$BUILD_ARM64"
-cd "$BUILD_ARM64"
-
-# Check if pre-built ARM64 binary with WebKitGTK is cached locally (like Neutralino!)
-PREBUILT_ARM64="$FRAMEWORK_DIR/launcher/prebuilt/linux/gemcore-launcher-linux-arm64"
-ARM64_CACHED=false
-
-if [ -f "$PREBUILT_ARM64" ]; then
-    echo " Using cached pre-built ARM64 binary (with WebKitGTK)"
-    cp "$PREBUILT_ARM64" "gemcore-launcher-linux"
-    chmod +x "gemcore-launcher-linux"
-    ARM64_CACHED=true
-fi
-
-if [ "$ARM64_CACHED" = false ]; then
-    if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
-        # Native ARM64 Linux build with WebKitGTK
-        cmake .. -DCMAKE_BUILD_TYPE=Release
-        make gemcore-launcher-linux -j4
-    else
-        # Cross-compile from macOS or x86_64 Linux (without WebKitGTK - fallback)
-        if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
-            echo "  aarch64-linux-musl-gcc not found! Skipping ARM64 build."
-            echo " Install: brew install FiloSottile/musl-cross/musl-cross"
-            BUILD_ARM64=""
-        else
-            cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake
-            make gemcore-launcher-linux -j4
-            
-            if [ ! -f "gemcore-launcher-linux" ]; then
-                echo "  ARM64 build failed! Skipping."
-                BUILD_ARM64=""
-            else
-                echo " ARM64 launcher built (without WebKitGTK - cross-compiled)"
-            fi
-        fi
-    fi
-fi
-
-if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/gemcore-launcher-linux" ]; then
-    echo " ARM64 launcher ready"
-fi
-
+# ARM64 support discontinued - focusing on x64 only for .deb compatibility
+BUILD_ARM64=""
+echo " ARM64 builds discontinued (x64 only for Steam + .deb compatibility)"
 echo ""
 
 cd "$FRAMEWORK_DIR"
@@ -219,13 +175,6 @@ if [ -f "$CONFIG_FILE" ]; then
             STEAM_SO_X64="$FRAMEWORK_DIR/bin/steamworks/linux/libsteam_api.so"
         elif [ -f "$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux64/libsteam_api.so" ]; then
             STEAM_SO_X64="$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux64/libsteam_api.so"
-        fi
-        
-        # Note: Steam doesn't provide ARM64 Linux binaries yet, but we prepare for it
-        if [ -f "$FRAMEWORK_DIR/bin/steamworks/linux-arm64/libsteam_api.so" ]; then
-            STEAM_SO_ARM64="$FRAMEWORK_DIR/bin/steamworks/linux-arm64/libsteam_api.so"
-        elif [ -f "$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux_arm64/libsteam_api.so" ]; then
-            STEAM_SO_ARM64="$FRAMEWORK_DIR/deps/steamworks/sdk/redistributable_bin/linux_arm64/libsteam_api.so"
         fi
         
         if [ -n "$STEAM_SO_X64" ] && [ -f "$STEAM_SO_X64" ]; then
@@ -269,102 +218,14 @@ fi
 echo " x86_64 executable packed!"
 echo ""
 
-# Pack ARM64 executable if built
-if [ -n "$BUILD_ARM64" ] && [ -f "$BUILD_ARM64/gemcore-launcher-linux" ]; then
-    echo " Packing ARM64 executable..."
-    
-    if [ "$UNIVERSAL_CACHED" = "skipped" ]; then
-        # No universal launcher - create separate executable + assets
-        echo " Creating separate executable (no universal launcher)"
-        cp "$BUILD_ARM64/gemcore-launcher-linux" "$OUTPUT_DIR/${APP_NAME}-arm64"
-        # Assets already copied for x64
-        chmod +x "$OUTPUT_DIR/${APP_NAME}-arm64"
-        
-        if [ -n "$STEAM_SO_ARM64" ] && [ -f "$STEAM_SO_ARM64" ]; then
-            cp "$STEAM_SO_ARM64" "$OUTPUT_DIR/"
-            echo " Copied Steam SDK (ARM64)"
-        fi
-    else
-        # Build ARM64 Universal Launcher (needed for ARM64 builds!)
-        BUILD_ARM64_UNIVERSAL="$FRAMEWORK_DIR/launcher/build-linux-universal-embedded-arm64"
-        mkdir -p "$BUILD_ARM64_UNIVERSAL"
-        cd "$BUILD_ARM64_UNIVERSAL"
-        
-        # Check if pre-built ARM64 universal launcher is cached locally
-        PREBUILT_ARM64_UNIVERSAL="$FRAMEWORK_DIR/launcher/prebuilt/linux/gemcore-universal-launcher-linux-embedded-arm64"
-        ARM64_UNIVERSAL_CACHED=false
-        
-        if [ -f "$PREBUILT_ARM64_UNIVERSAL" ]; then
-            echo " Using cached pre-built ARM64 universal launcher"
-            cp "$PREBUILT_ARM64_UNIVERSAL" "gemcore-universal-launcher-linux-embedded"
-            chmod +x "gemcore-universal-launcher-linux-embedded"
-            ARM64_UNIVERSAL_CACHED=true
-        fi
-        
-        if [ "$ARM64_UNIVERSAL_CACHED" = false ]; then
-            if [[ $(uname) == "Linux" ]] && [[ $(uname -m) == "aarch64" ]]; then
-                # Native ARM64 Linux build
-                cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-                make gemcore-universal-launcher-linux-embedded -j4
-            else
-                # Cross-compile from macOS or x86_64 Linux
-                if ! command -v aarch64-linux-musl-gcc &> /dev/null; then
-                    echo "  aarch64-linux-musl-gcc not found! Using x86-64 universal launcher (won't work on ARM64)"
-                    BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
-                else
-                    cmake .. -DCMAKE_TOOLCHAIN_FILE=../cmake/musl-cross-aarch64.cmake -DBUILD_UNIVERSAL_LAUNCHER_LINUX=ON
-                    make gemcore-universal-launcher-linux-embedded -j4
-                    if [ ! -f "gemcore-universal-launcher-linux-embedded" ]; then
-                        echo "  ARM64 universal launcher build failed! Using x86-64 (won't work on ARM64)"
-                        BUILD_ARM64_UNIVERSAL="$BUILD_EMBEDDED"
-                    fi
-                fi
-            fi
-        fi
-        
-        cd "$FRAMEWORK_DIR"
-        
-        STEAM_ARG=""
-        if [ -f "$STEAM_SO_ARM64" ]; then
-            echo " Embedding Steam SDK (ARM64) into executable..."
-            STEAM_ARG="$STEAM_SO_ARM64"
-        fi
-        
-        if [ -n "$STEAM_ARG" ]; then
-            bun scripts/pack-linux-single-exe.ts \
-                "$BUILD_ARM64_UNIVERSAL/gemcore-universal-launcher-linux-embedded" \
-                "$BUILD_ARM64/gemcore-launcher-linux" \
-                "$OUTPUT_DIR/${APP_NAME}-arm64" \
-                "$STEAM_ARG" \
-                "$ASSETS_PATH"
-        else
-            bun scripts/pack-linux-single-exe.ts \
-                "$BUILD_ARM64_UNIVERSAL/gemcore-universal-launcher-linux-embedded" \
-                "$BUILD_ARM64/gemcore-launcher-linux" \
-                "$OUTPUT_DIR/${APP_NAME}-arm64" \
-                "" \
-                "$ASSETS_PATH"
-        fi
-    fi
-    
-    echo " ARM64 executable packed!"
-    echo ""
-fi
-
 echo ""
-echo " Linux Single Executables complete!"
+echo " Linux Single Executable complete!"
 echo ""
 echo " Output:"
 echo "   $OUTPUT_DIR/${APP_NAME}-x86_64"
-if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
-    echo "   $OUTPUT_DIR/${APP_NAME}-arm64"
-fi
 echo ""
-echo " Sizes:"
+echo " Size:"
 du -h "$OUTPUT_DIR/${APP_NAME}-x86_64" | awk '{print "   " $2 ": " $1}'
-if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
-    du -h "$OUTPUT_DIR/${APP_NAME}-arm64" | awk '{print "   " $2 ": " $1}'
-fi
 echo ""
 echo " Everything embedded (launcher + binary + assets + Steam)"
 echo ""
@@ -426,22 +287,7 @@ Categories=Game;
 EOF
 chmod +x "$OUTPUT_DIR/${APP_NAME}-x86_64.desktop"
 
-# Create .desktop file for ARM64 if built
-if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
-    cat > "$OUTPUT_DIR/${APP_NAME}-arm64.desktop" << EOF
-[Desktop Entry]
-Type=Application
-Name=${APP_TITLE}
-Exec=${APP_NAME}-arm64
-Path=$(dirname "$OUTPUT_DIR")/linux
-Icon=${ICON_ABSOLUTE}
-Terminal=false
-Categories=Game;
-EOF
-    chmod +x "$OUTPUT_DIR/${APP_NAME}-arm64.desktop"
-fi
-
-echo " .desktop files created!"
+echo " .desktop file created!"
 echo ""
 
 # ============================================
@@ -702,26 +548,28 @@ APPIMAGE_HEADER
     rm -rf "$APPDIR_TMP"
 }
 
-# Create AppImages
+# Create AppImage (x64 only)
 create_proper_appimage "x86_64"
-if [ -n "$BUILD_ARM64" ] && [ -f "$OUTPUT_DIR/${APP_NAME}-arm64" ]; then
-    create_proper_appimage "arm64"
-fi
 
 # Clean up intermediate files (keep only AppImage - icon is embedded!)
+# UNLESS we're building a .deb package (then keep binary for .deb builder)
 echo ""
-echo " Cleaning up intermediate files..."
-rm -f "$OUTPUT_DIR/${APP_NAME}-x86_64" "$OUTPUT_DIR/${APP_NAME}-arm64" 2>/dev/null || true
-rm -f "$OUTPUT_DIR/${APP_NAME}-x86_64.desktop" "$OUTPUT_DIR/${APP_NAME}-arm64.desktop" 2>/dev/null || true
-rm -rf "$OUTPUT_DIR/${APP_NAME}.app" "$OUTPUT_DIR/${APP_NAME}-arm64.app" 2>/dev/null || true
-rm -f "$OUTPUT_DIR/${APP_NAME}.app.desktop" "$OUTPUT_DIR/${APP_NAME}-arm64.app.desktop" 2>/dev/null || true
-rm -f "$OUTPUT_DIR/${APP_NAME}-x86_64.AppImage.desktop" "$OUTPUT_DIR/${APP_NAME}-arm64.AppImage.desktop" 2>/dev/null || true
+if [ "$KEEP_BINARY_FOR_DEB" = "1" ]; then
+    echo " Keeping intermediate binary for .deb package build..."
+    echo "   Binary: $OUTPUT_DIR/${APP_NAME}-x86_64 (will be used by .deb builder)"
+else
+    echo " Cleaning up intermediate files..."
+    rm -f "$OUTPUT_DIR/${APP_NAME}-x86_64" 2>/dev/null || true
+fi
+
+rm -f "$OUTPUT_DIR/${APP_NAME}-x86_64.desktop" 2>/dev/null || true
+rm -rf "$OUTPUT_DIR/${APP_NAME}.app" 2>/dev/null || true
 rm -f "$OUTPUT_DIR/$ICON_FILE" 2>/dev/null || true  # Icon is embedded in AppImage
 rm -f "$OUTPUT_DIR/gemcore-assets" 2>/dev/null || true  # Assets are embedded in AppImage
 rm -f "$OUTPUT_DIR/libsteam_api.so" 2>/dev/null || true  # Steam SDK is embedded in AppImage
 rm -f "$OUTPUT_DIR/install-${APP_NAME}.sh" 2>/dev/null || true
 rm -f "$OUTPUT_DIR/README.txt" 2>/dev/null || true
-echo " Cleanup complete (only AppImage files remain - everything embedded!)"
+echo " Cleanup complete!"
 
 # No additional files needed - everything is in the AppImage!
 

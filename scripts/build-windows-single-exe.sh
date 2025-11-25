@@ -5,9 +5,10 @@ set -e
 
 PROJECT_DIR="$1"
 APP_NAME="$2"
+VERSION="$3"
 
-if [ -z "$PROJECT_DIR" ] || [ -z "$APP_NAME" ]; then
-    echo "Usage: $0 <project_dir> <app_name>"
+if [ -z "$PROJECT_DIR" ] || [ -z "$APP_NAME" ] || [ -z "$VERSION" ]; then
+    echo "Usage: $0 <project_dir> <app_name> <version>"
     exit 1
 fi
 
@@ -103,19 +104,19 @@ fi
 bun scripts/pack-windows-single-exe.ts \
     "$BUILD_EMBEDDED/gemcore-universal-launcher-windows-embedded.exe" \
     "$BUILD_DIR/gemcore-launcher-win.exe" \
-    "$PROJECT_DIR/dist/windows/${APP_NAME}.exe" \
+    "$PROJECT_DIR/dist/windows/${APP_NAME}_${VERSION}_x64.exe" \
     $STEAM_DLL_ARG
 
 echo ""
 echo ""
 echo " Windows Single EXE complete!"
 echo ""
-echo " Output: $PROJECT_DIR/dist/windows/${APP_NAME}.exe"
-echo " Size: $(du -h "$PROJECT_DIR/dist/windows/${APP_NAME}.exe" | awk '{print $1}')"
+echo " Output: $PROJECT_DIR/dist/windows/${APP_NAME}_${VERSION}_x64.exe"
+echo " Size: $(du -h "$PROJECT_DIR/dist/windows/${APP_NAME}_${VERSION}_x64.exe" | awk '{print $1}')"
 echo " Assets encrypted with XOR + multi-key rotation"
 echo ""
 echo " User experience:"
-echo "   � Double-click ${APP_NAME}.exe"
+echo "   � Double-click ${APP_NAME}_${VERSION}_x64.exe"
 echo "   � Everything embedded (launcher + assets)"
 echo "   � Instant launch with encryption!"
 echo ""

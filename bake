@@ -202,6 +202,7 @@ async function buildCommand(args: string[]) {
 
   const projectConfig = await import(configPath);
   const appName = projectConfig.default?.app?.name || 'GemcoreApp';
+  const appVersion = projectConfig.default?.app?.version || '1.0.0';
 
   console.log(' Project:', projectDir);
   console.log('  Platform:', platform);
@@ -253,29 +254,29 @@ async function buildCommand(args: string[]) {
   
   for (const targetPlatform of platforms) {
     console.log(`\n  Building for ${targetPlatform}...\n`);
-    await buildForPlatform(targetPlatform, projectDir, projectConfig, appName, shouldRun, FRAMEWORK_DIR);
+    await buildForPlatform(targetPlatform, projectDir, projectConfig, appName, appVersion, shouldRun, FRAMEWORK_DIR);
   }
   
   console.log('\n All builds complete!');
 }
 
-async function buildForPlatform(platform: string, projectDir: string, projectConfig: any, appName: string, shouldRun: boolean, frameworkDir: string) {
+async function buildForPlatform(platform: string, projectDir: string, projectConfig: any, appName: string, appVersion: string, shouldRun: boolean, frameworkDir: string) {
   switch (platform) {
     case 'mac':
-      await buildMacOS(projectDir, projectConfig, appName, shouldRun, frameworkDir);
+      await buildMacOS(projectDir, projectConfig, appName, appVersion, shouldRun, frameworkDir);
       break;
     case 'win':
-      await buildWindows(projectDir, projectConfig, appName, frameworkDir);
+      await buildWindows(projectDir, projectConfig, appName, appVersion, frameworkDir);
       break;
     case 'linux':
-      await buildLinux(projectDir, projectConfig, appName, frameworkDir);
+      await buildLinux(projectDir, projectConfig, appName, appVersion, frameworkDir);
       break;
     default:
       console.warn(`  Platform ${platform} not supported`);
   }
 }
 
-async function buildMacOS(projectDir: string, projectConfig: any, appName: string, shouldRun: boolean, frameworkDir: string) {
+async function buildMacOS(projectDir: string, projectConfig: any, appName: string, appVersion: string, shouldRun: boolean, frameworkDir: string) {
   console.log(' Building macOS Universal Binary (x64 + ARM64)...\n');
 
   // Check if Steamworks is enabled
@@ -303,7 +304,9 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   console.log(' Shared universal build ready!\n');
 
   const distDir = join(projectDir, 'dist', 'mac');
-  const appBundle = join(distDir, `${appName}.app`);
+  mkdirSync(distDir, { recursive: true });
+  
+  const appBundle = join(distDir, `${appName}_${appVersion}_universal.app`);
   const contentsDir = join(appBundle, 'Contents');
   const macOSDir = join(contentsDir, 'MacOS');
   const resourcesDir = join(contentsDir, 'Resources');
@@ -425,7 +428,8 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   console.log(' Output:', appBundle);
   
   // Calculate actual size
-  const appSize = await Bun.spawn(['du', '-sh', appBundle], { stdout: 'pipe' }).text();
+  const sizeProc = Bun.spawn(['du', '-sh', appBundle], { stdout: 'pipe' });
+  const appSize = await new Response(sizeProc.stdout).text();
   const sizeMatch = appSize.match(/^(\S+)/);
   const actualSize = sizeMatch ? sizeMatch[1] : '~1.5M';
   
@@ -442,11 +446,11 @@ async function buildMacOS(projectDir: string, projectConfig: any, appName: strin
   }
 }
 
-async function buildWindows(projectDir: string, projectConfig: any, appName: string, frameworkDir: string) {
+async function buildWindows(projectDir: string, projectConfig: any, appName: string, appVersion: string, frameworkDir: string) {
   console.log(' Building for Windows...\n');
   
   const buildScript = join(frameworkDir, 'scripts', 'build-windows-single-exe.sh');
-  const buildProc = Bun.spawn([buildScript, projectDir, appName], {
+  const buildProc = Bun.spawn([buildScript, projectDir, appName, appVersion], {
     cwd: frameworkDir,
     stdout: 'inherit',
     stderr: 'inherit',
@@ -454,16 +458,21 @@ async function buildWindows(projectDir: string, projectConfig: any, appName: str
   await buildProc.exited;
 }
 
-async function buildLinux(projectDir: string, projectConfig: any, appName: string, frameworkDir: string) {
-  console.log(' Building for Linux...\n');
-  
-  const buildScript = join(frameworkDir, 'scripts', 'build-linux-single-executables.sh');
-  const buildProc = Bun.spawn([buildScript, projectDir, appName], {
+async function buildLinux(projectDir: string, projectConfig: any, appName: string, appVersion: string, frameworkDir: string) {
+  // Build single ELF binary (like Godot!)
+  console.log(' Building Linux ELF Binary (single file, all-in-one)...\n');
+  const buildScript = join(frameworkDir, 'scripts', 'build-linux-single-binary.sh');
+  const buildProc = Bun.spawn([buildScript, projectDir, appName, appVersion], {
     cwd: frameworkDir,
     stdout: 'inherit',
     stderr: 'inherit',
   });
   await buildProc.exited;
+  
+  if (buildProc.exitCode !== 0) {
+    console.error(' Failed to build Linux binary!');
+    process.exit(1);
+  }
 }
 
 // ==============================================

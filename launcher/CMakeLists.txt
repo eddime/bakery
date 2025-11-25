@@ -58,9 +58,6 @@ elseif(UNIX)
     elseif(CMAKE_C_COMPILER MATCHES "x86_64-linux-gnu" OR CMAKE_CXX_COMPILER MATCHES "x86_64-linux-gnu")
         # Cross-compiling from ARM64 to x64
         set(IS_CROSS_COMPILING TRUE)
-    elseif(CMAKE_C_COMPILER MATCHES "aarch64-linux-gnu" OR CMAKE_CXX_COMPILER MATCHES "aarch64-linux-gnu")
-        # Cross-compiling from x64 to ARM64
-        set(IS_CROSS_COMPILING TRUE)
     endif()
     
     # SKIP pkg-config entirely - it hangs on some systems
@@ -279,97 +276,8 @@ elseif(UNIX)
                 include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
             endif()
         else()
-            # Native ARM64 build - try manual detection (pkg-config failed or not available)
-            message(STATUS "🔧 Manually detecting WebKitGTK for native build (pkg-config failed)...")
-            
-            # Check if native WebKitGTK libraries exist
-            set(NATIVE_WEBKIT_LIB_DIR "/usr/lib/aarch64-linux-gnu")
-            set(NATIVE_WEBKIT_INCLUDE_BASE "/usr/include/aarch64-linux-gnu")
-            
-            # Also check standard lib path
-            if(NOT EXISTS "${NATIVE_WEBKIT_LIB_DIR}")
-                set(NATIVE_WEBKIT_LIB_DIR "/usr/lib")
-            endif()
-            
-            if(EXISTS "${NATIVE_WEBKIT_LIB_DIR}/libwebkit2gtk-4.1.so" OR EXISTS "${NATIVE_WEBKIT_LIB_DIR}/libwebkit2gtk-4.0.so" OR 
-               EXISTS "/usr/lib/libwebkit2gtk-4.1.so" OR EXISTS "/usr/lib/libwebkit2gtk-4.0.so")
-                message(STATUS "✅ Found native WebKitGTK libraries - building with WebView support")
-                
-                # Manually set include directories
-                set(WEBVIEW_GTK_INCLUDES
-                    /usr/lib/aarch64-linux-gnu/glib-2.0/include
-                    ${NATIVE_WEBKIT_INCLUDE_BASE}/gtk-3.0
-                    ${NATIVE_WEBKIT_INCLUDE_BASE}/glib-2.0
-                    ${NATIVE_WEBKIT_INCLUDE_BASE}/pango-1.0
-                    ${NATIVE_WEBKIT_INCLUDE_BASE}/harfbuzz
-                    ${NATIVE_WEBKIT_INCLUDE_BASE}/cairo
-                    ${NATIVE_WEBKIT_INCLUDE_BASE}/gdk-pixbuf-2.0
-                    ${NATIVE_WEBKIT_INCLUDE_BASE}/atk-1.0
-                    ${NATIVE_WEBKIT_INCLUDE_BASE}/libsoup-3.0
-                    /usr/include/gtk-3.0
-                    /usr/include/glib-2.0
-                    /usr/include/pango-1.0
-                    /usr/include/harfbuzz
-                    /usr/include/cairo
-                    /usr/include/gdk-pixbuf-2.0
-                    /usr/include/atk-1.0
-                    /usr/include/libsoup-3.0
-                )
-                
-                # Check for webkit2gtk-4.1 or 4.0
-                if(EXISTS "/usr/include/webkitgtk-4.1")
-                    list(APPEND WEBVIEW_GTK_INCLUDES /usr/include/webkitgtk-4.1)
-                    set(WEBKIT_LIB "webkit2gtk-4.1")
-                    message(STATUS "   Found WebKitGTK 4.1 headers in /usr/include/webkitgtk-4.1")
-                elseif(EXISTS "/usr/include/webkitgtk-4.0")
-                    list(APPEND WEBVIEW_GTK_INCLUDES /usr/include/webkitgtk-4.0)
-                    set(WEBKIT_LIB "webkit2gtk-4.0")
-                    message(STATUS "   Found WebKitGTK 4.0 headers in /usr/include/webkitgtk-4.0")
-                else()
-                    message(WARNING "⚠️  WebKitGTK headers not found in /usr/include")
-                    set(WEBKIT_LIB "")
-                endif()
-                
-                if(WEBKIT_LIB)
-                    # Manually set libraries
-                    set(WEBVIEW_LIBS
-                        ${WEBKIT_LIB}
-                        javascriptcoregtk-4.1
-                        gtk-3
-                        gdk-3
-                        gobject-2.0
-                        glib-2.0
-                        cairo
-                        pango-1.0
-                        pangocairo-1.0
-                        gdk_pixbuf-2.0
-                        atk-1.0
-                        xcb
-                        X11
-                        Xrandr
-                        pthread
-                        png
-                        stdc++fs
-                        dl
-                    )
-                    
-                    include_directories(${WEBVIEW_GTK_INCLUDES})
-                    add_definitions(-DWEBVIEW_GTK)
-                    message(STATUS "   Includes: ${WEBVIEW_GTK_INCLUDES}")
-                    message(STATUS "   Libraries: ${WEBVIEW_LIBS}")
-                else()
-                    message(STATUS "⚠️  WebKitGTK headers not found - using minimal build")
-                    set(WEBVIEW_LIBS "")
-                    add_definitions(-DWEBVIEW_STATIC)
-                    include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
-                endif()
-            else()
-                message(STATUS "⚠️  WebKitGTK libraries not found - using minimal build")
-                message(STATUS "💡 Install: sudo apt-get install libgtk-3-dev libwebkit2gtk-4.1-dev")
-        set(WEBVIEW_LIBS "")
-        add_definitions(-DWEBVIEW_STATIC)
-        include_directories(${CMAKE_SOURCE_DIR}/../deps/webview/core/include)
-            endif()
+            # Not x64 cross-compile - unsupported
+            message(FATAL_ERROR "❌ Only x86_64 Linux builds are supported. ARM64 builds have been discontinued.")
         endif()
     endif()
 endif()
@@ -575,21 +483,14 @@ if(UNIX AND NOT APPLE)
         dl
     )
     
-    # Link Steamworks only if enabled
+    # Link Steamworks only if enabled (x64 only - ARM64 not supported)
     if(ENABLE_STEAMWORKS)
-        # Determine architecture for Steamworks library path
-        if(CMAKE_SYSTEM_PROCESSOR MATCHES "aarch64" OR CMAKE_SYSTEM_PROCESSOR MATCHES "arm64")
-            # ARM64: Valve doesn't provide ARM64 Steamworks library
-            # Use stubs only (API calls will be no-ops)
-            message(STATUS "   Steamworks: Using stubs only (ARM64 not officially supported by Valve)")
-        else()
-            # x64: Link the real Steamworks library
-            set(STEAM_ARCH "linux64")
-            target_link_libraries(gemcore-launcher-linux 
-                ${CMAKE_SOURCE_DIR}/../deps/steamworks/sdk/redistributable_bin/${STEAM_ARCH}/libsteam_api.so
-            )
-            message(STATUS "   Linking Steamworks: ${STEAM_ARCH}/libsteam_api.so")
-        endif()
+        # x64: Link the real Steamworks library
+        set(STEAM_ARCH "linux64")
+        target_link_libraries(gemcore-launcher-linux 
+            ${CMAKE_SOURCE_DIR}/../deps/steamworks/sdk/redistributable_bin/${STEAM_ARCH}/libsteam_api.so
+        )
+        message(STATUS "   Linking Steamworks: ${STEAM_ARCH}/libsteam_api.so")
     endif()
     
     # 🔧 Cross-compilation: Force x86_64 headers when cross-compiling from ARM64
